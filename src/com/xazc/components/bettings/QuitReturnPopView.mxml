@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="450" height="200" 
+				   cornerRadius="5" borderVisible="false" creationComplete="bordercontainer1_creationCompleteHandler(event)"
+				   backgroundColor="0x000000" backgroundAlpha="0.5">
+	<fx:Declarations>
+		<s:Rotate id="rotateEffect"  autoCenterTransform="true"
+				  duration="500"  angleFrom="0" angleTo="360"
+				  target="{imgClose}" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			private var _keyBoardFlag:Boolean=false;
+			
+			private var returnFunc:Function
+			[Bindable]
+			private var _message:String ="您还有{x}个活动没有完成,确定要退出吗?";
+			
+			[Bindable]
+			private var _titleMsg:String;
+			public function show(msg:String = "", titleValue:String = "", returnFunction:Function = null,model:Boolean = true):void
+			{
+//				_titleMsg = titleValue;
+				_titleMsg = "温馨提示";
+				returnFunc = returnFunction
+				_message = _message.replace("{x}",msg);
+				PopUpManager.removePopUp(this);
+				PopUpManager.addPopUp(this, FlexGlobals.topLevelApplication.contentGroup, model);
+				PopUpManager.centerPopUp(this);
+				okBtn.setFocus();
+			}
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				rotateEffect.play();
+			}
+			/**
+			 *发送关闭窗口时间 
+			 **/
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				jumpPanelHandler();
+			}
+			
+			protected function cancle_clickHandler(event:MouseEvent):void
+			{
+				jumpPanelHandler();
+				if(returnFunc !=null)
+					returnFunc(1)
+			}
+			
+			protected function okBtn_clickHandler(event:MouseEvent):void
+			{
+				jumpPanelHandler();
+				if(returnFunc !=null)
+					returnFunc(2)
+			}
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_LOGIN,jumpPanelHandler);
+			}
+			protected function jumpPanelHandler(event:JumpEvent = null):void
+			{
+				Sendnotification.instance.removeEventListener(JumpEvent.JUMP_TO_LOGIN,jumpPanelHandler);
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<s:BorderContainer borderVisible="false"  cornerRadius="5" top="10" left="10" right="10" bottom="10" backgroundColor="#ffffff" >
+		<s:BorderContainer width="100%" height="43" skinClass="css.skin1.universal.PopUpWindowTitleSkin" >
+			<mx:Label id="title" verticalCenter="0" left="20" text="{_titleMsg}" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			<s:Image id="imgClose" x="390" y="8" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)" />
+		</s:BorderContainer>
+		<s:VGroup width="100%" height="128" top="48" gap="20" horizontalAlign="center" verticalAlign="middle">
+			<s:HGroup horizontalAlign="center" verticalAlign="middle">
+				<s:Image smooth="true" source="css/skin1/universal/images/warringLogo2.png"/>
+				<s:Label text="{_message}" textAlign="left" styleName="personalCenterDetailLabelStyle_1"/>
+			</s:HGroup>
+			<s:HGroup horizontalAlign="center" gap="50" verticalAlign="middle">
+				<s:Button id="cancle" label="继续退出" click="cancle_clickHandler(event)" styleName="popUpPersonalCenterBlueButtonStyle_large"
+						  buttonMode="true"/>
+				<s:Button id="okBtn" label="查看" click="okBtn_clickHandler(event)" styleName="alertSubmitButtonStyle" 
+						  buttonMode="true" width="120" height="32"/> 
+			</s:HGroup>
+		</s:VGroup>
+	</s:BorderContainer>
+</s:BorderContainer>

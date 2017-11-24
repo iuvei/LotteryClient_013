@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:bank="com.xazc.center.bank.*"
+		 width="100%" height="100%" creationComplete="init()"
+		 xmlns:common="com.xazc.pop.center.common.*" xmlns:load="com.xazc.components.load.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.UserDetailVo;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.pop.center.record.PopUpBankRechargerRecords;
+			import com.xazc.pop.center.record.PopUpBankWithdrawalsRecords;
+			import com.xazc.single.CommonMethodClass;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.rpc.events.ResultEvent;
+			private var p_1:PopUpBankRecharge;//充值
+			private var p_2:PopUpBankWithdrawals;//提款
+			private var p_3:PopUpBankUserTransefer;//转账
+			private var p_4:PopUpBankRechargerRecords;//充值记录
+			private var p_5:PopUpBankWithdrawalsRecords;//提款记录
+			private var p_6:PopUpBankUserTransferRecords;//转账记录
+			
+			private var _index:int;
+			
+			private function init():void{
+				Sendnotification.instance.addEventListener("rechargeSuccessEvent",handler);
+			}
+			
+			private function handler(e:Event):void{
+				menu_clickHandler(4);
+			}
+			
+			/**
+			 *  点击按钮的时候
+			 * 
+			 */
+			public function menu_clickHandler(index:int):void
+			{
+				for(var i:int=1;i<7;i++){
+					if(index==i){
+						this["menu_"+i].selected=true;
+						detailSelected(i);
+					}else{
+						this["menu_"+i].selected=false;
+					}
+				}
+			}
+			/**
+			 *显示具体详细页面 
+			 **/
+			private function detailSelected(index:int):void
+			{
+				_index = index;
+				
+				if(group.numElements>0){
+					var obj:Object=group.getElementAt(0);
+					if(obj is PopUpBankRecharge){
+						(obj as PopUpBankRecharge).initPropertys();
+					}
+				}
+				group.removeAllElements();
+				if(!this["p_"+index])
+				{
+					if(index==1){
+						//获取最新的支付方式！
+						getUserPayment();
+						return;
+					}else if(index==2){
+						//获取最新的提款限制！
+						getUserPayment();
+						return;
+					}else if(index==3){
+						this["p_"+index]=new PopUpBankUserTransefer();
+					}else if(index==4){
+						this["p_"+index]=new PopUpBankRechargerRecords();
+					}else if(index==5){
+						this["p_"+index]=new PopUpBankWithdrawalsRecords();
+					}else if(index==6){
+						this["p_"+index]=new PopUpBankUserTransferRecords();
+					}
+					this["p_"+index].horizontalCenter=0;
+					group.addElement(this["p_"+index]);
+					this["p_"+index]=null;//释放资源
+				}
+			}
+			
+			private var service:ServerTool;
+			private function getUserPayment():void
+			{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.getUserGroupPayment(new Object(),selectUserDetailHandler);
+			}
+			/**
+			 *查询用户信息回调 
+			 **/
+			private function selectUserDetailHandler(e:ResultEvent):void
+			{
+				loading.suspend();
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64)
+				{
+					//保存个人信息；
+					CommonMethodClass.commom_payInfo(obj);	
+					if(_index == 1)
+					{
+						p_1 = new PopUpBankRecharge();
+						group.addElement(p_1);
+						p_1=null;//释放资源
+					}
+					if(_index == 2)
+					{
+						p_2 = new PopUpBankWithdrawals();
+						group.addElement(p_2);
+						p_2=null;//释放资源
+					}
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 菜单导航 -->
+	<s:Group width="100%">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient >
+					<s:GradientEntry color="0xcfcece" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:HGroup width="100%" height="55" gap="10" left="23" verticalAlign="middle">
+			<common:PopUpTabButtonItem id="menu_1" labelTitle="{resourceManager.getString('PersonalCenterPage','recharge')}" selected="true" click="menu_clickHandler(1)"/>
+			<common:PopUpTabButtonItem id="menu_4" labelTitle="{resourceManager.getString('PersonalCenterPage','rechargeRecord')}" click="menu_clickHandler(4)"/>
+			<common:PopUpTabButtonItem id="menu_2" labelTitle="{resourceManager.getString('PersonalCenterPage','ewithdrawal')}" click="menu_clickHandler(2)"/>
+			<common:PopUpTabButtonItem id="menu_5" labelTitle="{resourceManager.getString('PersonalCenterPage','ewithdrawalRecord')}" click="menu_clickHandler(5)"/>
+			<common:PopUpTabButtonItem id="menu_3" labelTitle="{resourceManager.getString('PersonalCenterPage','transferAccounts')}" click="menu_clickHandler(3)" visible="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}"/>
+			<common:PopUpTabButtonItem id="menu_6" labelTitle="{resourceManager.getString('PersonalCenterPage','transferAccountsRecord')}" click="menu_clickHandler(6)" visible="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}"/>
+		</s:HGroup>
+	</s:Group>
+	<!-- 内容 -->
+	<s:Group id="group" top="55" width="100%"/>
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading" />
+</s:Group>

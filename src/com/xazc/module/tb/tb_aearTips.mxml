@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			
+			private var _labInfo:String= "";
+			
+			[Bindable]
+			public function get labInfo():String
+			{
+				return _labInfo;
+			}
+
+			public function set labInfo(value:String):void
+			{
+				_labInfo = value;
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Rect width="90" height="30" radiusX="5" radiusY="5" >
+		<s:fill>
+			<s:LinearGradient >
+				<s:GradientEntry color="0x000000" alpha="0.7"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:HGroup width="90" height="30" horizontalAlign="center" verticalAlign="middle">
+		<s:Label text="{labInfo}" fontSize="14" fontFamily="微软雅黑" color="0xffff00"/>
+	</s:HGroup>
+	
+	
+</s:Group>

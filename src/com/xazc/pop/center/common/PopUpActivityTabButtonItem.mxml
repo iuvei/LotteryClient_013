@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   height="31" minWidth="93" borderVisible="{(c_alpha == 0)?false:true}" borderColor="0x4c3e83"
+		   buttonMode="true" mouseChildren="false"  cornerRadius="2"
+		   mouseOver="mouseOverHandler(event)"
+		   mouseOut="mouseOutHandler(event)"
+		   creationComplete="init()">
+	<!-- 菜单语 -->
+	<s:Group width="100%" height="100%" alpha="{c_alpha}" top="0" right="0" left="0" bottom="0">
+		<s:Rect  left="1" height="1" top="0" right="1">
+			<s:fill>
+				<s:SolidColor color="0x9881f2"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	<mx:Label id="menulabel_defualt" text="{labelTitle}" horizontalCenter="0" verticalCenter="0"  styleName="popUpActivityTabButtonItemLabelStyle_default"/>
+	<mx:Label id="menulabel_selected" text="{labelTitle}" horizontalCenter="0" verticalCenter="0" styleName="popUpActivityTabButtonItemLabelStyle_selected" visible="false"/>
+
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]
+			private var c_alpha:uint=0;
+			private var initFlag:Boolean=false;//初始化组件是否完成标识
+			private var _selected:Boolean = false;
+			private var _labelTitle:String="";
+			//Microsoft YaHei,微软雅黑
+			[Bindable]
+			public function get labelTitle():String
+			{
+				return _labelTitle;
+			}
+
+			public function set labelTitle(value:String):void
+			{
+				_labelTitle = value;
+			}
+
+			protected function mouseOverHandler(event:MouseEvent):void
+			{
+				changeBg(true);	
+			}
+			
+			protected function mouseOutHandler(event:MouseEvent):void
+			{
+				if(!_selected) {
+					changeBg(false);
+				}
+			}
+			
+			public function get selected():Boolean
+			{
+				return _selected ;
+			}
+			public function set selected(val:Boolean):void
+			{
+				_selected = val;
+				changeBg(val);
+			}
+			
+			private function changeBg(flag:Boolean):void
+			{
+				if(flag) {
+//					this.setStyle("backgroundColor", 0xdfe6ee);
+//					this.setStyle("backgroundAlpha",1);
+					c_alpha=1;
+//					this.setStyle("backgroundAlpha", 0.2);
+					if(initFlag){
+						menulabel_defualt.visible=false;
+						menulabel_selected.visible=true;
+					}
+				}else {
+//					this.setStyle("backgroundColor", 0xe8f0f4);
+//					this.setStyle("backgroundAlpha",0);
+					c_alpha=0;
+//					this.setStyle("backgroundAlpha", 0.1);
+//					this.menulabel.setStyle("color",0x7b8d9b);
+					if(initFlag){
+						menulabel_defualt.visible=true;
+						menulabel_selected.visible=false;
+					}
+				}
+			}
+			
+			private function init():void{
+				if(selected){
+					menulabel_defualt.visible=false;
+					menulabel_selected.visible=true;
+				}else{
+					menulabel_defualt.visible=true;
+					menulabel_selected.visible=false;
+				}
+				initFlag=true;
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<s:backgroundFill>
+		<s:LinearGradient rotation="90">
+			<s:GradientEntry color="0x705fb2" alpha="{c_alpha}" />
+			<s:GradientEntry color="0x5d4e98" alpha="{c_alpha}" />
+			<s:GradientEntry color="0x4c3e83" alpha="{c_alpha}" />
+		</s:LinearGradient>
+	</s:backgroundFill>
+</s:BorderContainer>

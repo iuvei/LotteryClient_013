@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.BorderContainer")]
+	</fx:Metadata>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="disabled" />
+		<s:State name="normal" />
+	</s:states>
+	
+<!--	<s:Rect left="1" right="1" top="1" bottom="1" bottomLeftRadiusX="10" >
+		<s:fill>
+			<s:LinearGradient rotation="180">
+				<s:GradientEntry color="0x2e3339" alpha="0.8"/>
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:BlurFilter blurX="2" blurY="2" quality="10"/>
+		</s:filters>
+	</s:Rect>
+	<s:Rect  id="border" left="0" right="0" top="0" bottom="0" width="69" height="20" bottomLeftRadiusX="10" bottomRightRadiusX="10">
+		<s:stroke>
+			<s:LinearGradientStroke rotation="90" weight="1">
+				<s:GradientEntry color="0xe3edee" alpha="0.2"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>-->
+	<s:BitmapImage source="css/skin1/universal/lotteryindexlogo/logo_box_bg.png" left="0" right="0" top="0" bottom="0"/>
+	<s:Group id="contentGroup" left="0" right="0" top="0" bottom="0" minWidth="0" minHeight="0"/>
+</s:Skin>

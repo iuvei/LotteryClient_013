@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  horizontalAlign="center" verticalAlign="middle"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="464" height="209" paddingTop="-47" gap="15"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.single.Kl8_tips;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Button;
+			[Bindable]
+			public var numbers:String = "";
+			public var lotteryID:int;
+			private var _timer:Timer;
+			private var palyTimes:int = 0;
+			private var runIndex:int = 0;
+			private var newTextArray:Array = new Array();
+			private var numberKey:int = 10
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				_timer = new Timer(150);
+				_timer.addEventListener(TimerEvent.TIMER,ontime);
+				var numbersArray:Array = numbers.split(",");
+				createNumbers(numbersArray);
+			}
+			private function ontime(event:Event):void{
+				palyTimes++;
+				if(palyTimes <= numberKey*5)
+				{
+					var mc:spark.components.Button = tittleGroup.getElementAt(runIndex) as spark.components.Button;
+					mc.visible = true;
+					var mc0:spark.components.Button = tittleGroup.getElementAt(runIndex+10) as spark.components.Button;
+					mc0.visible = true;
+					var index: String;
+					var index0: String;
+					if(showtype())
+					{
+						index = randRange(1,80).toString(); 
+						if(index.toString().length == 1){
+							index = "0"+index;
+						}
+						index0 = randRange(1,80).toString(); 
+						if(index0.toString().length == 1){
+							index0 = "0"+index0;
+						}
+					}
+					else
+					{
+						index = randRange(0,9).toString(); 
+						index0 = randRange(0,9).toString(); 
+					}
+					if(palyTimes%5 == 0)
+					{
+						var numbersArray:Array = numbers.split(",");
+						mc.label = numbersArray[runIndex].toString();
+						mc0.label = numbersArray[runIndex+10].toString();
+						runIndex++
+					}
+					else
+					{
+						mc.label = index;
+						mc0.label = index0;
+					}
+				}
+				else
+				{
+					palyTimes = 0;
+					runIndex = 0;
+					if(_timer!=null)
+					{
+						_timer.stop();
+						_timer.removeEventListener(TimerEvent.TIMER, ontime);
+						_timer =null;
+					}
+				}
+			}
+			/**
+			 * 创建号码
+			 */
+			public function createNumbers(array:Array):void
+			{
+				var mc:*;
+				newTextArray = array;
+				if(newTextArray.length<3)
+					return;
+				tittleGroup.removeAllElements();
+				for (var j:int = 0; j < 20; j++) //显示前20个号为开奖结果
+				{
+					mc = new spark.components.Button();
+//					mc.visible = false;
+					mc.styleName = "Happy8_Show_NumberStyle";
+					tittleGroup.addElementAt(mc,j);
+				}
+				_timer.start();
+				
+				tips_infomation.text = Kl8_tips.result(array);
+			}
+			/**
+			 * 是否是11选5(双号)
+			 */
+			private function showtype():Boolean
+			{
+				var state = false;
+				switch(Util.getInstance().getLotteryTypesByLotteryId(lotteryID.toString()))
+				{
+					case "happy8":
+					case "pk10":
+					case "11x5":{state =  true;break;}
+					default:{state =  false;break;}
+				}
+				return state;
+				
+				if(lotteryID == 16 
+					|| lotteryID == 5 
+					|| lotteryID == 4 
+					|| lotteryID == 61 
+					|| lotteryID == 63 
+					|| lotteryID == 9 
+					|| lotteryID == 10){
+					return true;
+				}
+				else{
+					return false;
+				}
+			}
+			private function randRange(min:Number, max:Number):Number {
+				var randomNum:Number = Math.floor(Math.random() * (max - min + 1)) + min;
+				return randomNum;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup width="100%" horizontalAlign="center">
+		<s:Label id="tips_infomation" styleName="labelStyles2"/>
+	</s:HGroup>
+	
+	<s:TileGroup id="tittleGroup" requestedColumnCount="10" paddingTop="-4">
+	</s:TileGroup>
+</s:VGroup>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="100%" 
+		 xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.pop.center.common.PopUpWindowBase;
+			
+			import mx.events.FlexEvent;
+			
+			public var _addIndex:int = 3;
+			public var _menuIndex:int = 1;
+			
+			[Bindable]
+			public function get menuIndex():int
+			{
+				return _menuIndex;
+			}
+
+			public function set menuIndex(value:int):void
+			{
+				_menuIndex = value;
+			}
+
+			[Bindable]
+			public function get addIndex():int
+			{
+				return _addIndex;
+			}
+
+			public function set addIndex(value:int):void
+			{
+				_addIndex = value;
+			}
+			public function init():void
+			{
+				//充值提款-1
+				//我的记录-2  账户明细  我的记录
+				//我的资料-3
+				//代理管理-4
+				//游戏记录-8
+				if(personalIndexGroup)
+				{
+					personalIndexGroup.removeAllElements();
+				}
+				var obj:PopUpWindowBase = new PopUpWindowBase();
+				personalIndexGroup.addElement(obj);
+				obj.addIndex = addIndex;
+				obj.winTtile = "个人中心";
+				obj.menuIndex = menuIndex;
+				obj.init();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group width="100%" height="100%">
+		<s:BitmapImage source="@Embed('css/img/bg_personal.jpg')" width="100%" height="100%" smooth="true"/>
+		<s:VGroup width="100%" height="100%">
+			<s:Spacer height="40" />
+			<s:HGroup id="personalIndexGroup" horizontalAlign="center" width="100%" height="100%" />
+			<s:Spacer height="20" />
+		</s:VGroup>
+	</s:Group>
+	
+</mx:VBox>

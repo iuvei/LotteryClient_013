@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  horizontalAlign="left" 
+		  verticalAlign="middle"
+		  gap="-8"
+		  creationComplete="hgroup1_creationCompleteHandler(event)"
+		  >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import mx.events.FlexEvent;
+			public static const CHANG_HAPPY10_GAME_TYPE:String = "changeHappy10GameType";
+			
+			//玩法id
+			private var playGameType:String = "01";
+			//胆拖标志位
+			private var playGameSntuo:String = "0";
+			
+			protected function hgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.init();
+				
+			}
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function clear():void
+			{
+				trace("清空组件。。。");
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+			}
+			
+			
+			protected function play_clickHandler(event:MouseEvent):void
+			{
+				var typeStr:String = (event.target as ToggleButton).name;
+				//切换显示逻辑
+				var togbtn:ToggleButton;
+				for(var i:int = 0; i < happy10_games.numElements; i++)
+				{
+					togbtn = happy10_games.getElementAt(i) as ToggleButton;
+					if(togbtn.name==typeStr){
+						togbtn.selected = true;
+					}else{
+						togbtn.selected = false;
+					}
+				}
+				//切换下方玩法类型（胆拖）
+				if(typeStr=="03"||typeStr=="04"||typeStr=="05"||typeStr=="06"||typeStr=="07"||typeStr=="09"){
+					this.paly_2.visible = true;
+				}else{
+					this.paly_2.visible = false;
+				}
+				this.paly_1.selected = true;
+				this.paly_2.selected = false;
+				
+				this.playGameType = typeStr;
+				this.playGameSntuo = "0";
+				this.dropOutSelectGameId();
+			}
+			
+			private function dropOutSelectGameId():void
+			{
+				dispatchEvent(new CustomEvent(CHANG_HAPPY10_GAME_TYPE,playGameType+"_"+playGameSntuo));
+			
+			}
+			
+			protected function paly_1_clickHandler(event:MouseEvent):void
+			{
+				paly_1.selected = true;
+				paly_2.selected = false;
+				this.playGameSntuo = "0";
+				this.dropOutSelectGameId();
+			}
+			
+			protected function paly_2_clickHandler(event:MouseEvent):void
+			{
+				paly_1.selected = false;
+				paly_2.selected = true;
+				this.playGameSntuo = "1";
+				this.dropOutSelectGameId();
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" height="37" paddingLeft="9" gap="-9" id="happy10_games"> 
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'01_0')}" name="01" styleName="menuSelectSkinStyle" selected="true" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'02_0')}" name="02" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'03_0')}" name="03" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'04_0')}" name="04" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'05_0')}" name="05" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'06_0')}" name="06" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'07_0')}" name="07" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'08_0')}" name="08" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'09_0')}" name="09" styleName="menuSelectSkinStyle" />
+		<s:ToggleButton click="play_clickHandler(event)" label="{resourceManager.getString('LotteryPlayNames','lottery_'+CurrentLotteryInfo.lotteryId+'_'+CurrentLotteryInfo.lotteryId+'10_0')}" name="10" styleName="menuSelectSkinStyle" />
+	</s:HGroup>
+	<!--  玩法类别提示  -->
+	<s:HGroup verticalAlign="middle" width="100%" height="32" gap="1">
+		<s:Label left="30" width="115" styleName="labelStyles1" text="{resourceManager.getString('LotteryTips','play_Selected')}" textAlign="center"
+				 verticalAlign="middle" verticalCenter="0"/>
+		<s:ToggleButton label="{resourceManager.getString('LotteryTips','stander_Selected_Number')}" id="paly_1" click="paly_1_clickHandler(event)"  verticalCenter="0"  styleName="standardButtonSkinStyle" selected="true"/>
+		<s:ToggleButton label="{resourceManager.getString('LotteryTips','danTuo_Selected_Number')}" id="paly_2" click="paly_2_clickHandler(event)"  verticalCenter="0"  styleName="standardButtonSkinStyle" visible="false"/>
+	</s:HGroup>
+</s:VGroup>

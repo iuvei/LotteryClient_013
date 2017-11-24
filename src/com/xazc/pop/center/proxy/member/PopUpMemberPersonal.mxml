@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  gap="6" creationComplete="init()"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			public var personalItem:Object;
+			
+			
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:300},
+				{title:"b",w:300},
+				{title:"c",w:300},
+				/* {title:"我的1800模式的返点",w:130},
+				{title:"的1800模式的返点",w:200}, */
+			]);
+			
+			override protected function resourcesChanged():void
+			{
+				for(var i:int=0; i<titles.length; i++) 
+				{
+					var str:String = titles[i].title;
+					if(str == "a")
+					{
+						titles[i].title = resourceManager.getString('PersonalCenterPage','lottery_Type');
+					}else if(str == "b"){
+						titles[i].title = resourceManager.getString('PersonalCenterPage','my_Max_Back_Awarding');
+					}else{
+						titles[i].title = resourceManager.getString('PersonalCenterPage','max_Back_Awarding');
+					}
+				}
+			}
+			/**
+			 *初始化 
+			 **/
+			private function init():void{
+				createView();
+				if((Number(personalItem.Category)&64)==64){
+					zwdl.visible = true;
+				}else{
+					zwdl.visible = false;
+				}
+				
+			}
+			/**
+			 *创建子项 
+			 **/
+			private function createView():void{
+				vg.removeAllElements();
+				if(group.numElements>1){
+					group.removeChildAt(1);
+				}
+				var grid:Grid=new Grid();
+				group.addElement(grid);
+				var row:GridRow=new GridRow();
+				row.height=40;
+				grid.addChild(row);
+				for(var i:int=0;i<titles.length;i++){
+					var item:GridItem=new GridItem();
+					item.width=titles.getItemAt(i).w;
+					row.addChild(item);
+					var label:Label=new Label();
+					if(i==2 || i==4){
+						label.width=titles.getItemAt(i).w-5;
+						label.text=personalItem.UserName+titles.getItemAt(i).title;
+						/* if(personalItem.UserName.toString().length>10){
+							label.text=personalItem.UserName+"\n"+titles.getItemAt(i).title;
+						}else{
+							label.text=personalItem.UserName+titles.getItemAt(i).title;
+						} */
+					}else{
+						label.text=titles.getItemAt(i).title;
+						label.width=titles.getItemAt(i).w-5;
+					}
+					item.addChild(label);
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+				}
+				var grid1:Grid=new Grid();
+				vg.addElement(grid1);
+				var arr:Array=CurrentBusinessInfo.LotteryList;
+				for(var ii:int=0;ii<arr.length;ii++){
+					var row1:GridRow=new GridRow();
+					row1.height=35;
+					grid1.addChild(row1);
+					for(var j:int=0;j<titles.length;j++){
+						var item1:GridItem=new GridItem();
+						if(j==titles.length-1){
+							item1.width=titles.getItemAt(j).w-15;
+						}else{
+							item1.width=titles.getItemAt(j).w;
+						}
+						row1.addChild(item1);
+						var label1:Label=new Label();
+						item1.addChild(label1);
+						label1.styleName="personalCenterDetailLabelStyle_1";
+						var a:int=0;
+						var b:int=0;
+						if(j==0){
+							label1.text=resourceManager.getString("LotteryPlayNames","lottery_"+arr[ii].LotteryCode);
+						}
+						if(j==1){
+							//a=CurrentUserInfo.myRebate;
+							a=int(arr[ii]["MaxRebate"]-CurrentUserInfo.myRebateDifference);
+							b=a<CurrentBusinessInfo.minRebate?CurrentBusinessInfo.minRebate:a;
+							label1.text=b+"";
+						}
+						if(j==2){
+							//a=int(personalItem.Rebate);
+							a=int(arr[ii]["MaxRebate"]-(CurrentBusinessInfo.maxRebate-personalItem.Rebate));
+							b=a<CurrentBusinessInfo.minRebate?CurrentBusinessInfo.minRebate:a;
+							label1.text=b+"";
+						}
+						if(j==3){
+							label1.text=(CurrentUserInfo.myRebate-1800)/20+"";
+						}
+						if(j==4){
+							label1.text=(int(personalItem.Rebate)-1800)/20+"";
+						}
+					}
+				}
+				
+			}
+			private var service:ServerToolImpl;
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//Alert.show("转为代理");
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object=new Object();
+				obj.Type=1;
+				obj.UID =personalItem.UserID;
+				service.modifyCategoryInfo(obj,modifyCategoryInfoReturn);
+			}
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			private function modifyCategoryInfoReturn(e:ResultEvent):void{
+				trace(e.result.toString());
+				var arr:Object = JSON.parse(e.result.toString(),null);
+				
+				if(arr.SystemState==64){
+				
+					if(arr.IsComplete){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_personal_state1'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						this.personalItem.Category = 0;
+						zwdl.visible = false;
+					}else{
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_personal_state2'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+				}else if(arr.SystemState==-1){
+					//跳转登录页面
+					dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_personal_state3'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!--<s:Spacer height="0"/>-->
+	<s:HGroup width="100%" verticalAlign="middle">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','userName')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label text="{personalItem.UserName}" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:Spacer width="100"/>
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','lottery_Money')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label text="{personalItem.LotteryMoney}" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:Spacer width="100"/>
+		<!--<mx:Label text="彩票余额：" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label text="CurrentUserInfo.userCPBalance}" styleName="personalCenterDetailLabelStyle_1"/>-->
+		<s:Button label="转为代理" id="zwdl" click="button1_clickHandler(event)" visible="false" width="80" styleName="popUpPersonalCenterBlueButtonStyle_mid"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','online_State')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label text="{personalItem.userState==0?resourceManager.getString('PersonalCenterPage','online'):resourceManager.getString('PersonalCenterPage','offline')}" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:Spacer width="100"/>
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','last_Login_Time')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label text="{personalItem.LastLoginTime==''?'从未登录':df.format(personalItem.LastLoginTime)}" styleName="personalCenterDetailLabelStyle_1"/>
+		<!--<s:Spacer width="100"/>
+		<mx:Label text="升降点请逐级申请，通过后自动完成。" styleName="personalCenterDetailLabelStyle_1"/>-->
+	</s:HGroup>
+	
+	<s:Group height="100%">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff" alpha="0"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect id="fill1" width="100%" height="40">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x6a6969" alpha="1"/>
+					<s:GradientEntry color="0x595858" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:VGroup  gap="-1" width="100%">
+			<s:Group id="group" height="40">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient rotation="90">
+							<s:GradientEntry color="0xffffff" alpha="0"/>
+							<s:GradientEntry color="0xdde6eb" alpha="0"/>
+						</s:LinearGradient>
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+			<s:Scroller height="308" styleName="personalCenterScrollerStyle_1" buttonMode="true">
+				<s:VGroup id="vg" />	
+			</s:Scroller>
+		</s:VGroup>
+	</s:Group>
+</s:VGroup>

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		 creationComplete="creationCompleteHandler(event)" 
+		 xmlns:bettings="com.xazc.components.bettings.*"
+		 xmlns:shssl="com.xazc.module.shssl.*" xmlns:pl5="com.xazc.module.pl5.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Group;
+			import spark.modules.Module;
+			
+			[Bindable]
+			public var lotteryID:String = "";
+			
+			private var selectedItemContainer:Group;
+			
+			private var bettingInfo:Cathectic;
+			
+			private var selectedPlay:ToggleButton;
+			
+			//投注注数
+			[Bindable]
+			private var betCount:Number = 0;
+			//投注总额
+			[Bindable]
+			private var betMoney:Number = 0;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				var selected:Pl5BettingSelected = new Pl5BettingSelected();
+				selected.percentWidth = 100;
+				selected.percentHeight = 100;
+				selected.lotteryID = lotteryID;
+				boderContainer.addElement(selected);
+				selectedPlay = togSelected;
+				addEventListener(BetsClickEvent.CONFIRM_BTN_ENABLE, confirmBtnEnableHandler);
+				addEventListener(BetsClickEvent.NUMBER_STICK, confirmBtnEnableHandler);
+				changeConfirmLabelHandler();
+			}
+			
+			public function changeConfirmLabelHandler():void
+			{
+				betCount = bettingInfo == null ? 0 : bettingInfo.tzzs;
+				betMoney = bettingInfo == null ? 0 : bettingInfo.tzzs*CurrentLotteryInfo.beishu * CurrentLotteryInfo.perPrice/CurrentLotteryInfo.yuanjiaoMoshi;
+			}
+			private function confirmBtnEnableHandler(e:BetsClickEvent):void
+			{
+				bettingInfo = e.body as Cathectic;
+				changeConfirmLabelHandler();
+			}
+			
+			private function changeBetsTypeHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				var selectedID:String = target.id;
+				selectedPlay.selected = false;
+				target.selected = true;
+				selectedPlay = target;
+				bettingInfo = null;
+				changeConfirmLabelHandler();
+				Util.getInstance().dispatchEvent(new BetsClickEvent(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS));
+				boderContainer.removeAllElements();
+				switch (selectedID)
+				{
+					case "togSelected":
+						var selected:Pl5BettingSelected = new Pl5BettingSelected();
+						selected.percentWidth = 100;
+						selected.percentHeight = 100;
+						selected.lotteryID = lotteryID;
+						boderContainer.addElement(selected);
+						break;
+					case "tog1Star":
+						var betting1Star:Pl5Betting1Star = new Pl5Betting1Star();
+						betting1Star.percentWidth = 100;
+						betting1Star.percentHeight = 100;
+						betting1Star.lotteryID = lotteryID;
+						boderContainer.addElement(betting1Star);
+						break;
+					case "togCopy":
+						var bettingCopy:Pl5BettingCopy = new Pl5BettingCopy();
+						bettingCopy.percentWidth = 100;
+						bettingCopy.percentHeight = 100;
+						bettingCopy.lotteryID = lotteryID;
+						boderContainer.addElement(bettingCopy);
+						break;
+				}
+			}
+			public function confirm_clickHandler():void
+			{
+				if(bettingInfo == null || isNaN(bettingInfo.tzzs) || bettingInfo.tzzs <= 0)
+				{
+					var alert:AlertMsg = new AlertMsg();
+					alert.show("请选择正确内容进行投注！", "温馨提示");
+					
+					//Alert.show("请选择正确内容进行投注！");
+					return;
+				}
+				
+				if(betMoney<0.02){
+					var alert3:AlertMsg = new AlertMsg();
+					alert3.show("厘模式每单最少投注0.02元！", "温馨提示");
+					return;
+					
+				}
+				
+				var ca:Cathectic = new Cathectic();
+				ca.tzzs = bettingInfo.tzzs;
+				ca.tzcontent = bettingInfo.tzcontent;
+				ca.sntuo = bettingInfo.sntuo;
+				ca.lottery_type = bettingInfo.lottery_type;
+				ca.game_id = bettingInfo.game_id;
+				var touzhuCathecticsArr:ArrayCollection = new ArrayCollection();
+				touzhuCathecticsArr.addItem(ca);
+				bettings_Module.sendAllTheTouzhu(touzhuCathecticsArr);
+				
+				Util.getInstance().dispatchEvent(new BetsClickEvent(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS));
+				bettingInfo = null;
+				changeConfirmLabelHandler();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:VGroup width="100%" gap="0">
+		<s:SkinnableContainer width="100%" height="44" skinClass="css.skin1.universal.PlayGameSkinnableContainerskin">
+			<s:layout>
+				<s:HorizontalLayout horizontalAlign="left" verticalAlign="middle" gap="0" paddingLeft="16"/>
+			</s:layout>
+			<s:ToggleButton id="togSelected" label="{resourceManager.getString('LotteryTips','lottery_12_5Starts')}" styleName="menuSelectSkinStyle"
+							selected="true" click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="tog1Star" label="{resourceManager.getString('LotteryTips','lottery_12_1Starts')}" styleName="lastMenuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="togCopy" label="{resourceManager.getString('LotteryTips','stick_Selected')}" styleName="menuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)" visible="false"/>
+		</s:SkinnableContainer>
+		<s:HGroup id="boderContainer" width="100%" height="100%">
+		</s:HGroup>
+	</s:VGroup>
+	<s:HGroup id="hg_content" gap="0" width="100%" horizontalAlign="left" paddingLeft="14" bottom="143">
+		<s:HGroup height="48" verticalAlign="middle">
+			<s:Label text="{resourceManager.getString('LotteryTips','you_Selected')}" styleName="labelStyles2"/>
+			<s:Label id="zhu" text="{betCount}" styleName="labelStyles4" minWidth="40" maxWidth="50" textAlign="center"/>
+			<s:Label text="注，" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup height="48" verticalAlign="middle">
+			<s:Label text="共计" styleName="labelStyles2"/>
+			<s:Label id="money" text="{betMoney}" styleName="labelStyles4" minWidth="40" maxWidth="75" textAlign="center"/>
+			<s:Label text="{CurrentUserInfo.moneyType}" styleName="labelStyles2"/>	
+		</s:HGroup>
+	</s:HGroup>
+	<bettings:BettingBottom  id="bettings_Module" bottom="0">
+	</bettings:BettingBottom>
+</s:Group>

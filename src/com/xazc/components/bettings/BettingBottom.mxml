@@ -1,0 +1,1245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:bettings="com.xazc.components.bettings.*"
+		 xmlns:load="com.xazc.components.load.*"
+		 implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		 width="960" height="190" xmlns:single="com.xazc.single.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.AppendNumbersItemVO;
+			import com.xazc.comm.vo.AppendNumbersVO;
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.ToolsUtil;
+			import com.xazc.single.UsersLotteryDate;
+			import com.xazc.single.Util;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;		
+			//总注数
+			[Bindable]
+			private var zongzhushu:Number = 0;
+			//总钱数
+			[Bindable]
+			private var zongqianshu:Number = 0;
+			//总期数
+			[Bindable]
+			private var zongqishu:Number = 0;
+			//投注信息集合（投注实体类）
+			[Bindable]
+			private var touzhuCathecticsArr:ArrayCollection = new ArrayCollection();
+			//默认返点
+			[Bindable]
+			protected var awreturn:int = 1800;
+			//最小返点
+			[Bindable]
+			protected var minawreturn:int = 1800;
+			
+			//当前选择返点(0-6)
+			[Bindable]
+			protected var fandianValue:Number = 0;
+			
+			//当前选择返点(1800-1920)
+			[Bindable]
+			protected var fandianValue2:Number = 1800;
+			//当前玩法对应奖金
+			[Bindable]
+			private var  gameAward:Number = 0;
+			//单注返奖金额
+			[Bindable]
+			private var  gameSingleAward:Number = 0;
+			
+			[Bindable]
+			private var fandianChazhi:Number = 0;
+			
+			private var appendNumShowFlag:Boolean;
+			
+			private var appendBumbers:AppendNumbers;
+			[Bindable]
+			private var DDLArr:ArrayCollection=new ArrayCollection([
+				{valueKey:1,valueName:"元"},
+				{valueKey:10,valueName:"角"},
+				{valueKey:100,valueName:"分"},
+				{valueKey:1000,valueName:"厘"}
+			]);
+			[Bindable]
+			private var cmbFandianArr:Array = new Array();
+			[Bindable]
+			private var appendNumTempX:int = (FlexGlobals.topLevelApplication.width - 500) / 2 - 180;
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				trace("初始化组件。。。BettingBottom");
+				//获取彩种信息
+				this.getLotteryInfo();
+				Util.getInstance().addEventListener(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,changShowDateHandler);
+				Util.getInstance().addEventListener(CustomEvent.BETTING_APPENDNUM_SUBMIT, appendNumberSubmitHandler);
+				Util.getInstance().addEventListener(CustomEvent.BETTING_APPENDNUM_CHANGE, appendNumChangeHandler);
+				Util.getInstance().addEventListener(CustomEvent.BETTING_APPENDNUM_CLOSE, appendNumCloseHandler);
+				Util.getInstance().addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				//第一次进入该页面后配置圆角分模式显示
+				//CurrentBusinessInfo.isYuanModelOpen
+				//CurrentBusinessInfo.isJiaoModelOpen
+				//CurrentBusinessInfo.isFenModelOpen
+				initMode();
+				
+			}
+			//添加圆角分模式初始化及选择当前的模式
+			private function initMode(num:int = 0):void
+			{
+				DDLArr = new ArrayCollection();
+				var obj:Object;
+				if(CurrentBusinessInfo.isYuanModelOpen){
+					obj = new Object();
+					obj.valueKey = 1;
+					obj.valueName ="元";
+					DDLArr.addItem(obj);
+				}
+				if(CurrentBusinessInfo.isJiaoModelOpen){
+					obj = new Object();
+					obj.valueKey = 10;
+					obj.valueName ="角";
+					DDLArr.addItem(obj);
+				}
+				if(CurrentBusinessInfo.isFenModelOpen){
+					obj = new Object();
+					obj.valueKey = 100;
+					obj.valueName ="分";
+					DDLArr.addItem(obj);
+				}
+				if(CurrentLotteryInfo.isShowLiModelBtn){
+					obj = new Object();
+					obj.valueKey = 1000;
+					obj.valueName ="厘";
+					DDLArr.addItem(obj);
+				}
+				if(10!=num){
+					cmbPayModel.selectedIndex = num;
+				}
+			}
+			
+			private function selectedLotteryChangeHandler(e:SystemEvent):void{
+				recycle()
+			}
+			/* public function changShowDateHandler(event:ChangeShowDateEvent):void
+			{
+				CurrentLotteryInfo.gameId = event.body as String;
+				this.gameAward = CurrentLotteryInfo.getPlayInfoByGameId(event.body as String);
+				this.fandian_changeHandler(null);
+				
+			} */
+			public function changShowDateHandler(event:ChangeShowDateEvent):void
+			{
+				CurrentLotteryInfo.gameId = event.body as String;
+				var tempNum:Number = 10; 
+				CurrentLotteryInfo.isShowLiModelBtn = true;
+				/* if(CurrentBusinessInfo.isLiModelOpen)
+				{
+					switch(Util.getInstance().getLotteryTypesByLotteryId(CurrentLotteryInfo.lotteryId))
+					{
+						case "ssc":
+						{
+							if(CurrentLotteryInfo.gameId == (CurrentLotteryInfo.lotteryId+"01")){
+								CurrentLotteryInfo.isShowLiModelBtn = true;
+							}
+							else if(CurrentLotteryInfo.gameId == (CurrentLotteryInfo.lotteryId+"30")){
+								CurrentLotteryInfo.isShowLiModelBtn = true;
+							}
+							else if(CurrentLotteryInfo.gameId == (CurrentLotteryInfo.lotteryId+"32")){
+								CurrentLotteryInfo.isShowLiModelBtn = true;
+							}
+							else{
+								if(CurrentLotteryInfo.yuanjiaoMoshi == 1000)
+								{
+									button_payModel_clickHandler(1);
+									//切换选择里模式
+									//yuanBtn.selected = true;
+									tempNum = 0;
+								}
+								CurrentLotteryInfo.isShowLiModelBtn = false;
+							}
+							break;
+						}
+						default:
+						{
+							CurrentLotteryInfo.isShowLiModelBtn = false;
+							break;
+						}
+					}
+				}
+				else
+				{
+					CurrentLotteryInfo.isShowLiModelBtn = false;
+				} */
+				
+				//初始化角分模式初始化
+				
+				this.initMode(tempNum);	
+				
+				this.gameAward = CurrentLotteryInfo.getPlayInfoByGameId(event.body as String);
+				this.fandian_changeHandler(null);
+				
+			}
+			
+			
+			//查询用户彩种信息
+			private function getLotteryInfo():void
+			{
+				if(UsersLotteryDate.getInstance().getThisLotteryDateByLoteryId(CurrentLotteryInfo.lotteryId)!=null){
+					lotteryInfoDate(UsersLotteryDate.getInstance().getThisLotteryDateByLoteryId(CurrentLotteryInfo.lotteryId));
+				}else{
+					var serverTool:ServerTool = new ServerToolImpl();
+					var obj:Object = new Object();
+					obj.LotteryCodeEnum = CurrentLotteryInfo.lotteryId;
+					serverTool.getLotteryInfo(obj,getLotteryInfoReturn);
+				}
+			}
+			//返回彩种信息时处理
+			private function getLotteryInfoReturn(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==-1){
+					//session失效
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}else if(arr.SystemState==-2){
+					//单点登录
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}
+				if(!arr.state){
+					var alert:StopLotteryAlertMsg = new StopLotteryAlertMsg();
+					alert.show(lotteryNameHelp.getCaizhong(CurrentLotteryInfo.lotteryId) + "#" + "错误代码：0X:00000001JJ"+ "#" + "请联系客服", "温馨提示");
+					CurrentLotteryInfo.isBetNow = false;
+					return;
+				}
+				trace(e.result.toString());
+				var obj:Object = new Object();
+				//obj.lotteryId = CurrentLotteryInfo.lotteryId;
+				obj.lotteryId = arr.LotteryInfo.LotteryCode;
+				obj.lottertyDate = arr;
+				UsersLotteryDate.getInstance().lotteryDateList.push(obj);
+				lotteryInfoDate(arr);
+			}
+			
+			
+			//处理彩种信息（奖级）
+			private function lotteryInfoDate(arr:Object):void
+			{
+				if(arr.SystemState==-1){
+					//session失效
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}else if(arr.SystemState==-2){
+					//单点登录
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}
+				
+				//添加该彩种是否可售
+				if(arr.LotteryInfo.SaleState!=1){
+					var alert:StopLotteryAlertMsg = new StopLotteryAlertMsg();
+					alert.show(lotteryNameHelp.getCaizhong(CurrentLotteryInfo.lotteryId) + "#" + "错误代码：0X:00000002TS"+ "#" + "请联系客服", "温馨提示");
+					CurrentLotteryInfo.isBetNow = false;
+				}else{
+					CurrentLotteryInfo.isBetNow = (!CurrentBusinessInfo.isAollowProxyBet && PersonCenterInfo.userInfoDetail.IsAgent)?false:true;
+				}
+				
+				//添加该彩种是否可售
+				/* var array:Array = CurrentBusinessInfo.LotteryList;
+				for(var i:int=0; i<array.length; i++){
+				if(CurrentLotteryInfo.lotteryId == array[i].LotteryCode.toString()){
+				if(array[i].SaleState != 1){
+				var alert:StopLotteryAlertMsg = new StopLotteryAlertMsg();
+				alert.show(lotteryNameHelp.getCaizhong(CurrentLotteryInfo.lotteryId) + "#" + "暂停销售，" + "#" + "具体开售时间请关注本网站！", "温馨提示");
+				CurrentLotteryInfo.isBetNow = false;
+				}else{
+				CurrentLotteryInfo.isBetNow = (!CurrentBusinessInfo.isAollowProxyBet && PersonCenterInfo.userInfoDetail.IsAgent)?false:true;
+				}
+				}
+				} */
+				
+				/**
+				 * DefaultBetRebate/UserRebate
+				 * 用户默认投注返点和用户返点（从用户信息处查询）
+				 * 
+				 * 
+				 */
+				
+				arr.UserRebate =(CurrentBusinessInfo.maxRebate-CurrentUserInfo.myRebate);//用户返点差值
+				
+				//设置默认返点为最大返点 2014.7.31添加
+				arr.DefaultBetRebate = arr.UserRebate;
+				
+				if(CurrentBusinessInfo.minRebate>(Number(arr.LotteryRebate)-Number(arr.UserRebate))){
+					this.awreturn = CurrentBusinessInfo.minRebate;
+				}else{
+					this.awreturn =Number(arr.LotteryRebate)-Number(arr.UserRebate);
+					//判断最大值规则20140802
+					if(arr.hasOwnProperty("BetRebate")){
+						
+						this.fandianChazhi = 0;
+						if(this.awreturn>arr.BetRebate){
+							if(CurrentBusinessInfo.MerchantNumber==0){
+								this.fandianChazhi = (this.awreturn-arr.BetRebate)/20;
+							}
+							this.awreturn = arr.BetRebate;
+							
+						}
+					}
+					
+				}
+				
+				if(CurrentBusinessInfo.minRebate>(Number(arr.LotteryRebate)-Number(arr.RebateSpan))){
+					this.minawreturn = CurrentBusinessInfo.minRebate;
+				}else{
+					this.minawreturn = Number(arr.LotteryRebate)-Number(arr.RebateSpan);
+				}
+				
+				if(CurrentBusinessInfo.minRebate>(Number(arr.LotteryRebate)-Number(arr.DefaultBetRebate))){
+					this.fandianValue2 = CurrentBusinessInfo.minRebate;
+				}else{
+					this.fandianValue2 = Number(arr.LotteryRebate)-Number(arr.DefaultBetRebate);
+					//判断最大值计算规则20140802
+					if(arr.hasOwnProperty("BetRebate")){
+						if(this.fandianValue2>arr.BetRebate){
+							this.fandianValue2 = arr.BetRebate;
+						}else{
+							
+							
+						}
+					}
+				}
+				
+				fandian.value =(this.awreturn-fandianValue2)/20;
+				
+				fandianValue = fandian.value+this.fandianChazhi;
+				fandian.maximum = (awreturn-minawreturn)/20;
+				
+				cmbFandianArr = new Array();
+				for (var i:int = 0; i <= fandian.maximum*10; i++) 
+				{
+					var obj:Object = new Object();
+					obj["fandianValue"] = Number(i*0.1+this.fandianChazhi).toFixed(1);
+					var tempfandianValue2:Number =  awreturn-i*0.1*20;
+					var temGameSingleAward:Number =  Number(((Number(this.gameAward)*tempfandianValue2)/1000/CurrentLotteryInfo.yuanjiaoMoshi).toFixed(6));
+					//temGameSingleAward = Number(Math.floor((temGameSingleAward+0.000001)*100))/100;
+					temGameSingleAward = Number(Math.floor((temGameSingleAward+0.000001)*10000))/10000;
+					obj["gameSingleAward"] = temGameSingleAward;
+					obj["KeyValue"] = (fandianValue2-2*i).toString()+"-"+obj["fandianValue"].toString()+"%";
+					cmbFandianArr.push(obj);
+				}
+				cmbFandian.selectedIndex = 0;
+				this.fandian_changeHandler(null);
+				//设置当前单注彩票金额
+				CurrentLotteryInfo.perPrice = arr.LotteryInfo.Price;
+				CurrentLotteryInfo.playInfo =new Array();
+				var tempObj:Object;
+				var date:Object;
+				for(var i:int = 0;i<arr.LotteryInfo.PlayInfo.length;i++){
+					date = arr.LotteryInfo.PlayInfo[i];
+					tempObj = new Object();
+					tempObj.PlayCode = date.PlayCode;
+					
+					var tempAwardLevelInfo:Array = date.AwardLevelInfo as Array;
+					var tempAwardAmount:Number = 0;
+					for(var o:int = 0;o<tempAwardLevelInfo.length;o++){
+						if(Number(tempAwardLevelInfo[o].AwardAmount)>tempAwardAmount){
+							tempAwardAmount = Number(tempAwardLevelInfo[o].AwardAmount);
+						}
+					}
+					//tempObj.AwardLevelInfo = date.AwardLevelInfo[0].AwardAmount;
+					tempObj.AwardLevelInfo = tempAwardAmount;
+					
+					CurrentLotteryInfo.playInfo.push(tempObj);
+					if(i==0){
+						this.gameAward = tempObj.AwardLevelInfo;
+					}
+				}
+				if(CurrentLotteryInfo.getPlayInfoByGameId(CurrentLotteryInfo.gameId)==0){
+					//为初始化彩种id
+				}else{
+					this.gameAward = CurrentLotteryInfo.getPlayInfoByGameId(CurrentLotteryInfo.gameId);
+				}
+				
+				this.fandian_changeHandler(null);
+				//				}
+				//				else if(arr.hasOwnProperty("SystemState"))
+				//					Util.getInstance().systemMsgTipHandler(arr.SystemState.toString());
+				
+				
+			}
+			/**
+			 * 将选号模块的数据传递到投注模块中
+			 */
+			public function sendAllTheTouzhu(cathectics:ArrayCollection):void
+			{
+				//圆角模式下的字符替换
+				var Pattern_0:RegExp = /０/g; 
+				var Pattern_1:RegExp = /１/g; 
+				var Pattern_2:RegExp = /２/g; 
+				var Pattern_3:RegExp = /３/g; 
+				var Pattern_4:RegExp = /４/g; 
+				var Pattern_5:RegExp = /５/g; 
+				var Pattern_6:RegExp = /６/g;
+				var Pattern_7:RegExp = /７/g; 
+				var Pattern_8:RegExp = /８/g; 
+				var Pattern_9:RegExp = /９/g; 
+				
+				for(var i:int = 0 ; i < cathectics.length ; i++ )
+				{
+					var obj:Cathectic = cathectics[i] as Cathectic;
+					
+					obj.tzcontent = obj.tzcontent.replace(Pattern_0,"0");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_1,"1");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_2,"2");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_3,"3");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_4,"4");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_5,"5");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_6,"6");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_7,"7");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_8,"8");
+					obj.tzcontent = obj.tzcontent.replace(Pattern_9,"9");
+					obj.awreturn = fandianValue2;//投注返点
+					obj.tzbshu = Number(beishu.text);//投注倍数
+					obj.tzbmoshi = CurrentLotteryInfo.yuanjiaoMoshi;//投注模式
+					touzhuCathecticsArr.addItemAt(obj,0);
+				}
+				//写入到投注框
+				writeTheResult();
+			}
+			/**
+			 * 切换圆角模式
+			 * 
+			 */
+			private  function button_payModel_clickHandler(payModel:Number):void
+			{
+				//改变彩种圆角模式
+				CurrentLotteryInfo.yuanjiaoMoshi = payModel;
+				//修改投注框中数据计算
+				this.writeTheResult();
+				//修改合计金额
+				//this.calculateZongZhuShu()
+				//修改单倍奖金返点
+				this.fandian_changeHandler(null);
+				
+				//抛出事件（修改选号模块相关计算）
+				dispatchEvent(new BetEvent(BetEvent.YUANJIAOMOSHI_CLICK));
+				
+			}
+			
+			
+			/**
+			 *  清除选号区的所有信息
+			 * 
+			 */
+			protected function clear_clickHandler(event:MouseEvent):void
+			{
+				if(myList.dataProvider.length > 0){
+					var alert:AlertMsg = new AlertMsg();
+					alert.show("您确定要清空投注列表吗？","温馨提示",2,true);
+					alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,deleteBettingNums);
+				}
+			}
+			/**
+			 * alert监听处理清空list
+			 */
+			protected function deleteBettingNums(event:SystemEvent):void
+			{
+				touzhuCathecticsArr = new ArrayCollection();
+				writeTheResult();
+			}
+			/**
+			 * 删除投注框中的数据(new)
+			 * @param target 要删除的投注数据
+			 */
+			public function deleteTouzhuInfo(target:Cathectic):void
+			{
+				var index:int = touzhuCathecticsArr.getItemIndex(target);
+				if(index != -1){
+					touzhuCathecticsArr.removeItemAt(index);
+				}
+				//重新写入
+				writeTheResult();
+			}
+			/**
+			 * 
+			 * 将投注内容添加到投注框中
+			 */
+			public function writeTheResult():void
+			{
+				myList.dataProvider = null;
+				myList.dataProvider = touzhuCathecticsArr;
+				this.calculateZongZhuShu();
+			}
+			/**
+			 *计算总注数 
+			 * 
+			 */
+			public function calculateZongZhuShu():void
+			{
+				
+				
+				if(touzhuCathecticsArr.length>0){
+					zongqishu = 1;
+				}else{
+					zongqishu = 0;
+				}
+				zongzhushu = 0;
+				zongqianshu = 0;
+				for(var i:int = 0 ; i<touzhuCathecticsArr.length ;i++){
+					zongzhushu+=(touzhuCathecticsArr[i] as Cathectic).tzzs;
+					zongqianshu += Number((((touzhuCathecticsArr[i] as Cathectic).tzzs*CurrentLotteryInfo.perPrice*(touzhuCathecticsArr[i] as Cathectic).tzbshu)/(touzhuCathecticsArr[i] as Cathectic).tzbmoshi).toFixed(4));
+				}
+				zongqianshu = Number(zongqianshu.toFixed(4));
+				if(appendNumCheckBox.selected)
+					Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.BETTING_TOTALMONEY, zongqianshu));
+			}
+			
+			private function appendNumberSubmitHandler(e:CustomEvent):void
+			{
+				/* appendNumShowFlag = false;
+				var appVo:AppendNumbersVO = e.body as AppendNumbersVO;
+				appendNum.removeAllElements();
+				appendNum.visible = false;
+				appendNum.includeInLayout = false; */
+				submit();
+			}
+			//
+			private function appendNumChangeHandler(e:CustomEvent):void
+			{
+				var obj:Object = e.body;
+				zongqianshu = Number(Number(obj.totalMoney).toFixed(4));
+				zongqishu = obj.issuesNum;
+			}
+			
+			private function appendNumCloseHandler(e:CustomEvent):void
+			{
+				appendNumShowFlag = false;
+				
+				if(touzhuCathecticsArr.length>0){
+					zongqishu = 1;
+				}else{
+					zongqishu = 0;
+				}
+				
+				zongzhushu = 0;
+				zongqianshu = 0;
+				for(var i:int = 0 ; i<touzhuCathecticsArr.length ;i++){
+					zongzhushu+=(touzhuCathecticsArr[i] as Cathectic).tzzs;
+					zongqianshu += Number((((touzhuCathecticsArr[i] as Cathectic).tzzs*CurrentLotteryInfo.perPrice*(touzhuCathecticsArr[i] as Cathectic).tzbshu)/(touzhuCathecticsArr[i] as Cathectic).tzbmoshi).toFixed(4));
+				}
+				zongqianshu = Number(zongqianshu.toFixed(4));
+				
+				appendNumCheckBox.selected = false;
+				PopUpManager.removePopUp(appendBumbers);
+				appendNum.removeAllElements();
+				appendNum.visible = false;
+				appendNum.includeInLayout = false;
+			}
+			/**
+			 * 改变投注倍数
+			 * 
+			 */
+			public function changeMultiple():void
+			{
+				
+				
+				if(beishu.text==""){
+					beishu.appendText("1");
+				}else if(beishu.text=="0"){
+					beishu.text = '';
+					beishu.appendText("1");
+					//beishu.appendText("1");
+				}else if(Number(beishu.text)<1){
+					beishu.text = '';
+					beishu.appendText("1");
+				}else if(Number(beishu.text)>CurrentLotteryInfo.maxMultiple){
+					beishu.text = CurrentLotteryInfo.maxMultiple+"";
+				}
+				CurrentLotteryInfo.beishu = int(beishu.text);
+				calculateZongZhuShu();
+				//抛出事件（修改选号模块相关计算）
+				dispatchEvent(new BetEvent(BetEvent.YUANJIAOMOSHI_CLICK));
+			}
+			
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function clear():void
+			{
+				trace("清空组件。。。BettingBottom");
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				trace("清空回收组件。。。BettingBottom");
+				Util.getInstance().removeEventListener(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,changShowDateHandler);
+				Util.getInstance().removeEventListener(CustomEvent.BETTING_APPENDNUM_SUBMIT, appendNumberSubmitHandler);
+				Util.getInstance().removeEventListener(CustomEvent.BETTING_APPENDNUM_CHANGE, appendNumChangeHandler);
+				Util.getInstance().removeEventListener(CustomEvent.BETTING_APPENDNUM_CLOSE, appendNumCloseHandler);
+				Util.getInstance().removeEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.removeEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				CurrentLotteryInfo.beishu = 1;
+			}
+			private var bettingState:Boolean = true;
+			
+			private var tempIssus:String="";
+			private function submit():void
+			{
+				var alert:AlertMsg= new AlertMsg();
+				if(this.zongqianshu > Number(CurrentUserInfo.userCPBalance)){
+					alert.show("账户余额不足！", "温馨提示");
+					return;
+				}
+				if(!bettingState){
+					return;
+				}
+				if(touzhuCathecticsArr.length<1){
+					alert.show("您没有可投注的信息！", "温馨提示");
+				}else{
+					
+					if(this.zongqishu==0){
+						alert.show("请选择期号！", "温馨提示");
+						return;
+					}
+					if(appendNumCheckBox.selected){
+						//验证追号投注验证提示
+						var tempNum:Number = 0;
+						for each(var item:AppendNumbersItemVO in appendBumbers.zhuiNumbersArr)
+						{
+							if(item.selected)
+							{
+								if(Number(item.issue) < Number(CurrentLotteryInfo.currentIssue)){
+									alert.show("您选择的第一个期号已经截止或即将截\n止，请重新选择后再提交", "温馨提示");
+									if(appendNumShowFlag){
+										PopUpManager.removePopUp(appendBumbers);
+										appendNum.removeAllElements();
+										appendNum.visible = false;
+										appendNum.includeInLayout = false;
+									}
+									appendNumCloseHandler(null);
+									//还原倍数显示
+									beishu.text = "1";
+									CurrentLotteryInfo.beishu = int(beishu.text);
+									//抛出事件（修改选号模块相关计算）
+									dispatchEvent(new BetEvent(BetEvent.YUANJIAOMOSHI_CLICK));
+									writeTheResult();
+									return;
+								}else{
+									tempNum+=1;
+								}
+							}
+						}
+						alert.show("你确认投注"+tempNum+"期？\n总金额:"+Number(zongqianshu.toFixed(4))+CurrentUserInfo.moneyType, "温馨提示",2,true);
+						alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,bettingNowZhui);
+					}else{
+						//验证正常投注验证提示
+						//alert.show("你选择了"+zongzhushu+"注"+Number(beishu.text)+"倍，共"+zongqianshu.toFixed(2)+CurrentUserInfo.moneyType+"\n请确认！", "温馨提示",true);
+						tempIssus = CurrentLotteryInfo.currentIssue;
+						alert.show("投注"+CurrentLotteryInfo.currentIssue+"期，"+zongzhushu+"注"+"，共"+Number(zongqianshu.toFixed(4))+CurrentUserInfo.moneyType+"\n请确认！", "温馨提示",2,true);
+						alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,bettingNow);
+					}
+				}
+			}
+			
+			//3.0版投注方法实现
+			private function bettingNow(event:SystemEvent):void
+			{
+				var alert:AlertMsg= new AlertMsg();
+				var alert2:AlertMsg= new AlertMsg();
+				if(tempIssus!=CurrentLotteryInfo.currentIssue){
+					alert2.show("投注"+CurrentLotteryInfo.currentIssue+"期，"+zongzhushu+"注"+Number(beishu.text)+"倍，共"+Number(zongqianshu.toFixed(4))+CurrentUserInfo.moneyType+"\n请确认！", "温馨提示",2,true);
+					alert2.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,bettingNow);
+					
+					alert.show("您好，"+tempIssus+"期已截止，\n当前期是"+CurrentLotteryInfo.currentIssue+"期，\n投注时请确认您选择的期号。", "温馨提示");
+					tempIssus = CurrentLotteryInfo.currentIssue;
+					return;
+				}
+				if(""==CurrentLotteryInfo.currentIssue){
+					alert.show("正在加载期号...", "温馨提示");
+					return;
+				}
+				Sendnotification.instance.dispatchEvent(new SystemEvent(SystemEvent.TZ_LOCK_FULL_SCREEN,{flag:true}));
+				bettingState = false;
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				var tempBetObj:Object = new Object();
+				tempBetObj.LotteryCode =CurrentLotteryInfo.lotteryId; 
+				var betArr:Array = new Array();
+				var tempCathectic:Cathectic;
+				var tempBetItem:Object
+				for(var i:int = 0;i<touzhuCathecticsArr.length;i++){
+					tempCathectic = touzhuCathecticsArr[i];
+					tempBetItem = new Object();
+					tempBetItem.PlayCode = tempCathectic.game_id;
+					tempBetItem.BetContent = tempCathectic.tzcontent;
+					tempBetItem.BetCount = tempCathectic.tzzs;
+					tempBetItem.IssueNumber = CurrentLotteryInfo.currentIssue;
+					tempBetItem.BetMultiple = Number(tempCathectic.tzbshu);
+					tempBetItem.BetMoney = tempCathectic.tzzs*Number(tempCathectic.tzbshu)*CurrentLotteryInfo.perPrice/tempCathectic.tzbmoshi;
+					tempBetItem.BetRebate = tempCathectic.awreturn;
+					//胆拖标志位
+					if(tempCathectic.sntuo==1){
+						tempBetItem.BetMode = 1;
+					}else if(tempCathectic.sntuo==2){
+						tempBetItem.BetMode = 16;
+					}else if(tempCathectic.sntuo==3){
+						tempBetItem.BetMode = 8;
+					}else{
+						tempBetItem.BetMode = 0;
+					}
+					betArr.push(tempBetItem);
+				}
+				
+				tempBetObj.Bet = betArr;
+				//				tempBetObj.BetRebate =fandianValue2; 
+				tempBetObj.IssueNumber =CurrentLotteryInfo.currentIssue; 
+				obj.UserBetInfo = tempBetObj;
+				serverTool.userBet20160412(obj,bettingNowReturn);
+			}
+			
+			//3.0版投注方法实现
+			private function bettingNowZhui(event:SystemEvent):void
+			{
+				var alert:AlertMsg= new AlertMsg();
+				for each(var item:AppendNumbersItemVO in appendBumbers.zhuiNumbersArr)
+				{
+					if(item.selected)
+					{
+						if(Number(item.issue) < Number(CurrentLotteryInfo.currentIssue)){
+							//alert.show("第"+item.issue+"期已停止投注", "温馨提示");
+							alert.show("您选择的第一个期号已经截止或即将截\n止，请重新选择后再提交", "温馨提示");
+							
+							if(appendNumShowFlag){
+								PopUpManager.removePopUp(appendBumbers);
+								appendNum.removeAllElements();
+								appendNum.visible = false;
+								appendNum.includeInLayout = false;
+							}
+							appendNumCloseHandler(null);
+							//还原倍数显示
+							beishu.text = "1";
+							CurrentLotteryInfo.beishu = int(beishu.text);
+							//抛出事件（修改选号模块相关计算）
+							dispatchEvent(new BetEvent(BetEvent.YUANJIAOMOSHI_CLICK));
+							writeTheResult();
+							return;
+						}
+					}
+				}
+				
+				if(""==CurrentLotteryInfo.currentIssue){
+					alert.show("正在加载期号...", "温馨提示");
+					return;
+				}
+				Sendnotification.instance.dispatchEvent(new SystemEvent(SystemEvent.TZ_LOCK_FULL_SCREEN,{flag:true}));
+				bettingState = false;
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				var tempBetObj:Object = new Object();
+				tempBetObj.LotteryCode =CurrentLotteryInfo.lotteryId; 
+				var betArr:Array = new Array();
+				var tempCathectic:Cathectic;
+				var tempBetItem:Object
+				for(var i:int = 0;i<touzhuCathecticsArr.length;i++){
+					tempCathectic = touzhuCathecticsArr[i];
+					tempBetItem = new Object();
+					tempBetItem.PlayCode = tempCathectic.game_id;
+					tempBetItem.BetContent = tempCathectic.tzcontent;
+					tempBetItem.BetCount = tempCathectic.tzzs;
+					tempBetItem.IssueNumber = CurrentLotteryInfo.currentIssue;
+					tempBetItem.BetMultiple = 1;
+					tempBetItem.BetMoney = tempCathectic.tzzs*1*CurrentLotteryInfo.perPrice/tempCathectic.tzbmoshi;
+					tempBetItem.BetRebate = tempCathectic.awreturn;
+					var isAppendNum:int = 0;
+					if(appendBumbers.flag.selected)
+						isAppendNum = 2;
+					else 
+						isAppendNum = 4;
+					//胆拖标志位
+					if(tempCathectic.sntuo==1){
+						tempBetItem.BetMode = 1+isAppendNum;
+					}else if(tempCathectic.sntuo==2){
+						tempBetItem.BetMode = 16+isAppendNum;
+					}else if(tempCathectic.sntuo==3){
+						tempBetItem.BetMode = 8+isAppendNum;
+					}else{
+						tempBetItem.BetMode = 0+isAppendNum;
+					}
+					betArr.push(tempBetItem);
+				}
+				tempBetObj.Bet = betArr;
+				
+				//				tempBetObj.BetRebate =fandianValue2; 
+				tempBetObj.IssueNumber =CurrentLotteryInfo.currentIssue; 
+				
+				obj.UserBetInfo = tempBetObj;			
+				var tempObj:Object;
+				tempObj= new Object();
+				for each(var item1:AppendNumbersItemVO in appendBumbers.zhuiNumbersArr)
+				{
+					trace(item1.issue+"*******************");
+					if(item1.selected)
+					{
+						tempObj[item1.issue] = item1.changeDouble;
+					}
+				}
+				obj.IssueList = tempObj;
+				
+				serverTool.userBet20160412(obj,bettingNowReturn);
+			}
+			
+			
+			
+			private function bettingNowReturn(e:ResultEvent):void
+			{
+				
+				//				loading.suspend();
+				Sendnotification.instance.dispatchEvent(new SystemEvent(SystemEvent.TZ_LOCK_FULL_SCREEN,{flag:false}));
+				bettingState = true;
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				//var arr:Object = JSON.parse(e.result.toString(),null);
+				if(arr.SystemState==-1){
+					//session失效
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}else if(arr.SystemState==-2){
+					//单点登录
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}
+				trace(e.result.toString());
+				var alert:AlertMsg= new AlertMsg();
+				if(arr.state){
+					alert.show("投注成功！", "温馨提示",1);
+					//更新余额
+					Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+					
+					
+					if(appendNumShowFlag){
+						PopUpManager.removePopUp(appendBumbers);
+						appendNum.removeAllElements();
+						appendNum.visible = false;
+						appendNum.includeInLayout = false;
+					}
+					appendNumCloseHandler(null);
+					//还原倍数显示
+					//还原倍数显示
+					beishu.text = "1";
+					CurrentLotteryInfo.beishu = int(beishu.text);
+					//抛出事件（修改选号模块相关计算）
+					dispatchEvent(new BetEvent(BetEvent.YUANJIAOMOSHI_CLICK));
+					//清空投注信息
+					touzhuCathecticsArr.removeAll();
+					writeTheResult();
+				}else{
+					
+					if(-1==arr.mark){
+						alert.show("您还没有完成与下级的分红契约，无法投注！", "温馨提示",2);
+						return;
+					}
+					if(arr.hasOwnProperty("OrderState")){
+						
+						if(arr.OrderState==-15){
+							// 投注的时候   OrderState = -15,  表示超时 
+							alert.show("交易状态不确定，请在投注记录中查看是否购买成功！", "温馨提示",2);
+						}else if(arr.OrderState == -16){
+							// 投注的时候   OrderState = -15,  表示超时 
+							alert.show(arr.StateMark, "温馨提示",2);
+						}else{
+							alert.show("投注失败！", "温馨提示",2);
+						}
+					}else{
+						alert.show("投注失败！", "温馨提示",2);
+					}
+				}
+			}
+			
+			
+			/**
+			 *  改变投注返点
+			 *  
+			 */
+			protected function fandian_changeHandler(event:Event):void
+			{
+				fandian.maximum = (awreturn-minawreturn)/20;	
+				fandianValue = fandian.value+this.fandianChazhi;
+				fandianValue2 = awreturn-fandian.value*20;
+				
+				//修改单倍奖金的计算
+				this.gameSingleAward = Number(((Number(this.gameAward)*fandianValue2)/1000/CurrentLotteryInfo.yuanjiaoMoshi).toFixed(6));
+				//this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*100))/100;
+				if(1==CurrentLotteryInfo.yuanjiaoMoshi){
+					this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*100))/100;
+				}else if(10==CurrentLotteryInfo.yuanjiaoMoshi){
+					this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*1000))/1000;
+				}else{
+					this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*10000))/10000;
+				}
+				
+			}
+			
+			protected function checkbox_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var checkBox:CheckBox = event.currentTarget as CheckBox;
+				beishu.text = "1";
+				CurrentLotteryInfo.beishu = int(beishu.text);
+				this.calculateZongZhuShu();
+				//抛出事件（修改选号模块相关计算）
+				dispatchEvent(new BetEvent(BetEvent.YUANJIAOMOSHI_CLICK));
+				if(checkBox.selected)
+				{
+					appendNumShowFlag = true;
+					appendBumbers = null;
+					if(appendBumbers == null)
+						appendBumbers = new AppendNumbers();
+					appendBumbers.params = {};
+					//					appendBumbers.bettingAppendNumChangeHandler();
+					//appendBumbers.countMoney = (zongzhushu == 0 ? 0 : zongzhushu) * CurrentLotteryInfo.perPrice*Number(beishu.text)/CurrentLotteryInfo.yuanjiaoMoshi;
+					
+					var TempMoney:Number = 0;
+					for(var i:int = 0 ; i<touzhuCathecticsArr.length ;i++){
+						TempMoney += Number((((touzhuCathecticsArr[i] as Cathectic).tzzs*CurrentLotteryInfo.perPrice*Number(beishu.text))/(touzhuCathecticsArr[i] as Cathectic).tzbmoshi).toFixed(4));
+					}
+					appendBumbers.countMoney = TempMoney;
+					
+					PopUpManager.addPopUp(appendBumbers, appendNum, true);
+					PopUpManager.centerPopUp(appendBumbers);
+					appendNum.visible = true;
+					appendNum.includeInLayout = true;
+					//					PopUpManager.removePopUp(appendBumbers);
+					//					PopUpManager.addPopUp(appendBumbers, this, false);
+				}
+				else
+				{
+					if(appendNumShowFlag)
+					{
+						PopUpManager.removePopUp(appendBumbers);
+						appendNum.removeAllElements();
+						appendNum.visible = false;
+						appendNum.includeInLayout = false;
+					}
+					appendNumShowFlag = false;
+					zongzhushu = 0;
+					if(touzhuCathecticsArr.length>0){
+						zongqishu = 1;
+					}else{
+						zongqishu = 0;
+					}
+					zongqianshu = 0;
+					for(var i:int = 0 ; i<touzhuCathecticsArr.length ;i++){
+						zongzhushu+=(touzhuCathecticsArr[i] as Cathectic).tzzs;
+						zongqianshu += Number((((touzhuCathecticsArr[i] as Cathectic).tzzs*CurrentLotteryInfo.perPrice*(touzhuCathecticsArr[i] as Cathectic).tzbshu)/(touzhuCathecticsArr[i] as Cathectic).tzbmoshi).toFixed(4));
+					}
+					zongqianshu = Number(zongqianshu.toFixed(4));
+				}
+			}
+			
+			protected function myList_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				myList.addEventListener("deleteCachectic",deleteCachecticHandler);
+			}
+			private function deleteCachecticHandler(e:CustomEvent):void{
+				deleteTouzhuInfo(e.body as Cathectic);
+			}
+			protected function beishu_keyUpHandler(event:KeyboardEvent):void
+			{
+				if(""==this.beishu.text){
+					this.beishu.text = "1";
+				}
+				else if((Number(beishu.text))>9999){
+					beishu.text = '9999';
+				}
+				calculateZongZhuShu();
+			}
+			
+			protected function multiple_clickHandler(num:int):void
+			{
+				if((Number(beishu.text)+num)<1){
+					beishu.text = '1';
+				}
+				else if((Number(beishu.text)+num)>9999){
+					beishu.text = '9999';
+				}
+				else{
+					beishu.text = (Number(beishu.text)+num)+"";
+				}
+				CurrentLotteryInfo.beishu = int(beishu.text);	
+				calculateZongZhuShu();
+				//抛出事件（修改选号模块相关计算）
+				dispatchEvent(new BetEvent(BetEvent.YUANJIAOMOSHI_CLICK));
+			}
+			
+			protected function leftFanDian_clickHandler(num:Number):void
+			{
+				this.fandian.value = this.fandian.value+num;
+				if(this.fandian.value<fandian.minimum){
+					this.fandian.value = this.fandian.value+0.1;
+				}
+				if(this.fandian.value>fandian.maximum){
+					this.fandian.value = this.fandian.value-0.1;
+				}
+				var tempFndan:String = this.fandian.value.toFixed(2);
+				this.fandian.value = Number(tempFndan);
+				fandian_changeHandler(null);
+			}
+			
+			protected function combobox1_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				button_payModel_clickHandler(cmbPayModel.selectedItem.valueKey)
+			}
+			
+			protected function cmbFandian_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				fandian.value = ComboBox(event.target).selectedItem.fandianValue-fandianChazhi;
+				fandian.maximum = (awreturn-minawreturn)/20;	
+				fandianValue = fandian.value+this.fandianChazhi;
+				fandianValue2 = awreturn-fandian.value*20;
+				
+				//修改单倍奖金的计算
+				this.gameSingleAward = Number(((Number(this.gameAward)*fandianValue2)/1000/CurrentLotteryInfo.yuanjiaoMoshi).toFixed(6));
+				//this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*100))/100;
+				if(1==CurrentLotteryInfo.yuanjiaoMoshi){
+					this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*100))/100;
+				}else if(10==CurrentLotteryInfo.yuanjiaoMoshi){
+					this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*1000))/1000;
+				}else{
+					this.gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*10000))/10000;
+				}
+				
+			}
+			protected function confirm_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				dispatchEvent(new CustomEvent(CustomEvent.ADD_BETNUM_BTNCLICK));
+			}
+			
+			protected function ALL_IN_clickHandler(event:MouseEvent):void
+			{
+				var tempBeiShu:Number = 0;
+				var yiZhuMoney:Number = 0;
+				var alert:AlertMsg;
+				if(zongzhushu == 0)
+				{
+					alert = new AlertMsg();
+					alert.show("请选择正确内容进行投注！", "温馨提示");
+					return;
+				}
+				yiZhuMoney = Number(((zongzhushu*CurrentLotteryInfo.perPrice*1)/CurrentLotteryInfo.yuanjiaoMoshi).toFixed(4));
+				tempBeiShu = Number(CurrentUserInfo.userCPBalance)/yiZhuMoney;
+				if(tempBeiShu > 9999)
+				{
+					tempBeiShu = 9999;
+				}
+				else if(tempBeiShu < 1)
+				{
+					tempBeiShu = 1;
+					alert = new AlertMsg();
+					alert.show("账户余额不足！", "温馨提示");
+				}	
+				beishu.text = int(tempBeiShu).toString();
+				calculateZongZhuShu();
+			}
+			/*查看投注记录*/	
+			protected function betList_clickHandler(event:MouseEvent):void
+			{
+				if(judeIsgoto())
+				{
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_MAIN,{num:2,addIndex:8,menuIndex:1}));
+				}
+			}
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			private function judeIsgoto():Boolean
+			{
+				if(PersonCenterInfo.userInfoDetail.BankCode=="" ||PersonCenterInfo.userInfoDetail.CardNumber=="" || PersonCenterInfo.userInfoDetail.UserRealName==""){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_MAIN,{num:2,addIndex:3,menuIndex:2}));
+					//请先完善您的银行资料！
+					alert.show(resourceManager.getString("AlertMessage","message_005"),resourceManager.getString("AlertMessage","message_004"));
+					return false;
+				}
+				if(!PersonCenterInfo.IsPayPsw){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_MAIN,{num:2,addIndex:3,menuIndex:4}));
+					//请先完善您的资金密码！
+					alert.show(resourceManager.getString("AlertMessage","message_006"),resourceManager.getString("AlertMessage","message_004")); 
+					return false;
+				}
+				return true;
+			}
+			
+			
+			/**
+			 * 追号逻辑显示（新）
+			 * 
+			 */
+			public function appendBetListHandler():void
+			{
+				
+				if(touzhuCathecticsArr.length<1){
+					alert.show("请选择正确内容进行投注!", "温馨提示");
+					return;
+				}
+				
+				var appendNumberGroup:AppendBetListCenter = new AppendBetListCenter();
+				appendNumberGroup.setData(touzhuCathecticsArr);
+				appendNumberGroup.x=(FlexGlobals.topLevelApplication.width-appendNumberGroup.width)/2;
+				appendNumberGroup.y=(FlexGlobals.topLevelApplication.height-appendNumberGroup.height)/2;
+				appendNumberGroup.addEventListener("closeOrderDetailsEvent",closeAppendNumberGroupHandler);
+				PopUpManager.addPopUp(appendNumberGroup,this,true);
+				appendNumberGroup=null;
+			
+			}
+			/**
+			 * 关闭追号信息（新）
+			 * 
+			 */
+			private function closeAppendNumberGroupHandler(e:DynamicEvent):void{
+				var appendNumberGroup:AppendBetListCenter=e.parentCurrent as AppendBetListCenter;
+				 if(e.hasOwnProperty("parameters")){
+					 if(1==e.parameters.toString()){
+						 //清空投注信息
+						 touzhuCathecticsArr.removeAll();
+						 writeTheResult();
+					 }
+				} 
+				appendNumberGroup.removeEventListener("closeOrderDetailsEvent",closeAppendNumberGroupHandler);
+				PopUpManager.removePopUp(appendNumberGroup);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<s:Button id="confirm" label="{resourceManager.getString('LotteryTips','confirm_Selected')}" styleName="submitButtonSkinStyle" click="confirm_clickHandler(event)" left="590" top="40"/>
+	<s:HGroup width="100%" height="24" bottom="155" verticalAlign="middle" paddingLeft="235" gap="0">
+		<!--<s:Button id="ALL_IN" styleName="ALL_INbtnStyle" click="ALL_IN_clickHandler(event)"/>-->
+		<s:Spacer width="35"/>
+		<s:HGroup   verticalAlign="middle" gap="5" visible="{!appendNumCheckBox.selected}" includeInLayout="{!appendNumCheckBox.selected}">
+			<s:HGroup gap="2" verticalAlign="middle">
+				<s:Button styleName="minusMultipleButtonSkinStyle" width="19" height="20" click="multiple_clickHandler(-1)"/>
+				<s:TextInput  keyUp="beishu_keyUpHandler(event)" id="beishu" restrict="0-9"  focusAlpha="0.0" contentBackgroundColor="0xffffff" borderColor="0xaaabb1"
+							  maxChars="4"  width="40" change="changeMultiple()" height="20" textAlign="center"
+							  text="1" color="0x000000" fontSize="14"/>
+				<s:Button styleName="addMultipleButtonSkinStyle" width="19" height="20" click="multiple_clickHandler(1)"/>
+			</s:HGroup>
+			<s:Label text="{resourceManager.getString('LotteryTips','double')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:Spacer width="20"/>
+		<s:ComboBox id="cmbPayModel" width="47" height="20" dataProvider="{DDLArr}" labelField="valueName" selectedIndex="0" initialize="cmbPayModel.textInput.editable = false" focusAlpha="0.0"
+					change="combobox1_changeHandler(event)" skinClass="css.skin1.universal.PayModelComBoxSkin" color="0x000000" fontFamily="Microsoft YaHei,微软雅黑" fontSize="12"/>
+		<s:Spacer width="20"/>
+		<s:Label text="选择奖金返点:  " styleName="labelStyles5"/>
+		<s:Spacer width="2"/>
+		<s:ComboBox id="cmbFandian" width="120" height="20" dataProvider="{new ArrayCollection(cmbFandianArr)}" labelField="KeyValue" selectedIndex="0" initialize="cmbFandian.textInput.editable = false" focusAlpha="0.0"
+					change="cmbFandian_changeHandler(event)" skinClass="css.skin1.universal.PayModelComBoxSkin" color="0x000000" fontFamily="Microsoft YaHei,微软雅黑" fontSize="12"/>
+		<s:Spacer width="20"/>
+		<s:HGroup height="100%" width="104" verticalAlign="middle">
+			<s:Label text="奖金" styleName="labelStyles2"/>
+			<s:Label text="{gameSingleAward}" styleName="labelStyles3"/>
+			<s:Label text="{CurrentUserInfo.moneyType}" styleName="labelStyles2"/>
+		</s:HGroup>
+	
+	</s:HGroup>
+	
+	<!--  投注框，及按钮显示  -->
+	<s:HGroup width="100%" height="95" horizontalAlign="left" bottom="20" paddingLeft="16" gap="8">
+		<s:List id="myList" dataProvider="{touzhuCathecticsArr}" width="652" height="95" 
+				styleName="listStyles" horizontalScrollPolicy="off"
+				selectionColor="0xffffff" rollOverColor="0xffffff"
+				itemRenderer="com.xazc.components.bettings.ListItemRenderder"
+				creationComplete="myList_creationCompleteHandler(event)"/>
+		<s:VGroup height="100%" gap="6" horizontalAlign="left">
+			<s:Button  label="{resourceManager.getString('LotteryTips','clean_List')}" styleName="betBotDeleteButtonStyle" click="clear_clickHandler(event)"/>
+			<s:CheckBox visible="false" includeInLayout="false"  id="appendNumCheckBox" buttonMode="true" label="{resourceManager.getString('LotteryTips','follow_Numbers_2')}" styleName="appendNUmCheckBoxStyle" click="checkbox_clickHandler(event)"/>
+			<s:Button id="appendBetList" enabled="{CurrentLotteryInfo.isBetNow}" label="我要追号" styleName="submitButtonSkinStyle_append" click="appendBetListHandler()"/>
+			<s:Button id="betList" label="查看记录" styleName="submitButtonSkinStyle_list" click="betList_clickHandler(event)"/>
+		</s:VGroup>
+		<s:VGroup>
+			<s:HGroup height="100%" verticalAlign="middle">
+				<s:Label text="共" styleName="labelStyles2"/>
+				<s:Label text=" {zongzhushu} " styleName="labelStyles4"/>
+				<s:Label text="{resourceManager.getString('LotteryTips','stake')}," styleName="labelStyles2"/>
+			</s:HGroup>
+			<s:HGroup height="100%" verticalAlign="middle">
+				<s:Label text="共计" styleName="labelStyles2"/>
+				<s:Label text="{zongqianshu}" styleName="labelStyles4"/>
+				<s:Label text="{CurrentUserInfo.moneyType}" styleName="labelStyles2"/>
+			</s:HGroup>
+			<s:Button  enabled="{CurrentLotteryInfo.isBetNow}" label="{resourceManager.getString('LotteryTips','bet_Now')}" click="submit()" id="ljtz" styleName="plankButtonSkinStyle"/>
+		</s:VGroup>
+	</s:HGroup>
+	
+	
+	<!--  该地方已经现在没使用，已经注释 -->
+	<s:HGroup width="100%" height="100%"  horizontalAlign="left" gap="0" paddingTop="59" verticalAlign="middle" paddingLeft="16" visible="false" includeInLayout="false">
+		<s:HGroup height="100%" width="260"  horizontalAlign="left" verticalAlign="middle">
+			<s:Label text="{fandianValue2}" styleName="labelStyles2"/>
+			<s:HGroup gap="0" verticalAlign="middle" paddingTop="5">
+				<s:Image source="css/skin1/universal/images/fandian_left.png" buttonMode="true" depth="1" click="leftFanDian_clickHandler(-0.1)" />
+				<s:Group depth="2">
+					<s:Image source="css/skin1/universal/images/fandian_middle.png" />
+					<s:HGroup width="100%" height="100%" horizontalAlign="center" paddingTop="6">
+						<single:MyHSlider id="fandian" showTrackHighlight="true" accentColor="0x00a3e2"
+										  width="100" change="fandian_changeHandler(event)" liveDragging="true"
+										  mouseFocusEnabled="false"  maximum="10" minimum="0"  snapInterval="0.1" stepSize="0.1">
+						</single:MyHSlider>
+					</s:HGroup>
+				</s:Group>
+				<s:Image source="css/skin1/universal/images/fandian_right.png" buttonMode="true" click="leftFanDian_clickHandler(0.1)" depth="1"/>
+			</s:HGroup>
+			
+			<s:HGroup  height="75" horizontalAlign="left" gap="0" verticalAlign="middle">
+				<s:Label  height="100%" text="{gameSingleAward}"  verticalAlign="middle" styleName="labelStyles2"/>
+				<s:Label text="|{fandianValue}%" styleName="labelStyles2" />
+			</s:HGroup>
+		</s:HGroup>
+		<s:HGroup   verticalAlign="middle" id="fukuanMoshi" 
+					visible="{CurrentBusinessInfo.isYuanModelOpen||CurrentBusinessInfo.isJiaoModelOpen||CurrentBusinessInfo.isFenModelOpen}"
+					includeInLayout="{CurrentBusinessInfo.isYuanModelOpen||CurrentBusinessInfo.isJiaoModelOpen||CurrentBusinessInfo.isFenModelOpen}">
+			<s:RadioButton label="{resourceManager.getString('LotteryTips','yuan_Model')}" visible="{CurrentBusinessInfo.isYuanModelOpen}" includeInLayout="{CurrentBusinessInfo.isYuanModelOpen}" click="button_payModel_clickHandler(1)" selected="true" styleName="betBtoRadioButtonStyle"/>
+			<s:RadioButton label="{resourceManager.getString('LotteryTips','jiao_Model')}" visible="{CurrentBusinessInfo.isJiaoModelOpen}" includeInLayout="{CurrentBusinessInfo.isJiaoModelOpen}" click="button_payModel_clickHandler(10)" styleName="betBtoRadioButtonStyle"/>
+			<s:RadioButton label="{resourceManager.getString('LotteryTips','fen_Model')}" visible="{CurrentBusinessInfo.isFenModelOpen}" includeInLayout="{CurrentBusinessInfo.isFenModelOpen}" click="button_payModel_clickHandler(100)" styleName="betBtoRadioButtonStyle"/>
+		</s:HGroup>
+	</s:HGroup>
+	<s:HGroup id="appendNum" width="480" height="245" visible="false" includeInLayout="false" x="{(1000-500)/2 - 20}" y="-300"/>
+</s:Group>

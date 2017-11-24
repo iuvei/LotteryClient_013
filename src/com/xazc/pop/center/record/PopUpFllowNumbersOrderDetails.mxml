@@ -1,0 +1,809 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark"  
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   width="670" height="550"
+					   cornerRadius="5" 
+					   borderVisible="false"
+					   backgroundColor="0x000000" 
+					   backgroundAlpha="0.5" 
+					   creationComplete="init()"
+					   >
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+		[ResourceBundle("LotteryTips")]
+		[Event(name="closeFllowNumbersOrderDetailsEvent",type="mx.events.DynamicEvent")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<s:Sequence id="seqeffect" duration="500">
+			<!--<s:Move yFrom="260" yTo="210" />-->
+			<s:Fade alphaFrom="0" alphaTo="1"/>
+			<s:Pause duration="100"/>
+			<!--<s:Move yFrom="{(400-label_succ.height)/2}" yTo="0"/>-->
+			<s:Fade alphaFrom="1" alphaTo="0"/>
+		</s:Sequence>
+		
+		<s:Rotate id="rotateEffect"  autoCenterTransform="true"
+				  duration="500"  angleFrom="0" angleTo="360"
+				  target="{imgClose}" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.pop.center.record.PopUpOrderDetails;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import flashx.textLayout.operations.PasteOperation;
+			
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.LinkBar;
+			import mx.controls.LinkButton;
+			import mx.core.FlexGlobals;
+			import mx.events.DynamicEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			private var service:ServerToolImpl;
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			
+			//当前查询是否是历史库
+			private var isHistory:Boolean = false; 
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			//定义一个grid{title:"彩种：",w:100,column:"LotteryID",w1:220},
+			public var grid:Grid = new Grid();
+			private var title1:ArrayCollection = new ArrayCollection([
+				{title:"a",w:120,column:"ChaseOrderID",w1:200},
+				{title:"b",w:120,column:"BetMoney",w1:200},
+				{title:"c",w:120,column:"FllowName",w1:200},
+				{title:"d",w:120,column:"InsertTime",w1:200},
+				{title:"e",w:120,column:"PlayCode",w1:200},
+				{title:"f",w:120,column:"OrderState",w1:200},
+				{title:"g",w:120,column:"MoneyMoudle",w1:200},
+				{title:"h",w:120,column:"AwardMoney",w1:200},
+				{title:"i",w:120,column:"Moude",w1:200},
+				{title:"j",w:120,column:"FollowBoolen",w1:200}]);
+			private var title2:ArrayCollection = new ArrayCollection([
+				{title:"a",w:110},
+				{title:"b",w:90},
+				{title:"c",w:50},
+				{title:"d",w:60},
+				{title:"e",w:60},
+				{title:"f",w:60},
+				{title:"g",w:70},
+				{title:"h",w:70},
+				{title:"i",w:75}]);
+			private var value2:ArrayCollection = new ArrayCollection([
+				{column:"ChaseOrderID",w:110},
+				{column:"LotteryIssue",w:90},
+				{column:"Belv",w:50},
+				{column:"BetMoney",w:60},
+				{column:"OrderState",w:60},
+				{column:"DrawNumbers",w:60},
+				{column:"AwardNums",w:70},
+				{column:"AwardMoney",w:70},
+				{column:"Operate",w:75}]);
+			
+			public var lotteryQH:String="";
+			
+			//订单号
+			[Bindable]
+			public var OrderID:String = "";
+			//流水号
+			[Bindable]
+			public var ChaseOrderID:String = "";
+			//交易时间
+			[Bindable]
+			public var InsertTime:String = "";
+			//开奖时间
+			[Bindable]
+			public var AwardTime:String = "";
+			//返点
+			[Bindable]
+			public var Moude:int = 0;
+			//彩种
+			[Bindable]
+			public var LotteryID:String = "";
+			
+			public var LotteryCode:String = "";
+			//期号
+			[Bindable]
+			public var LotteryIssue:String = "";
+			//付款模式
+			[Bindable]
+			public var MoneyMoudle:String = "";
+			//玩法
+			[Bindable]
+			public var PlayCode:String = "";
+			//订单状态
+			[Bindable]
+			public var OrderState:String = "";
+			//购买金额
+			[Bindable]
+			public var BetMoney:String = "0.00";
+			//投注号码
+			[Bindable]
+			public var BetNumbers:String = "";
+			//投注号码
+			[Bindable]
+			public var Copy_BetNumbers:String = "";
+			//开奖号码
+			[Bindable]
+			public var DrawNumbers:String = "";
+			//倍数
+			[Bindable]
+			public var Belv:String = "";
+			//状态
+			[Bindable]
+			public var SingleState:String = "";
+			//是否中奖
+			[Bindable]
+			public var AwardBoolen:String = "";
+			//中奖注数
+			[Bindable]
+			public var AwardNums:String = "";
+			//中奖金额
+			[Bindable]
+			public var AwardMoney:String = "0.00";
+			//操作
+			[Bindable]
+			public var Operate:String = "";
+			//中奖是否追号
+			[Bindable]
+			public var FollowBoolen:String = "";
+			//投注返点
+			[Bindable]
+			public var BettingRebates:String = "";
+			//追号名称
+			[Bindable]
+			public var FllowName:String="";
+			[Bindable]
+			private var labelSuccessTop:Number=220;
+			[Bindable]
+			private var detailBtnFlag:Boolean=false;
+			/**
+			 * 初始化 
+			 */
+			public function init():void
+			{
+				createBets1();
+			}
+			/**
+			 *创建投注记录
+			 **/
+			private function createBets1():void
+			{
+				var j:int=0;
+				vgroup1.removeAllElements();
+				 var grid:Grid=new Grid();
+				vgroup1.addElement(grid);
+				/* var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.colSpan=4;
+				row.addChild(item);
+				var label:Label=new Label();
+				item.addChild(label);
+				label.text="投注记录：";
+				label.width=630;
+				label.styleName="personalCenterDetailLabelStyle_1";
+				label.setStyle("textAlign","left");  */
+				for(var i:int=0;i<5;i++){
+					var row1:GridRow=new GridRow();
+					row1.height=30;
+					grid.addChild(row1);
+					for(var k:int=j;k<title1.length;k++){
+						var item1:GridItem=new GridItem();
+						item1.width=title1.getItemAt(k).w;
+						row1.addChild(item1);
+						var label1:Label=new Label();
+						item1.addChild(label1);
+						if(title1.getItemAt(k).title == "a"){
+							label1.text = resourceManager.getString('PersonalCenterPage','order_Number') + "：";
+						}else if(title1.getItemAt(k).title == "b"){
+							label1.text = resourceManager.getString('PersonalCenterPage','bets_Total_Money') + "：";
+						}else if(title1.getItemAt(k).title == "c"){
+							label1.text = resourceManager.getString('PersonalCenterPage','follow_Number_Name') + "：";
+						}else if(title1.getItemAt(k).title == "d"){
+							label1.text = resourceManager.getString('PersonalCenterPage','purchase_Time') + "：";
+						}else if(title1.getItemAt(k).title == "e"){
+							label1.text = resourceManager.getString('PersonalCenterPage','play_Method') + "：";
+						}else if(title1.getItemAt(k).title == "f"){
+							label1.text = resourceManager.getString('PersonalCenterPage','order_State') + "：";
+						}else if(title1.getItemAt(k).title == "g"){
+							label1.text = resourceManager.getString('PersonalCenterPage','bets_Moudle') + "：";
+						}else if(title1.getItemAt(k).title == "h"){
+							label1.text = resourceManager.getString('PersonalCenterPage','total_Award_Money') + "：";
+						}else if(title1.getItemAt(k).title == "i"){
+							label1.text = resourceManager.getString('PersonalCenterPage','bets_Rebates') + "：";
+						}else{
+							label1.text = resourceManager.getString('PersonalCenterPage','after_Award_Stop_Follow_Number') + "：";
+						}
+						label1.styleName="personalCenterDetailLabelStyle_1";
+						
+						var item2:GridItem=new GridItem();
+						item2.width=title1.getItemAt(k).w1;
+						row1.addChild(item2);
+						var label2:Label=new Label();
+						label2.selectable=true;
+						item2.addChild(label2);
+						BindingUtils.bindProperty(label2,"text",this,title1.getItemAt(k).column);
+						label2.styleName="personalCenterDetailLabelStyle_1";
+						if(k%2==1){
+							j=k+1;
+							break;
+						} 
+					}
+				}
+			}
+			/**
+			 *创建购买详情
+			 **/
+			private function createBets2(array:Array):void{
+				vgroup2.removeAllElements();
+				var grid:Grid=new Grid();
+				vgroup2.addElement(grid);
+				var row:GridRow=new GridRow();
+				row.height=35;
+				grid.addChild(row);
+				
+				for(var i:int=0;i<title2.length;i++){
+					var item:GridItem=new GridItem();
+					item.width=title2.getItemAt(i).w;
+					row.addChild(item);
+					var label:Label=new Label();
+					label.width=title2.getItemAt(i).w-5;
+					item.addChild(label);
+					label.text=title2.getItemAt(i).title;
+					if(title2.getItemAt(i).title == "a"){
+						label.text = resourceManager.getString('PersonalCenterPage','ChaseOrderID');
+					}else if(title2.getItemAt(i).title == "b"){
+						label.text = resourceManager.getString('PersonalCenterPage','issue');
+					}else if(title2.getItemAt(i).title == "c"){
+						label.text = resourceManager.getString('PersonalCenterPage','Belv');
+					}else if(title2.getItemAt(i).title == "d"){
+						label.text = resourceManager.getString('PersonalCenterPage','BetMoney');
+					}else if(title2.getItemAt(i).title == "e"){
+						label.text = resourceManager.getString('PersonalCenterPage','state');
+					}else if(title2.getItemAt(i).title == "f"){
+						label.text = resourceManager.getString('PersonalCenterPage','drawNumbers');
+					}else if(title2.getItemAt(i).title == "g"){
+						label.text = resourceManager.getString('PersonalCenterPage','awardNums');
+					}else if(title2.getItemAt(i).title == "h"){
+						label.text = resourceManager.getString('PersonalCenterPage','award_Money');
+					}else{
+						label.text = resourceManager.getString('PersonalCenterPage','operate');
+					}
+					label.styleName="personalCenterDetailLabelStyle_1";
+				}
+				vgroup3.removeAllElements();
+				var grid1:Grid = new Grid();
+				vgroup3.addElement(grid1);
+				if(array != null){
+					OrderID=array[0].OrderID;
+					for(var n:int=0; n<array.length; n++){
+						var row1:GridRow=new GridRow();
+						row1.height=30;
+						grid1.addChild(row1);
+						var lab:Label;
+						var linkbutton:LinkButton;
+						for(var j:int=0;j<value2.length;j++){
+							var item1:GridItem=new GridItem();
+							if(j==value2.length-1){
+								linkbutton=new LinkButton();
+								linkbutton.width=value2.getItemAt(j).w-20;
+								linkbutton.height=30;
+								item1.addChild(linkbutton);
+							}else{
+								lab=new Label();	
+								lab.width=value2.getItemAt(j).w-5;
+								lab.selectable=true;
+								item1.addChild(lab);
+							}
+							if(array.length>5&&j==(value2.length-1)){
+								item1.width=value2.getItemAt(j).w-15;
+							}else{
+								item1.width=value2.getItemAt(j).w;
+							}
+							row1.addChild(item1);
+							
+							var str:String = value2.getItemAt(j).column;
+							lab.styleName = "personalCenterDetailLabelStyle_1";
+							if(str == "ChaseOrderID"){
+								lab.text = array[n].OrderID;
+								lab.name = array[n].ChaseOrderID+"#"+lotteryID+"#"+array[n].IssueNumber+"#"+array[n].InsertTime+"#"+this.isHistory;
+								lab.buttonMode=true;
+								lab.useHandCursor=true;
+								lab.mouseChildren=false;
+								lab.width=value2.getItemAt(j).w-5;
+								lab.styleName = "personalCenterDetailLabelStyle_3";
+								lab.addEventListener(MouseEvent.CLICK,label1MouseClickHandler);
+							}else if(str == "LotteryIssue"){
+								lab.text = array[n].IssueNumber;
+							}else if(str == "Belv"){
+								lab.text = array[n].BetMultiple;
+							}else if(str == "BetMoney"){
+								lab.text = array[n].BetMoney;
+							}else if(str == "OrderState"){
+								if((Number(array[n].BetOrderState) & 4) == 4){
+									lab.text = resourceManager.getString('PersonalCenterPage','order_Cancle_1');
+								}else if((Number(array[n].BetOrderState) & 32768) == 32768){
+									lab.text = resourceManager.getString('PersonalCenterPage','award_Cancle_1');
+								}else if((Number(array[n].BetOrderState) & 16777216) == 16777216){
+									lab.text = resourceManager.getString('PersonalCenterPage','sent_Award_1');
+								}else if((Number(array[n].BetOrderState) & 33554432) == 33554432){
+									lab.text = resourceManager.getString('PersonalCenterPage','unAwarding');
+								}else if((Number(array[n].BetOrderState) & 4096) == 4096){
+									lab.text = resourceManager.getString('PersonalCenterPage','already_Settlement');
+								}else if((Number(array[n].BetOrderState) & 512) == 512){
+									lab.text = resourceManager.getString('PersonalCenterPage','force_Settlement');
+								}else if((Number(array[n].BetOrderState) & 64) == 64){
+									lab.text = resourceManager.getString('PersonalCenterPage','put_Ticket_1');
+								}else if((Number(array[n].BetOrderState) & 1) == 1){
+									lab.text = resourceManager.getString('PersonalCenterPage','purchase_Success');
+								}else{
+									lab.text = "--";
+								}
+							}else if(str == "DrawNumbers"){
+								lab.text = array[n].DrawContent==""?resourceManager.getString('PersonalCenterPage','wait_Drawing'):array[n].DrawContent;
+							}else if(str == "AwardNums"){
+								lab.text = array[n].AwContent==""?"0":array[n].AwContent;
+							}else if(str == "AwardMoney"){
+								lab.text = array[n].AwMoney
+							}else if(str == "Operate"){
+//								item1.horizontalScrollPolicy = "off";
+//								item1.verticalScrollPolicy = "off";
+//								lab.buttonMode = false;
+//								lab.setStyle("lineThrough",true);
+								linkbutton.setStyle("color","#ffffff");
+								linkbutton.enabled=false;
+								if((Number(array[n].BetOrderState) & 32768) == 32768){
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+								}else if((Number(array[n].BetOrderState) & 16777216) == 16777216){
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+								}else if((Number(array[n].BetOrderState) & 33554432) == 33554432){
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+								}else if((Number(array[n].BetOrderState) & 4096) == 4096){
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+								}else if((Number(array[n].BetOrderState) & 512) == 512){
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+								}else if((Number(array[n].BetOrderState) & 64) == 64){
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+								}else if((Number(array[n].BetOrderState) & 4) == 4){
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+								}else{
+									linkbutton.setStyle("color","#FF0000");
+									linkbutton.enabled=true;
+									linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+									linkbutton.name = array[n].OrderID;
+									linkbutton.addEventListener(MouseEvent.CLICK,clickHandler);
+								}
+							}
+						}
+					}
+				}else{
+				}
+			}
+			/**
+			 * 处理数据
+			 */
+			public var lotteryID:String = "";
+			public function setData(object:Object):void
+			{
+				var array:Array = object.UserBetInfo.Bet as Array;
+				Moude = object.UserBetInfo.BetRebate;
+				lotteryID = object.UserBetInfo.LotteryCode;
+				LotteryCode=object.UserBetInfo.LotteryCode;
+				
+				//是否是历史库
+				this.isHistory = object.IsHistory;
+				
+				LotteryID = resourceManager.getString('LotteryPlayNames','lottery_' + lotteryID);
+				if(parseInt(object.countSY)>0){
+					OrderState=resourceManager.getString('PersonalCenterPage','progressing');
+				}else{
+					OrderState=resourceManager.getString('PersonalCenterPage','finished');
+				}
+				if(array != null){
+					for(var j:int=0;j<array.length;j++){
+						//BetMoney += Number(array[j].BetMoney);
+						//AwardMoney += Number(array[j].AwMoney);
+					}
+					BetMoney = object.UserBetInfo.SumBetMoney;
+					AwardMoney = object.UserBetInfo.AwMoney;
+					
+					for(var i:int=0; i<array.length; i++){
+						ChaseOrderID = array[i].ChaseOrderID;
+						InsertTime = array[i].BetTime;
+						LotteryIssue = array[i].IssueNumber;
+						var mode:int = 0;
+						if((Number(array[i].BetMode)) == 0){mode = 0;}
+						else if((Number(array[i].BetMode)&1) == 1){mode = 1;}
+						else if((Number(array[i].BetMode)&8)== 8){mode = 3;}
+						else if((Number(array[i].BetMode)&16)== 16){mode = 2;}
+						PlayCode = resourceManager.getString('LotteryPlayNames','lottery_' + object.UserBetInfo.LotteryCode + '_' + array[i].PlayCode + '_' + mode);
+						FllowName=resourceManager.getString('LotteryPlayNames','lottery_' + object.UserBetInfo.LotteryCode)+resourceManager.getString('LotteryTips','follow_Numbers')+array.length+resourceManager.getString('LotteryTips','period');
+						
+						
+						Copy_BetNumbers=array[i].BetContent.toString();
+						var bcString:String=Util.getInstance().strFormatConversionForShowByObject(object.UserBetInfo.LotteryCode,array[i]);
+						var count:int=0;
+						if(bcString.length>10000){
+							//								BetNumbers =bcString.substring(0,1100)+"......"+bcString.substring(bcString.length-110,bcString.length);
+							detailBtnFlag=true;
+							for(var c:int=0;c<bcString.length;c++){
+								if(c!==0 && c%100==0 && count<100){
+									BetNumbers +="\n";
+									count+=1;
+								}
+								if(count!=100){
+									BetNumbers +=bcString.substring(c,c+1);
+								}
+								if(count==100){
+									BetNumbers +="......\n"+bcString.substring(bcString.length-100,bcString.length);
+									break;
+								}
+							}
+						}else{
+							labelSuccessTop=230;
+							for(var k:int = 0;k<bcString.length;k++){
+								if(0==k%85){
+									if(0==k){
+										BetNumbers += bcString.charAt(k);
+									}else{
+										BetNumbers += bcString.charAt(k) +"\n";
+									}
+								}else{
+									BetNumbers += bcString.charAt(k);
+								}
+							}
+							
+							//BetNumbers =bcString;
+						}
+						
+						
+						DrawNumbers = array[i].AwContent;
+						AwardTime = array[i].AwTime;
+						Belv = array[i].BetMultiple;
+						if((Number(array[i].BetMode) & 2)== 2 ){
+							FollowBoolen = resourceManager.getString('PersonalCenterPage','yes');
+						}else if((Number(array[i].BetMode) & 4) == 4){
+							FollowBoolen = resourceManager.getString('PersonalCenterPage','no');
+						}else{
+							FollowBoolen = "--";
+						}
+						
+						if((Number(array[i].BetMode) & 32)==32){
+							MoneyMoudle = resourceManager.getString('PersonalCenterPage','yuan_Moudle');
+						}else if((Number(array[i].BetMode) & 64)==64){
+							MoneyMoudle = resourceManager.getString('PersonalCenterPage','jiao_Moudle');
+						}else if((Number(array[i].BetMode) & 128)==128){
+							MoneyMoudle = resourceManager.getString('PersonalCenterPage','fen_Moudle');
+						}else{
+							MoneyMoudle = "--";
+						}
+//						if(array[i].BetMoney / array[i].BetMultiple / array[i].BetCount / 2 == 1){
+//							MoneyMoudle = "元模式";
+//						}else if(array[i].BetMoney / array[i].BetMultiple / array[i].BetCount / 2 == 0.1){
+//							MoneyMoudle = "角模式";
+//						}else if(array[i].BetMoney / array[i].BetMultiple / array[i].BetCount / 2 == 0.01){
+//							MoneyMoudle = "分模式";
+//						}else{
+//							MoneyMoudle = "--";
+//						}
+						break;
+					}
+				}
+				createBets2(array);
+			}
+		
+			private var parameter:String="";
+			/**
+			 * 请求撤单
+			 */
+			public function clickHandler(event:MouseEvent):void
+			{
+				var label:LinkButton=event.currentTarget as LinkButton;
+				trace("撤单："+label.name+"-"+lotteryID);
+//				var e:DynamicEvent=new DynamicEvent("closeFllowNumbersOrderDetailsEvent");
+//				e.parentCurrent=this;
+//				e.parameters=label.name+"#"+lotteryID;
+//				dispatchEvent(e);
+				alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd'),resourceManager.getString('PersonalCenterPrompt','alert_title'),2,true);
+				alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,deleteCheDanHandler);
+				parameter=label.name+"#"+lotteryID;
+			}
+			private function deleteCheDanHandler(e:SystemEvent):void{
+				cancelOrder(parameter);
+			}
+			
+			
+			public function label1MouseClickHandler(event:MouseEvent):void
+			{
+				/* var label:Label = event.currentTarget as Label;
+				var object:Object = new Object();
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var p:Array=label.name.split("#");
+				object.ChaseOrderID = p[0];//组号
+				object.LotteryCode = p[1];//彩种id
+				object.InsertTime=p[3];
+				lotteryQH=p[2];//期号
+				object.IsChase=true;
+				if(p[4].toString()=="true"){
+					object.IsHistory = true;
+				}else{
+					object.IsHistory = false;
+				}
+				service.getBetOrderDetil(object,resultHandler); */
+				
+				
+				
+				
+				var label:Label = event.currentTarget as Label;
+				var array:Array = label.name.split("#");
+				var orderDetails:PopUpOrderDetails2 = new PopUpOrderDetails2();
+				orderDetails.x=(FlexGlobals.topLevelApplication.width-orderDetails.width)/2;
+				orderDetails.y=(FlexGlobals.topLevelApplication.height-orderDetails.height)/2;
+				orderDetails.setDataArray(array);
+				orderDetails.addEventListener("closeOrderDetailsEvent",closeOrderDetailsHandler);
+				PopUpManager.addPopUp(orderDetails,this,true);
+				orderDetails=null;
+			}
+			
+			/********************************************************************/
+			
+			/**
+			 * 鼠标点击订单号处理函数
+			 */
+			public function label1MouseClickHandler2(event:MouseEvent):void
+			{
+				var label:Label = event.currentTarget as Label;
+				var object:Object = new Object();
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var p:Array=label.name.split("#");
+				object.ChaseOrderID = p[0];//组号
+				object.LotteryCode = p[1];//彩种id
+				object.InsertTime=p[3];
+				lotteryQH=p[2];//期号
+				object.IsChase=true;
+				if(p[4].toString()=="true"){
+					object.IsHistory = true;
+				}else{
+					object.IsHistory = false;
+				}
+				//object.IsHistory = Boolean(p[4]);
+				service.getBetOrderDetil(object,resultHandler);
+			}
+			
+			private function resultHandler(e:ResultEvent):void
+			{
+				trace(e.result.toString());
+				var detail:Object = JSON.parse(e.result.toString());
+				if(detail.hasOwnProperty("SystemState")){
+					if(detail.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(detail.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				
+				detail.child=false;
+				detail.lotteryQH=lotteryQH;
+				
+				var orderDetails:PopUpOrderDetails = new PopUpOrderDetails();
+				orderDetails.x=(FlexGlobals.topLevelApplication.width-orderDetails.width)/2;
+				orderDetails.y=(FlexGlobals.topLevelApplication.height-orderDetails.height)/2;
+				orderDetails.setData(detail);
+				orderDetails.addEventListener("closeOrderDetailsEvent",closeOrderDetailsHandler);
+				PopUpManager.addPopUp(orderDetails,this,true);
+			}
+			
+			
+			/********************************************************************/
+			
+			
+			private function closeOrderDetailsHandler(e:DynamicEvent):void{
+				var item:PopUpOrderDetails2=e.parentCurrent as PopUpOrderDetails2;
+				if(e.hasOwnProperty("parameters")){
+					cancelOrder(e.parameters.toString());
+					return;
+				}
+				item.removeEventListener("closeOrderDetailsEvent",closeOrderDetailsHandler);
+				PopUpManager.removePopUp(item);
+			}
+			private function cancelOrder(str:String):void{
+				var parameters:Array=str.split("#");
+				var obj:Object=new Object();
+				obj.OrderID=parameters[0];
+				obj.Code=parameters[1];
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.cancelOrder(obj,cancelOrderHandler);
+			}
+			/**
+			 *撤单回调函数 
+			 **/
+			private function cancelOrderHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var object:Object=JSON.parse(e.result.toString());
+				if(object.SystemState== 64){
+					if(object.CarryStateResult==false){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd_error'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}else{
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd_suc'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						
+						//更新余额
+						Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+						
+						
+						//如果撤单成功，刷新表格
+						var grid:Grid=vgroup3.getChildAt(0) as Grid;
+						var p:Array=parameter.split("#");
+						for(var i:int=0;i<grid.numChildren;i++){
+							var row:GridRow=grid.getChildAt(i) as GridRow;
+							var item:GridItem=row.getChildAt(row.numChildren-1) as GridItem;
+							var item1:GridItem=row.getChildAt(row.numChildren-5) as GridItem;
+							var linkbutton:LinkButton=item.getChildAt(0) as LinkButton;
+							var label:Label=item1.getChildAt(0) as Label;
+							var orderID:String=linkbutton.name;
+							if(p[0]==orderID){
+								label.text=resourceManager.getString('PersonalCenterPage','order_Cancle_1');
+								linkbutton.enabled=false;
+								linkbutton.setStyle("color","#ffffff");
+							}
+						}
+					}
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd_errorIO'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			protected function copy(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				System.setClipboard(Copy_BetNumbers);
+				seqeffect.play([label_succ]);
+//				var alert1:AlertMsgCenter = new AlertMsgCenter();
+//				alert1.show("已复制到粘贴板", "提示信息");
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				rotateEffect.play();
+			}
+			/**
+			 *发送关闭窗口时间 
+			 **/
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				// TODO Auto-generated method stub
+				var evt:DynamicEvent=new DynamicEvent("closeFllowNumbersOrderDetailsEvent");
+				evt.parentCurrent=this;
+				dispatchEvent(evt);
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var request:URLRequest = new URLRequest(); 
+//				request.url ="detail/detail.html"; 
+				request.url=CurrentBusinessInfo.serverUrl_net+"/"+CurrentBusinessInfo.MerchantProjectName+"/detail/detail.html";
+				var param:URLVariables=new URLVariables();
+				param["IssueNumber"] =LotteryIssue;
+				param["LotteryCode"] = LotteryCode;
+				param["OrderID"] =OrderID;
+				param["UserID"] = CurrentUserInfo.myUserID;
+				param["InsertTime"]=InsertTime;
+				param["IsChase"]=true;
+				param["IsHistory"]=this.isHistory;
+				param["ProjectPublic_PlatformCode"]=3;
+				param["InterfaceName"]="GetBetContentDetil";
+				param["Url"]=CurrentBusinessInfo.serverUrl_net+"/manager/service.ashx";
+				request.data=param;
+				navigateToURL(request,"_bank");
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer borderVisible="false"  cornerRadius="5" top="10" left="10" right="10" bottom="10">
+		<s:BorderContainer width="100%" height="43" skinClass="css.skin1.universal.PopUpWindowTitleSkin" >
+			<mx:Label verticalCenter="0" left="20" text="{resourceManager.getString('PersonalCenterPage','order_Detail')}" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			<s:Image id="imgClose" x="610" y="8" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)" />
+		</s:BorderContainer>
+		<s:VGroup   top="48" horizontalAlign="center" verticalAlign="middle" horizontalCenter="0" >
+			<!---->
+			<s:VGroup id="vgroup1" horizontalAlign="center"/>
+			<!---->
+			<s:VGroup  horizontalAlign="center">
+				<mx:Label width="100%" text="   {resourceManager.getString('PersonalCenterPage','bets_Numbers')}：" textAlign="left" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:HGroup verticalAlign="middle">
+					<s:Group width="580" height="70">
+						<s:Rect width="100%" height="100%">
+							<s:stroke>
+								<s:LinearGradientStroke>
+									<s:GradientEntry color="0xc9d2dc"/>
+								</s:LinearGradientStroke>
+							</s:stroke>
+						</s:Rect>
+						<s:Scroller width="580" height="70" styleName="personalCenterScrollerStyle_1" horizontalScrollPolicy="off">
+							<s:VGroup verticalCenter="0" minHeight="70" verticalAlign="middle" horizontalAlign="center">
+								<!--<mx:Label text="{BetNumbers}" styleName="personalCenterDetailLabelStyle_1" width="630" selectable="true" />-->
+								<mx:Text text="{BetNumbers}"  
+										 selectable="true"  color="#768a99"    maxWidth="580"/>
+							</s:VGroup>
+						</s:Scroller>
+					</s:Group>
+					<s:VGroup height="100%" verticalAlign="middle">
+						<s:Button id="copy_btn" label="{resourceManager.getString('PersonalCenterPage','copy')}" width="50"
+								  styleName="popUpPersonalCenterBlueButtonStyle_mid" click="copy(event)" buttonMode="true"/>	
+						<s:Button id="detail_btn" visible="{detailBtnFlag}" includeInLayout="{detailBtnFlag}" label="详情"  click="button1_clickHandler(event)" width="50"  styleName="popUpPersonalCenterBlueButtonStyle_mid"  buttonMode="true"/>
+					</s:VGroup>
+				</s:HGroup>
+			</s:VGroup>
+			<!---->
+			<!--<s:Spacer height="10"/>-->
+			<s:VGroup width="100%" horizontalAlign="center" >
+				<mx:Label id="test" width="100%" text="   {resourceManager.getString('PersonalCenterPage','bets_Detail')}：" textAlign="left" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:VGroup width="100%" gap="-1" horizontalAlign="center">
+					<s:VGroup width="100%" id="vgroup2" horizontalAlign="center"/>
+					<s:Scroller id="scroller" height="150" styleName="personalCenterScrollerStyle_1">
+						<s:VGroup width="100%" id="vgroup3" gap="-1" horizontalAlign="center">
+						</s:VGroup>
+					</s:Scroller>
+				</s:VGroup>
+			</s:VGroup>
+		</s:VGroup>
+		<mx:Label id="label_succ" styleName="personalCenterDetailLabelStyle_3"  right="5" top="{labelSuccessTop}" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+	</s:BorderContainer>
+</s:BorderContainer>

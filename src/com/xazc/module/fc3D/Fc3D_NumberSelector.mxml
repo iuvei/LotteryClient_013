@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="com.xazc.interfaces.IInit"  width="896" height="38"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			//绑定百位，十位，个位
+			[Bindable]
+			public var headerText:String = "";	
+			//选中的号码
+			public var numbersArr:Array = new Array();
+			//存取号码数组
+			public var btns:Array;
+			public static const NUMBER_CLICK:String="number_Click";
+			/**
+			 * 初始化控件ID 
+			 */
+			protected function btns_addId(event:FlexEvent):void
+			{
+				btns=[btn_0,btn_1,btn_2,btn_3,btn_4,btn_5,btn_6,btn_7,btn_8,btn_9];
+			}
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				numbersArr = [];
+				clearAllTheSelectNumbers();
+			}
+			/**
+			 * 将选择的号码清空 
+			 */
+			public function clearAllTheSelectNumbers():void
+			{
+				var temp:ToggleButton;
+				for(var i:int=0; i<btns.length; i++){
+					temp = btns[i] as ToggleButton;
+					if(temp){
+						temp.selected = false;
+					}
+				}
+			}
+			/**
+			 *	设置全选按钮选中状态
+			 */
+			public function setAllButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						if(selected == true){
+							numbersArr.push(temp.label);
+						}else{
+							numbersArr = [];
+						}
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArr));
+			}
+			/**
+			 *	设置选大号按钮选中状态
+			 */
+			public function setBigButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=5;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						numbersArr.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArr));
+			}
+			/**
+			 *	设置选小号按钮选中状态
+			 */
+			public function setSmallButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<5;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						numbersArr.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArr));
+			}
+			/**
+			 *	设置选奇按钮选中状态
+			 */
+			public function setOddButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp && i % 2 != 0){
+						temp.selected=selected;
+						numbersArr.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArr));
+			}
+			/**
+			 *	设置选偶按钮选中状态
+			 */
+			public function setEvenButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp && i % 2 == 0){
+						temp.selected=selected;
+						numbersArr.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArr));
+			}
+			/**
+			 * 选号添加入数组 
+			 */
+			public function btn_clickHandler(event:MouseEvent):void{
+				var btnTemp:ToggleButton = event.target as ToggleButton;
+				if(btnTemp.selected==true){
+					numbersArr.push(btnTemp.label);
+				}else{
+					numbersArr.splice(numbersArr.indexOf(btnTemp.label),1);
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArr));
+			}
+			/**
+			 * 设置按钮样式及清空所选行按钮状态 
+			 */
+			public function click_qdxjoq(event:MouseEvent):void{
+				//清除号码样式
+				init();
+				switch(event.target)
+				{
+					case all:
+						setAllButtonState(true);
+						break;
+					case big:
+						setBigButtonState(true);
+						break;
+					case small:
+						setSmallButtonState(true);
+						break;
+					case odd:
+						setOddButtonState(true);
+						break;
+					case even:
+						setEvenButtonState(true);
+						break;
+					case clean:
+						setAllButtonState(false);
+						break;
+				}
+			}
+			/**
+			 * 初始化控件ID 
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				btns=[btn_0,btn_1,btn_2,btn_3,btn_4,btn_5,btn_6,btn_7,btn_8,btn_9];
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup height="100%" verticalAlign="middle" gap="20">
+		<s:Button styleName="orderButtonSkinStyle_mid" label="{headerText}"/>
+		<s:HGroup height="100%" verticalAlign="middle" gap="8">
+			<s:ToggleButton id="btn_0" styleName="numberSelectSkinStyle_large" label="0" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_1" styleName="numberSelectSkinStyle_large" label="1" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_2" styleName="numberSelectSkinStyle_large" label="2" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_3" styleName="numberSelectSkinStyle_large" label="3" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_4" styleName="numberSelectSkinStyle_large" label="4" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_5" styleName="numberSelectSkinStyle_large" label="5" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_6" styleName="numberSelectSkinStyle_large" label="6" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_7" styleName="numberSelectSkinStyle_large" label="7" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_8" styleName="numberSelectSkinStyle_large" label="8" click="btn_clickHandler(event)"/>
+			<s:ToggleButton id="btn_9" styleName="numberSelectSkinStyle_large" label="9" click="btn_clickHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	<s:HGroup gap="10" right="0">
+		<s:Button id="all" styleName="strSelectSkinStyle_mid" label="{resourceManager.getString('LotteryTips','all')}"
+				  click="click_qdxjoq(event)"/>
+		<s:Button id="big" styleName="strSelectSkinStyle_mid" label="{resourceManager.getString('LotteryTips','large')}"
+				  click="click_qdxjoq(event)"/>
+		<s:Button id="small" styleName="strSelectSkinStyle_mid" label="{resourceManager.getString('LotteryTips','small')}"
+				  click="click_qdxjoq(event)"/>
+		<s:Button id="odd" styleName="strSelectSkinStyle_mid" label="{resourceManager.getString('LotteryTips','Odd')}"
+				  click="click_qdxjoq(event)"/>
+		<s:Button id="even" styleName="strSelectSkinStyle_mid" label="{resourceManager.getString('LotteryTips','Even')}"
+				  click="click_qdxjoq(event)"/>
+		<s:Button id="clean" styleName="strSelectSkinStyle_mid" label="{resourceManager.getString('LotteryTips','clean')}"
+				  click="click_qdxjoq(event)"/>
+	</s:HGroup>
+</s:Group>

@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="100%"
+		 creationComplete="init(event)" xmlns:common="com.xazc.pop.center.common.*"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			/**服务对象*/
+			private var service:ServerToolImpl = new ServerToolImpl();//
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			protected function init(event:FlexEvent):void
+			{
+				//查询密保设置状态
+				getState();
+			}
+			
+			/**
+			 *  初始化  密保设置组件；
+			 **/
+			private function clear_init():void
+			{
+				cbRechargers = new ArrayCollection([{id:"0",question:"请选择密保问题！"}]);
+				question_1.selectedIndex = 0;
+				question_1_answer.text = "";
+				question_2.selectedIndex = 0;
+				question_2_answer.text = "";
+				set_group.visible = false;
+				set_group.includeInLayout = false;
+			}
+			
+			/**
+			 *查询密保设置状态
+			 **/
+			public function getState():void
+			{
+				clear_init();
+				service=new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.UserID = CurrentUserInfo.myUserID;
+				obj.FlagType = "1";     //类型（1：密保 2：提示语）
+				service.getSecurityPromptingState(obj,getSecurityPromptingStateHandler);
+			}
+			private function getSecurityPromptingStateHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64){
+					
+					if(arr.Result == 1){
+						PersonCenterInfo.IsSecurityState = true;
+						//已设置
+						PromptingState.text = "已设置";
+						Modif.visible = true;
+						Modif.includeInLayout = true;
+						
+						title.visible = true;
+						title.includeInLayout = true;
+					}else if(arr.Result == 0){
+						PersonCenterInfo.IsSecurityState = false;
+						//未设置
+//						PromptingState.text = "未设置";
+//						Instal.visible = true;
+//						Instal.includeInLayout = true;
+						
+						//头一次进来，未设置密保，直接进入设置页面；
+						//获取密保问题数据
+						getQuestion();
+					}
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("获取密保状态失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			/**
+			 *  修改密保
+			 **/
+			protected function Modif_clickHandler(event:MouseEvent):void
+			{
+				//防止在后台直接删除密保问题，点击修改返回超出索引；每次点击修改的时候都调一次是否有密保，有的话继续修改，没有的话就是设置。
+				service=new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.UserID = CurrentUserInfo.myUserID;
+				obj.FlagType = "1";     //类型（1：密保 2：提示语）
+				service.getSecurityPromptingState(obj,OnceGetSecurityState);
+				
+				function OnceGetSecurityState(e:ResultEvent):void{
+					var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+					if(arr.SystemState==64){
+						if(arr.Result == 1){
+							//已设置
+							PersonCenterInfo.IsSecurityState = true;
+							// 随机获取密保答案问题
+							service=new ServerToolImpl();
+							var obj:Object = new Object();
+							obj.UserID = CurrentUserInfo.myUserID;
+							obj.FlagType = "1";     //类型（1：密保 2：提示语）
+							obj.SecurityCount = 2; 
+							service.getRandomSecurity(obj,getRandomSecurityHandler);
+						}else if(arr.Result == 0){
+							//未设置
+							PersonCenterInfo.IsSecurityState = false;
+							//未设置
+							Instal.visible = false;
+							Instal.includeInLayout = false;
+							Modif.visible = false;
+							Modif.includeInLayout = false;
+							title.visible = false;
+							title.includeInLayout = false;
+							
+							clear_init();
+							//未设置密保，直接进入设置页面；
+							//获取密保问题数据
+							getQuestion();
+						}
+					}
+				}
+				
+			}
+			private var random_obj:Object;
+			private function getRandomSecurityHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64){
+					
+					Modif.visible = false;
+					Modif.includeInLayout = false;
+					question_0.text = "";
+					question_0_answer.text = "";
+					modify_group.visible = true;
+					modify_group.includeInLayout = true;
+					
+					//保存随机问题实体数据；
+					random_obj  = new Object();
+					random_obj = (arr.SecurityQuestionAnswerModels[0]) as Object;
+					question_0.text  = random_obj.Question;
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					//alert.show("获取密保问题数据失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					alert.show(arr.StateMark,resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			/**
+			 *  设置密保
+			 **/
+			protected function Instal_clickHandler(event:MouseEvent):void
+			{
+				//获取密保问题数据
+				getQuestion();
+			}
+			private function getQuestion():void
+			{
+				//获取密保问题数据
+				service=new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.UserID = CurrentUserInfo.myUserID;
+				service.getSecurityQuestion(obj,getSecurityQuestionHandler);
+			}
+			private function getSecurityQuestionHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64){
+					
+					Instal.visible = false;
+					Instal.includeInLayout = false;
+					set_group.visible = true;
+					set_group.includeInLayout = true;
+					
+					var obj_arr:Array = arr.SecurityQuestionModels as Array;
+					for(var i:int=0;i<obj_arr.length;i++)
+					{
+						var obj:Object = new Object();
+						obj.id = obj_arr[i].ID;
+						obj.question = obj_arr[i].Question;
+						cbRechargers.addItem(obj);
+					}
+					
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("获取密保问题数据失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			public function menu_clickHandler(index:int):void
+			{
+				if(index==1){
+					question_1.selectedIndex = 0;
+					question_1_answer.text = "";
+					question_2.selectedIndex = 0;
+					question_2_answer.text = "";
+				}else if(index==2){
+					if(!check()){
+						return;
+					}
+					//添加用户密保问题数据
+					service=new ServerToolImpl();
+					var obj:Object = new Object();
+					obj.UserID = CurrentUserInfo.myUserID;
+					obj.UserName = CurrentUserInfo.userName;
+					var sendArr:Array = new Array();
+					if(PersonCenterInfo.IsSecurityState){
+						for(var i:int=0;i<2;i++){
+							var item:Object = new Object();
+							item.ID = this["question_" +　(i+1)].selectedIndex;
+							item.Question = this["question_" +　(i+1) + "_answer"].text;
+							item.KeyID = keyId_str.split("#")[i];
+							sendArr.push(item);}
+						obj.SecurityQuestionModels = sendArr;
+						//已设置  修改接口
+						service.userSecurityQuestionEdit(obj,userSecurityQuestionEditHandler);
+					}else{
+						for(var i:int=0;i<2;i++){
+							var item:Object = new Object();
+							item.ID = this["question_" +　(i+1)].selectedIndex;
+							item.Question = this["question_" +　(i+1) + "_answer"].text;
+							sendArr.push(item);}
+						obj.SecurityQuestionModels = sendArr;
+						//未设置  添加接口
+						service.userSecurityQuestionAdd(obj,userSecurityQuestionAddHandler);
+					}
+				}else if(index==3){
+					question_0.text = "";
+					question_0_answer.text = "";
+					modify_group.visible = false;
+					modify_group.includeInLayout = false;
+					Modif.visible = true;
+					Modif.includeInLayout = true;
+				}else if(index==4){
+					if(question_0_answer.text == ""){
+						alert.show("请填写密保答案！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return;
+					}
+					//验证随机问题答案是否正确；
+					service=new ServerToolImpl();
+					var obj:Object = new Object();
+					obj.UserName = CurrentUserInfo.userName;
+					obj.RecoveryMode = "2";       //找回方式（1：按资金密码 2：通过密保答案找回）
+					obj.SecurityID = random_obj.ID;
+					obj.Answer = question_0_answer.text;
+					service.retrievePassword(obj,retrievePasswordHandler);
+				}
+			}
+			private function retrievePasswordHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64)
+				{
+//					1：成功
+//					0：失败
+//					-1：资金密码错误
+//						-2：用户不存在
+//						-3：回答问题错误
+//						-4：该用户没有设置密保
+//						-5：该用户没有设置资金密码
+					if(arr.Result==1){
+						
+						modify_group.visible = false;
+						modify_group.includeInLayout = false;
+						
+						//成功
+						alert.show("验证通过！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						
+						//获取密保问题数据
+						service=new ServerToolImpl();
+						var obj:Object = new Object();
+						obj.UserID = CurrentUserInfo.myUserID;
+						service.getSecurityQuestion(obj,OnceGetSecurityQuestion);
+						function OnceGetSecurityQuestion(e:ResultEvent):void{
+							var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+							if(arr.SystemState==64){
+								
+								Instal.visible = false;
+								Instal.includeInLayout = false;
+								set_group.visible = true;
+								set_group.includeInLayout = true;
+								
+								var obj_arr:Array = arr.SecurityQuestionModels as Array;
+								for(var i:int=0;i<obj_arr.length;i++)
+								{
+									var obj:Object = new Object();
+									obj.id = obj_arr[i].ID;
+									obj.question = obj_arr[i].Question;
+									cbRechargers.addItem(obj);
+								}
+								//修改时初始化密保数据
+								getModifyInitData();
+							}else if(arr.SystemState==-1){
+								Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+							}else if(arr.SystemState==-2){
+								var yd:AlertMsgCenter=new AlertMsgCenter();
+								yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+								yd.okBtnBoolean=true;
+								yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+							}else{
+								alert.show("获取密保问题数据失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+							}
+						}
+					}else if(arr.Result==0){
+						alert.show("验证失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}else if(arr.Result==-1){
+						alert.show("资金密码错误！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}else if(arr.Result==-2){
+						alert.show("用户不存在！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}else if(arr.Result==-3){
+						alert.show("密保问题或答案有误！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}else if(arr.Result==-4){
+						alert.show("该用户没有设置密保！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}else if(arr.Result==-5){
+						alert.show("该用户没有设置资金密码！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("验证密保答案失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			//修改时初始化密保数据
+			private function getModifyInitData():void
+			{
+				//修改时初始化密保数据
+				service=new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.UserID = CurrentUserInfo.myUserID;
+				obj.FlagType = "1";     //类型（1：密保 2：提示语）
+				service.initSecurityData(obj,initSecurityDataHandler);
+			}
+			private var keyId_str:String = new String();
+			private function initSecurityDataHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64)
+				{
+					keyId_str = new String();
+					for(var i:int=0;i<2;i++){
+						this["question_" +　(i+1)].selectedIndex = arr.SecurityQuestionAnswerModels[i].ID
+						this["question_" +　(i+1) + "_answer"].text = arr.SecurityQuestionAnswerModels[i].Answer;
+						keyId_str += arr.SecurityQuestionAnswerModels[i].KeyID + "#";
+					}
+					
+					set_group.visible = true;
+					set_group.includeInLayout = true;
+					
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("获取修改初始化密保数据失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			//修改用户密保问题  回调函数
+			private function userSecurityQuestionEditHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64){
+					if(arr.Result){
+						//成功
+						alert.show("修改密保成功！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						//查询密保设置状态
+						getState();
+						// 更改 密保状态
+						PersonCenterInfo.IsSecurityState = true;
+						//是否跳转资金密码页面；
+						if(!PersonCenterInfo.IsPayPsw){
+							dispatchEvent(new Event("requestBankPswEvent",true));
+						}
+					}else{
+						//失败
+						alert.show("修改密保失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+					
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("添加用户密保问题失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			//添加用户密保问题  回调函数
+			private function userSecurityQuestionAddHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64){
+					if(arr.Result==1){
+						//成功
+						alert.show("设置密保成功！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						//查询密保设置状态
+						getState();
+						// 更改 密保状态
+						PersonCenterInfo.IsSecurityState = true;
+//						//是否跳转资金密码页面；
+//						if(!PersonCenterInfo.IsPayPsw){
+//							dispatchEvent(new Event("requestBankPswEvent",true));
+//						}
+					}
+					if(arr.Result==0 || arr.Result==-1 ){
+						//失败
+						alert.show("设置密保失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+					
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("添加用户密保问题失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			//添加用户密保问题   效验
+			private function check():Boolean
+			{
+				if(question_1.selectedIndex == 0 || question_2.selectedIndex == 0){
+					alert.show("请选择要设置的密保问题！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(question_1_answer.text == "" || question_2_answer.text == ""){
+					alert.show("请填写密保答案！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(question_1_answer.text != "" || question_2_answer.text != ""){
+					if(question_1_answer.text.length < 2 || question_1_answer.text.length >20)
+					{
+						alert.show("密保答案格式不正确！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				}
+				if(question_1.selectedIndex == question_2.selectedIndex ){
+					alert.show("密保问题不能重复！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				return true;
+			}
+			
+			[Bindable]
+			private var cbRechargers:ArrayCollection=new ArrayCollection([
+				{id:"0",question:"请选择密保问题！"},
+				])
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup width="90%"  top="15" horizontalCenter="0" gap="30" >
+		<!-- 密保状态   放在此处 -->
+		<s:HGroup width="100%" height="40"  verticalAlign="middle" gap="50">
+			<s:HGroup height="40"  verticalAlign="middle"  id="title" visible="false" includeInLayout="false">
+				<mx:Label text="密保状态：" width="100" textAlign="right"  styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:Label id="PromptingState"  width="100" styleName="personalCenterDetailLabelStyle_4"/>
+			</s:HGroup>
+			<s:HGroup height="40"  verticalAlign="middle" buttonMode="true" id="Modif" visible="false" includeInLayout="false" click="Modif_clickHandler(event)">
+				<s:Image source="css/skin1/images/mibao/Modify.png" />
+				<s:Label  text="修改" />
+			</s:HGroup>
+			<s:HGroup height="40"  verticalAlign="middle" buttonMode="true" id="Instal" visible="false" includeInLayout="false" click="Instal_clickHandler(event)" >
+				<s:Image source="css/skin1/images/mibao/Instal.png" />
+				<s:Label  text="设置" />
+			</s:HGroup>
+		</s:HGroup>
+		
+		
+		<!-- 修改密保  随机一个问题  放在此处 -->
+		<s:VGroup width="100%"  id="modify_group" visible="false" includeInLayout="false">
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label  width="100" textAlign="right" text="验证密保问题：" styleName="personalCenterDetailLabelStyle_4"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label text="问题：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:Label id="question_0"  textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label text="答案：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput id="question_0_answer"   styleName="personalCenterDetailTextInputStyle" width="200" maxChars="20"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  height="45"  verticalAlign="middle">
+				<s:Spacer width="100"/>
+				<common:PopUpTabButtonItem id="cancle" labelTitle="取    消" selected="false" click="menu_clickHandler(3)"/>
+				<common:PopUpTabButtonItem id="confirm_0" labelTitle="确    认" selected="false" click="menu_clickHandler(4)"/>
+			</s:HGroup>
+		</s:VGroup>
+				  
+				  
+				  
+		<!-- 设置密保  问题选择  放在此处 -->
+		<s:VGroup width="100%"  id="set_group" visible="false" includeInLayout="false">
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label  width="100" textAlign="right" text="温馨提示：" styleName="personalCenterDetailLabelStyle_4"/>
+				<mx:Label  text="设置密保能增加账户的安全性，可用于修改资金密码，请妥善保管。" styleName="personalCenterDetailLabelStyle_4"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label text="问题一：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:ComboBox width="200" initialize="question_1.textInput.editable = false" id="question_1" styleName="personalCenterDetailComboBoxStyle"
+							dataProvider="{cbRechargers}" labelField="question" selectedIndex="0"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label text="答案：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput id="question_1_answer"   styleName="personalCenterDetailTextInputStyle" width="200" maxChars="20"/>
+				<s:Spacer width="10"/>
+				<mx:Label text="* 2~20位字符" styleName="personalCenterDetailLabelStyle_4"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label text="问题二：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:ComboBox width="200" initialize="question_2.textInput.editable = false" id="question_2" styleName="personalCenterDetailComboBoxStyle"
+							dataProvider="{cbRechargers}" labelField="question" selectedIndex="0"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  height="30"  verticalAlign="middle">
+				<mx:Label text="答案：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput id="question_2_answer"   styleName="personalCenterDetailTextInputStyle" width="200" maxChars="20"/>
+				<s:Spacer width="10"/>
+				<mx:Label text="* 2~20位字符" styleName="personalCenterDetailLabelStyle_4"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  height="45"  verticalAlign="middle">
+				<s:Spacer width="100"/>
+				<common:PopUpTabButtonItem id="reset" labelTitle="重    置" selected="false" click="menu_clickHandler(1)"/>
+				<common:PopUpTabButtonItem id="confirm" labelTitle="确    认" selected="false" click="menu_clickHandler(2)"/>
+			</s:HGroup>
+		</s:VGroup>
+		
+	</s:VGroup>
+</s:Group>

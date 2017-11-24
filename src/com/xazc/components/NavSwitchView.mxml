@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  width="204"
+		 cornerRadius="2" backgroundColor="0x1b2d3b" borderColor="0x213949"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="init()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.controls.HRule;
+			import mx.controls.LinkButton;
+			
+			[Embed(source="css/skin1/universal/images/hot.png")]
+			private var imgClass_1:Class;
+			[Embed(source="css/skin1/universal/images/fc.png")]
+			private var imgClass_2:Class;
+			[Embed(source="css/skin1/universal/images/tc.png")]
+			private var imgClass_3:Class;
+			
+			
+			
+			private var listLotteryNameHot:Array=[{label:"12"},{label:"13"},{label:"14"},{label:"4"},{label:"5"},{label:"16"},{label:"10"},{label:"9"},{label:"15"},{label:"51"},{label:"53"},{label:"55"}];//高频彩
+			private var listLotteryNameFc:Array=[{label:"24"},{label:"19"},{label:"22"},{label:"23"},{label:"6"}];//福彩
+			private var listLotteryNameTc:Array=[{label:"17"},{label:"18"}];//体彩
+			
+			private function init():void{
+				var arr:Array=CurrentBusinessInfo.canSalableLotteries.split(",");
+				for(var i:int=1;i<4;i++){
+					var item:NavSwitchItem=new NavSwitchItem();
+					item.lotterys=arr;
+					item.percentWidth=100;
+					item.listLottery= i==1?listLotteryNameHot:i==2?listLotteryNameFc:listLotteryNameTc;
+					item.tgType= i==2?0:1;
+					item.imgClass=this["imgClass_"+i];
+					item.typeTitle=resourceManager.getString('LotteryTips','lottery_Kind_'+i);
+					item.ruleFlag= i==3?false:true;
+					vg.addElement(item);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:VGroup top="5" id="vg" width="100%" bottom="5" />
+</s:BorderContainer>

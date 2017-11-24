@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   width="100%" height="100%" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="initPropertys()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.UsersLotteryDate;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.rpc.events.ResultEvent;
+			public var markID:String="1010500";
+			public static var markID:String="1010500";
+			[Bindable]
+			public var labelTitleText:String="彩种返点";
+			
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			
+			private var service:ServerToolImpl;
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"c",w:28},
+				{title:"a",w:430},
+				{title:"b",w:430},
+				/* {title:"c",w:260} */
+			]);
+			
+			private var values:ArrayCollection=new ArrayCollection([
+				{column:"Num",w:28},
+				{column:"LotteryCode",w:430},
+				{column:"MaxRebate",w:430},
+				/* {column:"DefaultRebate",w:245} */
+			]);
+			
+			/**
+			 *初始化 
+			 **/
+			public function initPropertys():void{
+				label_max.text=CurrentUserInfo.myRebate+"";
+				label_min.text=CurrentBusinessInfo.minRebate+"";
+				
+				hslider.maximum=Number(CurrentUserInfo.myRebate);
+				hslider.minimum=Number(CurrentBusinessInfo.minRebate);
+				
+				if(CurrentUserInfo.generalRebate>0){
+					hslider.value=CurrentUserInfo.generalRebate;					
+				}else{
+					hslider.value=CurrentUserInfo.myRebate;
+				}
+				initView();
+				trace(hslider.height+"--"+h_1.height);
+			}
+			/**
+			 *改变返点差值 
+			 **/
+			protected function hslider_changeHandler(event:Event):void
+			{
+				var fdvalue:Number=hslider.value;
+				var cz:Number=hslider.maximum-fdvalue;
+//				trace(cz+"-"+fdvalue);
+				var grid:Grid=vg.getElementAt(0) as Grid;
+				for(var j:int=0;j<grid.numChildren;j++){
+					var row:GridRow=grid.getChildAt(j) as GridRow;
+					var item1:GridItem=row.getChildAt(1) as GridItem;
+					var label1:Label=item1.getChildAt(0) as Label;
+					var item2:GridItem=row.getChildAt(2) as GridItem;
+					var label2:Label=item2.getChildAt(0) as Label;
+					var b:int=(int(label1.text)-cz)<CurrentBusinessInfo.minRebate?CurrentBusinessInfo.minRebate:(int(label1.text)-cz);
+					label2.text=b+"";
+				}
+			}
+			
+			
+			/**
+			 *提交 
+			 **/
+			private function submit():void{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.setUserLotteryRebate({"Rebate":hslider.value},setUserLotteryRebateHandler);
+			}
+			private function setUserLotteryRebateHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var obj:Object=JSON.parse(e.result.toString());
+				if(obj.SystemState==64){
+					//清理彩种缓存
+					UsersLotteryDate.getInstance().lotteryDateList = new Array();
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_setting_rebate_state1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					//查询用户信息
+					getUserDetail();
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_setting_rebate_state2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function getUserDetail():void{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.getUserDetailNew(new Object(),selectUserDetailHandler);
+			}
+			/**
+			 *查询用户信息回调 
+			 **/
+			private function selectUserDetailHandler(e:ResultEvent):void{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64){
+					CurrentUserInfo.qRebate=obj.QRebate;
+					if(obj.hasOwnProperty("QARebate")){
+						CurrentUserInfo.qARebate=obj.QARebate;
+					}
+					CurrentUserInfo.hRebate=obj.HRebate;
+					CurrentUserInfo.xRebate=obj.XRebate;
+					CurrentUserInfo.myRebate=obj.MyRebate;
+					CurrentUserInfo.myRebateDifference=obj.MyRebateDifference;
+					CurrentUserInfo.generalRebate=obj.GeneralRebate;
+					//更新数据
+					initView();
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					
+				}
+			}
+			
+			private function initView():void{
+				if(group.numElements>1){
+					group.removeElementAt(1);
+				}
+				var grid1:Grid=new Grid();
+				group.addElement(grid1);
+				var row1:GridRow=new GridRow();
+				row1.height=40;
+				grid1.addChild(row1);
+				for(var i:int=0;i<titles.length;i++){
+					var item1:GridItem=new GridItem();
+					item1.width=titles.getItemAt(i).w;
+					row1.addChild(item1);
+					var label1:Label=new Label();
+					item1.addChild(label1);
+					if(titles.getItemAt(i).title == "a"){
+						label1.text = resourceManager.getString('PersonalCenterPage','lottery_Type');
+					}else if(titles.getItemAt(i).title == "b"){
+						label1.text = resourceManager.getString('PersonalCenterPage','my_Max_Rebates');
+					}else if(titles.getItemAt(i).title == "c"){
+						label1.text = "";
+					}else{
+						label1.text = resourceManager.getString('PersonalCenterPage','approve_Bets_Rebates');
+					}
+					label1.styleName="personalCenterDetailLabelStyle_1";
+				}
+				var arr:Array=CurrentBusinessInfo.LotteryList;
+				vg.removeAllElements();
+				var grid2:Grid=new Grid();
+				vg.addElement(grid2);
+				for(var ii:int=0;ii<arr.length;ii++){
+					var row2:GridRow=new GridRow();
+					row2.height=40;
+					grid2.addChild(row2);
+					var column:String="";
+					var value:String="";
+					for(var j:int=0;j<values.length;j++){
+						column=values.getItemAt(j).column;
+						var item2:GridItem=new GridItem();
+//						item2.width=values.getItemAt(j).w;
+						row2.addChild(item2);
+						var label:Label=new Label();
+						item2.addChild(label);
+						label.styleName="personalCenterDetailLabelStyle_1";
+						label.width = values.getItemAt(j).w-5;
+						var a:int=0;
+						var b:int=0;
+						if(column=="Num"){
+							label.text=(ii+1).toString();
+							item2.width=values.getItemAt(j).w;
+						}
+						if(column=="LotteryCode"){
+							label.text=resourceManager.getString("LotteryPlayNames","lottery_"+arr[ii][column]);
+							item2.width=values.getItemAt(j).w;
+						}
+						if(column=="MaxRebate"){
+							a=int(arr[ii][column]-CurrentUserInfo.myRebateDifference);
+							b=a<CurrentBusinessInfo.minRebate?CurrentBusinessInfo.minRebate:a;
+							label.text=b+"";
+							label.width = values.getItemAt(j).w-25;
+							item2.width=values.getItemAt(j).w - 15;
+						}
+						if(column=="DefaultRebate"){
+							if(CurrentUserInfo.myRebateDifference>0 && CurrentUserInfo.generalRebate>0){
+//								trace(arr[ii].MaxRebate+"-"+CurrentUserInfo.myRebateDifference+"-"+CurrentUserInfo.myRebate+"-"+CurrentUserInfo.generalRebate);
+								a=int(arr[ii].MaxRebate)-CurrentUserInfo.myRebateDifference-(CurrentUserInfo.myRebate-CurrentUserInfo.generalRebate);
+								b=a<CurrentBusinessInfo.minRebate?CurrentBusinessInfo.minRebate:a;
+								label.text=b+"";
+//								trace("1:"+CurrentUserInfo.myRebateDifference+"______"+(CurrentUserInfo.myRebate-CurrentUserInfo.generalRebate));
+							}else if(CurrentUserInfo.myRebateDifference>0){
+								a=int(arr[ii].MaxRebate)-CurrentUserInfo.myRebateDifference;
+								b=a<CurrentBusinessInfo.minRebate?CurrentBusinessInfo.minRebate:a;
+								label.text=b+"";
+//								trace("2:"+CurrentUserInfo.myRebateDifference);
+							}else if(CurrentUserInfo.generalRebate>0){
+								a=int(arr[ii].MaxRebate)-(CurrentUserInfo.myRebate-CurrentUserInfo.generalRebate);
+								b=a<CurrentBusinessInfo.minRebate?CurrentBusinessInfo.minRebate:a;
+								label.text=b+"";
+//								trace("3:"+(CurrentUserInfo.myRebate-CurrentUserInfo.generalRebate));
+							}else if(arr[ii].MaxRebate!=null && arr[ii].MaxRebate!=""){
+								label.text=arr[ii].MaxRebate;
+							}else{
+								label.text="";
+							}
+						}
+					}
+				}
+			}
+			
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryPlayNames")]
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<s:Group width="100%" height="100%">
+		<s:HGroup id="h_1" width="100%" verticalAlign="middle" height="5%"  top="15" visible="false" includeInLayout="false">
+			<mx:Spacer width="15"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','set_All_The_Lottery')}：" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label id="label_max"  styleName="personalCenterDetailLabelStyle_4"/>			
+			<s:HSlider id="hslider"  layoutDirection="rtl" snapInterval="2" liveDragging="true" 
+						change="hslider_changeHandler(event)" showDataTip="false"  
+						mouseFocusEnabled="false"
+						buttonMode="true"/>
+			<!--<mx:HSlider id="hslider"  layoutDirection="rtl" snapInterval="2" liveDragging="true"  verticalCenter="0"
+						change="hslider_changeHandler(event)" showDataTip="false"   showTrackHighlight="true"
+						mouseFocusEnabled="false" 
+						buttonMode="true"/>-->
+			<mx:Label id="label_min"  styleName="personalCenterDetailLabelStyle_4"/>
+			<mx:Spacer width="20"/>
+			<s:Button label="{resourceManager.getString('PersonalCenterPage','save')}" styleName="personalSubmitButtonStyle" click="submit()" buttonMode="true"/>
+		</s:HGroup>
+		<s:VGroup width="100%" top="{20+h_1.height}" bottom="20" horizontalCenter="0" horizontalAlign="center">
+			<s:Group horizontalCenter="0">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient>
+							<s:GradientEntry color="0xffffff"/>
+						</s:LinearGradient>
+					</s:fill>
+				</s:Rect>
+				<s:VGroup width="100%" height="100%" gap="-1" horizontalAlign="center">
+					<s:Group id="group" height="40">
+						<s:Rect id="fill1" width="100%" height="40">
+							<s:fill>
+								<s:LinearGradient rotation="90">
+									<s:GradientEntry color="0xe6e6e6" alpha="1"/>
+								</s:LinearGradient>
+							</s:fill>
+						</s:Rect>
+					</s:Group>
+					<s:Scroller height="508" styleName="personalCenterScrollerStyle_1" buttonMode="true">
+						<s:VGroup id="vg" />	
+					</s:Scroller>
+				</s:VGroup>	
+			</s:Group>
+		</s:VGroup>
+	</s:Group>
+</s:Group>

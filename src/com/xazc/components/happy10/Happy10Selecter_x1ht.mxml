@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:happy10="com.xazc.components.happy10.*"
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  width="100%" height="100%" creationComplete="vgroup1_creationCompleteHandler(event)"
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  gap="20"
+		  horizontalAlign="center"
+		  >
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			
+			public var configNumber:Number = 20;
+			
+			public static const SEND_NUMBERS_CLICK:String = "sendNumbersClick";
+			
+			private var tempNumberArr:Array = new Array();
+			
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				
+				
+			}
+			
+			
+			public function clear():void
+			{
+				tempNumberArr = new Array();
+				var togbtn:ToggleButton;
+				for(var i:int = 0; i < numbers.numElements; i++)
+				{
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = false;
+				}
+				
+			}
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var btn:ToggleButton;
+				for(var i:int = 19; i <= configNumber; i++)
+				{
+					btn = new ToggleButton();
+					
+					btn.id = "num_" + i;
+					if(i < 10)
+						btn.label = "0" + i;
+					else
+						btn.label = i.toString();
+					btn.addEventListener(MouseEvent.CLICK, nums_click);
+					btn.styleName="numberSelectSkinStyle_large";
+					numbers.addElement(btn);
+				}
+				
+				
+				
+				this.addEventListener(Happy10Help.HELP_ALL,selectQuan);
+				this.addEventListener(Happy10Help.HELP_BIG,selectDa);
+				this.addEventListener(Happy10Help.HELP_SMALL,selectXiao);
+				this.addEventListener(Happy10Help.HELP_ODD,selectJi);
+				this.addEventListener(Happy10Help.HELP_EVEN,selectOu);
+				this.addEventListener(Happy10Help.HELP_CLEAR,selectQing);
+				
+			}
+			
+			private function nums_click(event:MouseEvent):void
+			{
+				var btnTemp:ToggleButton = event.target as ToggleButton;
+				// TODO Auto-generated method stub
+				if(btnTemp.selected==true){
+					tempNumberArr.push(btnTemp.label);
+				}else{
+					tempNumberArr.splice(tempNumberArr.indexOf(btnTemp.label),1);
+				}
+				this.dropSelectedNumbers();
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				
+			}
+			
+			
+			public function selectQuan(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 0;i<numbers.numElements;i++){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				this.dropSelectedNumbers();
+			}
+			
+			public function selectDa(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = (numbers.numElements/2);i<numbers.numElements;i++){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				this.dropSelectedNumbers();
+			}
+			
+			public function selectXiao(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 0;i<(numbers.numElements/2);i++){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				this.dropSelectedNumbers();
+			}
+			public function selectJi(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 0;i<numbers.numElements;i+=2){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				this.dropSelectedNumbers();
+			}
+			public function selectOu(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 1;i<numbers.numElements;i+=2){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				this.dropSelectedNumbers();
+			}
+			public function selectQing(event:CustomEvent=null):void
+			{
+				this.clear();
+				this.dropSelectedNumbers();
+			}
+			//抛出选择的号码数组
+			private function dropSelectedNumbers():void
+			{
+				dispatchEvent(new CustomEvent(SEND_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup width="60%" horizontalAlign="center" verticalAlign="middle">
+		<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" height="10">
+			<bettings:LineLeftRadiusItem width="40%" height="2" left="20" top="3"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','at_Least_select_5_numbers')}" styleName="labelStyles2"/>
+			<bettings:LineRightRadiusItem width="40%" height="2" right="20" top="3"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="180" horizontalAlign="left" verticalAlign="middle" >
+			<s:Button label="{resourceManager.getString('LotteryTips','select_Numbers_Area')}" styleName="orderButtonSkinStyle_large"/>
+			<s:TileGroup id="numbers" requestedColumnCount="9"/>
+		</s:HGroup>
+	</s:VGroup>
+	<s:VGroup width="30%" horizontalAlign="center" verticalAlign="middle">
+		<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" height="10">
+			<bettings:LineLeftRadiusItem width="40%" height="2" left="20" top="3"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','help_Area')}" styleName="labelStyles2"/>
+			<bettings:LineRightRadiusItem width="40%" height="2" right="20" top="3"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="180" horizontalAlign="center" verticalAlign="middle" >
+			<happy10:Happy10Help >
+			</happy10:Happy10Help>
+		</s:HGroup>
+		
+	</s:VGroup>
+</s:HGroup>

@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark"  
+		  creationComplete="createGridInitProperties()"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="900" height="455"
+		  xmlns:load="com.xazc.components.load.*" xmlns:common="com.xazc.pop.center.common.*" xmlns:single="com.xazc.single.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.core.mx_internal;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.events.DynamicEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			private var dateTimeType:ArrayCollection=new ArrayCollection([{label:"当前记录",value:0},{label:"历史记录",value:1}]);
+			
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			[Bindable]
+			private var cbRechargers:ArrayCollection=new ArrayCollection([
+				{label:"a",value:"all"},
+				{label:"b",value:1},
+				{label:"c",value:3},
+				{label:"d",value:4},
+				{label:"e",value:0},
+				{label:"f",value:2}]);
+			//提款状态  0 未处理,1交易中，2拒绝，3交易成功，4 交易失败 
+			
+			private var myPattern1:RegExp=/-|:| /g; 
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=10;//当页行数
+			
+			private var messages:Array=[];//保留查询数据
+			
+			private var service:ServerToolImpl;
+			
+			
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:150},
+				{title:"b",w:150},
+				{title:"c",w:150},
+				/* {title:"d",w:105}, */
+				{title:"e",w:150},
+				{title:"f",w:150},
+				{title:"g",w:150}
+			]);
+			
+			private var values:ArrayCollection=new ArrayCollection([
+				{column:"DrawingsOrder",w:150},
+				{column:"UserName",w:150},
+				{column:"DrawingsMoney",w:150},
+				/* {column:"DrawingsType",w:105}, */
+				{column:"DrawingsState",w:150},
+				{column:"CreateTime",w:150},
+				{column:"Remark",w:150}
+			]);
+			override protected function resourcesChanged():void
+			{
+				for (var i:int = 0; i < cbRechargers.length; i++) 
+				{
+					if(cbRechargers[i].label == "a"){
+						cbRechargers[i].label = resourceManager.getString('PersonalCenterPage','all');
+					}else if(cbRechargers[i].label == "b"){
+						cbRechargers[i].label = resourceManager.getString('PersonalCenterPage','trading');
+					}else if(cbRechargers[i].label == "c"){
+						cbRechargers[i].label = resourceManager.getString('PersonalCenterPage','trad_Success');
+					}else if(cbRechargers[i].label == "d"){
+						cbRechargers[i].label = resourceManager.getString('PersonalCenterPage','trad_Falied');
+					}else if(cbRechargers[i].label == "e"){
+						cbRechargers[i].label = resourceManager.getString('PersonalCenterPage','undisposed');
+					}else if(cbRechargers[i].label == "f"){
+						cbRechargers[i].label = resourceManager.getString('PersonalCenterPage','refuse');
+					}
+				}
+			}
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					var label:Label=new Label();
+					label.text=titles.getItemAt(i).title;
+					if(titles.getItemAt(i).title == "a"){
+						label.text = resourceManager.getString('PersonalCenterPage','order_Number');
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = resourceManager.getString('PersonalCenterPage','userName');
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = resourceManager.getString('PersonalCenterPage','cash_Money');
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = resourceManager.getString('PersonalCenterPage','cash_Moudle');
+					}else if(titles.getItemAt(i).title == "e"){
+						label.text = resourceManager.getString('PersonalCenterPage','cash_State');
+					}else if(titles.getItemAt(i).title == "f"){
+						label.text = resourceManager.getString('PersonalCenterPage','trad_Time');
+					}else if(titles.getItemAt(i).title == "g"){
+						label.text = resourceManager.getString('PersonalCenterPage','remark');
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				refrenshView();
+			}
+			
+			/**
+			 *初始化 
+			 **/
+			public function refrenshView():void{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				initPropertys();
+				currentPage=1;
+				getUserRechargeInfo();
+			}
+			
+			/**
+			 *查询提款记录 
+			 **/
+			public function getUserRechargeInfo():void{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object=filterSelectCondition();
+				service.getUserDrawingsInfoByPage(obj,getUserRechargeInfoHandler);
+			}
+			private function getUserRechargeInfoHandler(e:ResultEvent):void{
+				loading.suspend();
+				trace(e.result.toString());
+				var obj:Object=JSON.parse(e.result.toString());
+				if(obj.SystemState==64){
+					page.setPage(currentPage,obj.PageCount,obj.DataCount);	
+					label_totals.text=obj.TotalMoney;
+					messages=obj.ModelList as Array;
+					if(messages.length==0){
+						createGridOneRow();
+						return;
+					}
+					updateViewPropertysValue(obj.ModelList as Array);
+					g_page.visible=true;
+					g_page.includeInLayout=true;
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					if(obj.SystemState==32){
+						createGridOneRow();
+						return;
+					}
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_records_state1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function updateViewPropertysValue(list:Array):void{
+				if(list.length==0){
+//					Alert.show("sdsf");
+					return;
+				}
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				for(var i:int=0;i<list.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=30;
+					grid.addChild(row);
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=values.getItemAt(j).w;
+						var lb:Label=new Label();
+						item.addChild(lb);
+						var strColumn:String=values.getItemAt(j).column;
+						var strvalue:String="";
+						if(strColumn=="CreateTime"){
+							lb.text=df.format(list[i][strColumn]);
+						}else if(strColumn=="DrawingsType"){
+							strvalue=list[i][strColumn];
+							if(strvalue=="0"){
+								lb.text=resourceManager.getString('PersonalCenterPage','automate_Pay_Out_Money');
+							}else if(strvalue=="1"){
+								lb.text=resourceManager.getString('PersonalCenterPage','artificial_Withdrawals');
+							}else if(strvalue=="2"){
+								lb.text=resourceManager.getString('PersonalCenterPage','artificial_Deductions');
+							}
+						}else if(strColumn=="DrawingsState"){
+							//提款状态  0 未处理,1交易中，2拒绝，3交易成功，4 交易失败 
+							strvalue=list[i][strColumn];
+							if(strvalue=="0"){
+								lb.text=resourceManager.getString('PersonalCenterPage','undisposed');
+							}else if(strvalue=="1"){
+								lb.text=resourceManager.getString('PersonalCenterPage','trading');
+							}else if(strvalue=="2"){
+								lb.text=resourceManager.getString('PersonalCenterPage','refuse');
+							}else if(strvalue=="3"){
+								lb.text=resourceManager.getString('PersonalCenterPage','trad_Success');
+							}else if(strvalue=="4"){
+								lb.text=resourceManager.getString('PersonalCenterPage','trad_Falied');
+							}
+						}else if(strColumn=="Remark"){
+							if(list[i]["DrawingsState"]=="2"){
+								lb.text=list[i]["DrawingsMark"];
+							}else{
+								if(list[i]["DrawingsType"]=="0"){
+									lb.text=resourceManager.getString('PersonalCenterPage','user_Cash');
+								}else if(list[i]["DrawingsType"]=="1"){
+									lb.text=resourceManager.getString('PersonalCenterPage','user_Cash');
+								}else if(list[i]["DrawingsType"]=="2"){
+									lb.text=list[i]["DrawingsMark"];
+								}else{
+									lb.text=list[i]["DrawingsMark"];
+								}
+							}
+						}else if(strColumn=="DrawingsMoney"){
+							lb.text = list[i][strColumn];
+						}else{
+							lb.text=list[i][strColumn];
+						}
+						lb.width=values.getItemAt(j).w-5;
+						lb.maxWidth=values.getItemAt(j).w-5;
+						if(j==0){
+							lb.styleName="personalCenterDetailLabelStyle_1";
+							lb.selectable=true;
+							lb.width=values.getItemAt(j).w-5;
+							/* lb.styleName="personalCenterDetailLabelStyle_2";
+							lb.buttonMode=true;
+							lb.addEventListener(MouseEvent.CLICK,labelMouseClickHandler); */
+						}else{
+							lb.styleName="personalCenterDetailLabelStyle_1";
+						}
+					}
+				}
+			}
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				g_page.visible=false;
+				g_page.includeInLayout=false;
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			
+			/**
+			 *过滤封装查询条件
+			 **/
+			private function filterSelectCondition():Object{
+				var obj:Object=new Object();
+				obj.CurrentPageIndex=currentPage-1;
+				obj.CurrentPageSize=currentPageSize;
+				obj.SearchMyTeam=true;
+				if(input_username.text!=""){
+					obj.LikeUserName=input_username.text;
+				}
+				if(cb_status.selectedItem && cb_status.selectedItem.value!="all"){
+					obj.DrawingsState=cb_status.selectedItem.value;
+				}
+				if(df_start.text && df_end.text){
+					obj.BeginDate=df_start.text+" 00:00:00";
+					obj.EndDate=df_end.text+" 23:59:59";
+				}
+				return obj;
+			}
+			protected function df_start_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				if(df_start.text==""){
+					return;
+				}
+				var str:Array=df_start.text.split("-");
+				var temp:Date = new Date();
+				if(this.timeType.selectedIndex==0){
+					df_end.disabledRanges=[{rangeStart:new Date(temp.fullYear,temp.month,temp.date+1)},{rangeEnd:new Date(int(str[0]),int(str[1])-1,int(str[2])-1)}];
+				}else{
+					df_end.disabledRanges=[{rangeStart:new Date(temp.fullYear,temp.month,temp.date-3)},{rangeEnd:new Date(int(str[0]),int(str[1])-1,int(str[2])-1)}];
+				}
+			}
+			protected function df_end_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				if(df_end.text==""){
+					return;
+				}
+				var str:Array=df_end.text.split("-");
+				var temp:Date = new Date();
+				if(this.timeType.selectedIndex==0){
+					df_start.disabledRanges=[{rangeStart:new Date(int(str[0]),int(str[1])-1,int(str[2])+1)},{rangeEnd:new Date(temp.fullYear,temp.month,temp.date-4)}];
+				}else{
+					df_start.disabledRanges=[{rangeStart:new Date(int(str[0]),int(str[1])-1,int(str[2])+1)},{rangeEnd:new Date(temp.fullYear,temp.month,temp.date-33)}];
+				}
+			}
+			/**
+			 *初始化页面信息 
+			 **/
+			private function initPropertys():void{
+				cb_status.selectedIndex=2; 
+				timeType.selectedIndex = 0;
+				
+				//默认实现
+				this.timeType_changeHandler(null);
+				
+				
+				//var d:Date=new Date();
+				//df_start.selectedDate=new Date();;
+				//df_end.selectedDate= new Date();
+				//df_start.text=df1.format(df_start.selectedDate);
+				//df_end.text=df1.format(df_end.selectedDate);
+				
+				
+				
+				page.pageSelector.text="";
+			}
+			
+			protected function page_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				// TODO Auto-generated method stub
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				var page:int=int(event.body);
+				currentPage=page;
+				getUserRechargeInfo();
+			}
+			/**
+			 *校验查询条件 
+			 **/
+			private function checkPropertys():Boolean{
+				if(df_start.text!="" && df_end.text==""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_account_detail_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(df_start.text=="" && df_end.text!=""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_account_detail_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(df_start.text!="" && df_end.text!=""){
+					var start:String=df.format(df_start.text);
+					start=start.replace(myPattern1,"");
+					var end:String=df.format(df_end.text);
+					end=end.replace(myPattern1,"");
+					if(start>end){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_account_detail_check2'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				}
+				return true;
+			}
+			/**
+			 *查询操作 
+			 **/
+			protected function submit(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(!checkPropertys())
+					return;
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=1;
+				getUserRechargeInfo();
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			/**
+			 *	切换查询区间时执行
+			 *
+			 */
+			protected function timeType_changeHandler(event:IndexChangeEvent):void
+			{
+				trace(timeType.selectedIndex+"");
+				var d:Date=new Date();
+				if(0==timeType.selectedIndex){
+					//开始时间默认时间
+					df_start.selectedDate=new Date();
+					df_start.text=df1.format(df_start.selectedDate);
+					//开始时间可选设置
+					df_start.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date+1)},{rangeEnd:new Date(d.fullYear,d.month,d.date-4)}];
+					//结束时间默认时间
+					df_end.selectedDate= new Date();
+					df_end.text=df1.format(df_end.selectedDate);
+					//结束时间可选设置
+					df_end.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date+1)},{rangeEnd:new Date(df_start.selectedDate.fullYear,df_start.selectedDate.month,df_start.selectedDate.date-1)}];
+				}else{
+					//开始时间默认时间
+					df_start.selectedDate=new Date(d.fullYear,d.month,d.date-4);
+					df_start.text=df1.format(df_start.selectedDate);
+					//开始时间可选设置
+					df_start.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date-3)},{rangeEnd:new Date(d.fullYear,d.month,d.date-33)}];
+					//结束时间默认时间
+					df_end.selectedDate= new Date(d.fullYear,d.month,d.date-4);
+					df_end.text=df1.format(df_end.selectedDate);
+					//结束时间可选设置
+					df_end.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date-3)},{rangeEnd:new Date(df_start.selectedDate.fullYear,df_start.selectedDate.month,df_start.selectedDate.date-1)}];
+					
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 过滤条件 -->
+	<s:HGroup  id="vg_main" top="10" verticalAlign="middle" width="100%" gap="0">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','userName')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:TextInput id="input_username"   styleName="personalCenterDetailTextInputStyle" width="80"/>
+		<s:Spacer width="20" />
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','cash_State')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:ComboBox width="90" initialize="cb_status.textInput.editable = false" id="cb_status" styleName="personalCenterDetailComboBoxStyle" dataProvider="{cbRechargers}" labelField="label" selectedIndex="2"/>
+		<s:Spacer width="20" />
+		<mx:Label text="选择：" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:ComboBox width="90" change="timeType_changeHandler(event)" initialize="timeType.textInput.editable = false" id="timeType" styleName="personalCenterDetailComboBoxStyle" dataProvider="{dateTimeType}" labelField="label"/>
+		<s:Spacer width="20" />
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','trad_Time2')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<single:MyDateField width="120" id="df_start" styleName="personalCenterDateFieldStyle" formatString="YYYY-MM-DD" 
+					  change="df_start_changeHandler(event)" buttonMode="true"/>
+		<mx:Label text="至" styleName="personalCenterDetailLabelStyle_1"/>
+		<single:MyDateField width="120" id="df_end" styleName="personalCenterDateFieldStyle" formatString="YYYY-MM-DD" 
+					  change="df_end_changeHandler(event)" buttonMode="true"/>
+		<s:Spacer width="20" />	
+		<s:Button label="{resourceManager.getString('PersonalCenterPage','ensure')}" styleName="personalLookButtonStyle"
+					  click="submit(event)" buttonMode="true" verticalCenter="0" />	
+	</s:HGroup>
+	<!--具体内容-->
+	<s:Group top="{vg_main.height+20}" >
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff" alpha="0"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect id="fill1" width="100%" height="35">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x6a6969" alpha="1"/>
+					<s:GradientEntry color="0x595858" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:VGroup height="100%" gap="-1" id="vg">
+			<s:Group height="70"   width="100%" id="g_page" visible="false" includeInLayout="false">
+				<s:Rect x="0" id="border" width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient >
+							<s:GradientEntry color="0xcfcece" alpha="1"/>
+						</s:LinearGradient>
+					</s:fill>
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<s:VGroup  left="10" right="10" height="100%" verticalAlign="middle">
+					<s:HGroup  horizontalAlign="left" verticalAlign="middle" width="100%" height="30%">
+						<mx:Label text="{resourceManager.getString('PersonalCenterPage','success_Cash_Money')}：" styleName="personalCenterDetailLabelStyle_1"/>
+						<mx:Label id="label_totals"  text="0" styleName="personalCenterDetailLabelStyle_3"/>
+						<mx:Label text="{CurrentUserInfo.moneyType}" styleName="personalCenterDetailLabelStyle_1"/>
+					</s:HGroup>
+					<s:HGroup horizontalAlign="right" verticalAlign="middle" height="30%" width="100%">
+						<common:PopUpChangePageComponent width="100%" height="100%" id="page" ChangePageIndex="page_ChangePageIndexHandler(event)"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:Group>
+		
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading"/>
+</s:Group>

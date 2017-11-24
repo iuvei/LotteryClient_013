@@ -1,0 +1,743 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  width="950" height="450"  
+		  creationComplete="group1_creationCompleteHandler(event)" >
+	<fx:Declarations>
+		<s:Sequence id="seqeffect" duration="500">
+			<!--<s:Move yFrom="260" yTo="210" />-->
+			<s:Fade alphaFrom="0" alphaTo="1"/>
+			<s:Pause duration="100"/>
+			<!--<s:Move yFrom="{(400-label_succ.height)/2}" yTo="0"/>-->
+			<s:Fade alphaFrom="1" alphaTo="0"/>
+		</s:Sequence>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.UserDetailVo;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			/**
+			 *'/^(?=.{6,16})(?=.*[a-zA-Z])(?=.*[0-9])[0-9a-zA-Z]*$/' 
+			 * 验证字符串为6-16位，字母和数字组成
+			 * 
+			 */
+			private var pswTest:RegExp = /^(?=.{6,16})(?=.*[a-zA-Z])(?=.*[0-9])[0-9a-zA-Z]*$/;
+			
+			private var myreg:RegExp=/[\u4e00-\u9fa5]|^[a-zA-Z0-9]+$/;//验证持卡人只能是汉字、字母、数字
+			
+			private var memberArrCol:ArrayCollection;
+			
+			private var proxyArrCol:ArrayCollection;
+			
+			//是否显示url链接
+			[Bindable]
+			private var urlState:Boolean = false;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var arr:Array = [];
+				var maxRebate:int = CurrentBusinessInfo.maxRebate;
+				var minRebate:int = CurrentBusinessInfo.minRebate;
+				var cRebate:int = CurrentBusinessInfo.cRebate;
+				
+				var hRebate:int = CurrentUserInfo.hRebate;
+				var qRebate:int = CurrentUserInfo.qRebate;
+				var xRebate:int = CurrentUserInfo.xRebate;
+				var myRebate:int = CurrentUserInfo.myRebate;
+				var qARebate:int = CurrentUserInfo.qARebate;
+				
+				//				HREBATE=会员返点区间配置的这个1958
+				//				QREBATE=前台开户允许范围的这个1940
+				
+				var rebate:int;//会员返点
+				
+				var rebateArr:Array = [];//返点数组
+				
+				var memberArr:Array = [];//会员返点
+				
+				var proxyArr:Array = [];//proxy返点
+				
+				
+				rebateArr.push(hRebate);
+				rebateArr.push(qRebate);
+				rebateArr.push(myRebate);
+				rebateArr.sort(Array.NUMERIC);
+				if(rebateArr[0] >= minRebate)
+					rebate = rebateArr[0];
+				else if(rebateArr[1] >= minRebate)
+					rebate = rebateArr[1];
+				else if(rebateArr[2] >= minRebate)
+					rebate = rebateArr[2];
+				
+				if(rebate==myRebate){
+					//memberArr = getRebateArr(rebate-xRebate, minRebate, xRebate);
+					memberArr = getRebateArr(rebate, minRebate, xRebate);
+				}else{
+					memberArr = getRebateArr(rebate, minRebate, xRebate);
+				}
+				
+				if((myRebate-xRebate)>qARebate){
+					proxyArr = getRebateArr(qARebate, minRebate, xRebate);
+				}else{
+					//proxyArr = getRebateArr(myRebate-xRebate, minRebate, xRebate);
+					proxyArr = getRebateArr(myRebate, minRebate, xRebate);
+				}
+				
+				memberArrCol = new ArrayCollection(memberArr);
+				proxyArrCol = new ArrayCollection(proxyArr);
+				
+				rebateCombox.dataProvider = proxyArrCol;
+				rebateCombox.selectedIndex = 0;
+				rebateBelow.dataProvider = proxyArrCol;
+				rebateBelow.selectedIndex = 0;
+				/*
+				if(CurrentUserInfo.rRebate == null || CurrentUserInfo.rRebate == "null" || CurrentUserInfo.rRebate == "-1" || CurrentUserInfo.rRebate == "")
+				rebateBelow.selectedIndex = 0;
+				else
+				{
+				var i:int;
+				for(i = 0; i < memberArrCol.length; i++)
+				{
+				if(memberArrCol[i].rebate.toString() == CurrentUserInfo.rRebate)
+				break;
+				}
+				rebateBelow.selectedIndex = i;
+				urlAddress.text = CurrentBusinessInfo.registerUrl+"" + CurrentUserInfo.myUserID;
+				}
+				*/
+				
+				createGridInitProperties();
+			}
+			
+			private function getRebateArr(rebate:int, minRebate:int, xRebate:int):Array
+			{
+				var arr:Array = [];
+				var count:int = 1;
+				
+				if(!(rebate % 2) && rebate >= minRebate)
+				{
+					//arr.push({"index":0, "rebate":"统一设置"});
+					
+					while(rebate >= minRebate)
+					{
+						var obj:Object = new Object();
+						obj.index = count;
+						obj.rebate = rebate;
+						arr.push(obj);
+						rebate -= xRebate;
+						count++;
+					}
+				}
+				return arr;
+			}
+			private var tempSaveState:Boolean = true;
+			protected function userRegistHandler(event:MouseEvent):void
+			{
+				if(!tempSaveState){
+					return;
+				}
+				
+				//psd_focusOutHandler(null);
+				var alert:AlertMsgCenter = new AlertMsgCenter();
+				// || psdtip.text!="√"
+				if(tips.text!="√"){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return;
+				}
+				tempSaveState = false;
+				var obj:Object = new Object();
+				obj.UserName = userName.text;
+				obj.Password = psd.text;
+				/* if(rebateCombox.selectedIndex == 0)
+				{
+					alert.show("请确认添加信息是否正确！", "温馨提示");
+					return;
+				} */
+				obj.Rebate = rebateCombox.selectedItem.rebate;
+				obj.RegistChild = true;
+				obj.IsAgent = agent.selected;
+				var ser:ServerToolImpl = new ServerToolImpl();
+				ser.userRegist(obj, resultHandler, faultHandler);
+			}
+			
+			private function resultHandler(e:ResultEvent):void
+			{
+				tempSaveState = true;
+				var data:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				var alert:AlertMsgCenter = new AlertMsgCenter();
+				if(data.SystemState.toString() =="64")
+				{
+					userName.text = "";
+					//psd.text = "";
+					tips.text="";
+					psdtip.text="";
+					rebateCombox.dataProvider = proxyArrCol;
+					rebateCombox.selectedIndex = 0;
+					agent.selected = true;
+					
+//					alert.show("注册成功", "温馨提示");
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_state1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+				}else if(data.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(data.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else if(data.SystemState.toString() == "128"){
+					if(data.ErrorCode){
+						if(data.ErrorCode==1||data.ErrorCode=="1"){
+//							alert.show("此用户不能创建下级!", "温馨提示");
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_state2'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						}else if(data.ErrorCode==2||data.ErrorCode=="2"){
+//							alert.show("注册人数已满!", "温馨提示");
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_state3'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						}else if(data.ErrorCode==3||data.ErrorCode=="3"){
+//							alert.show("系统异常", "温馨提示");
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_state4'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						}else{
+//							alert.show("注册失败", "温馨提示");
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_state5'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						}
+					}else{
+//						alert.show("注册失败", "温馨提示");
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_state5'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+				}
+				//Util.getInstance().systemMsgTipHandler(data.SystemState.toString());
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			private function faultHandler(e:FaultEvent):void
+			{
+				var alert:AlertMsgCenter = new AlertMsgCenter();
+				
+			}
+			
+			protected function checkUserName(event:FocusEvent):void
+			{
+				
+				if(""==userName.text){
+					tips.text=resourceManager.getString('PersonalCenterPage','account_Check_Tips_3');
+					return;
+				}
+				var str:String=userName.text.replace(/[^\x00-\xff]/g,"x");
+				if(!myreg.test(str)){
+					tips.text = resourceManager.getString('PersonalCenterPage','account_Check_Tips_2');
+					userName.text="";
+					return;
+				}
+				if(myreg.test(userName.text)){
+					if(userName.text.replace(/[^\x00-\xff]/g,"xx").length<4 || userName.text.replace(/[^\x00-\xff]/g,"xx").length>25){
+						tips.text = resourceManager.getString('PersonalCenterPage','account_Check_Tips_1');
+						userName.text="";
+						return;
+					}
+				}
+				tips.text="";
+				var obj:Object = new Object();
+				obj.Username = userName.text;
+				obj.SaleID = CurrentBusinessInfo.MerchantCode;
+				var ser:ServerToolImpl = new ServerToolImpl();
+				ser.checkUserName(obj, checkUserSuccessHandler, checkUserFaultHandler);
+			}
+			
+			private function checkUserSuccessHandler(e:ResultEvent):void
+			{
+				var data:Object = JSON.parse(e.result.toString());
+				if(data.hasOwnProperty("SystemState")){
+					if(data.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(data.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				
+				if(data.Result=="1"){
+					tips.text = resourceManager.getString('PersonalCenterPage','account_Check_Tips');
+					userName.text = "";
+				}else{
+					tips.text = "√";
+				}
+			}
+			
+			private function checkUserFaultHandler(e:ResultEvent):void
+			{
+				var alert:AlertMsgCenter = new AlertMsgCenter();
+				alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_insert_check2'),
+					resourceManager.getString('PersonalCenterPrompt','alert_title'));
+			}
+			
+			protected function agentOrNotclickHandler(event:MouseEvent):void
+			{
+				var target:RadioButton = event.currentTarget as RadioButton;;
+				if(target.id == "agent" && target.selected)
+				{
+					rebateCombox.dataProvider = proxyArrCol;
+					rebateCombox.selectedIndex = 0;
+				}
+				
+				else if(target.id == "nAgent" && target.selected)
+				{
+					rebateCombox.dataProvider = memberArrCol;
+					rebateCombox.selectedIndex = 0;
+				}
+			}
+			
+			protected function userName_focusInHandler(event:FocusEvent):void
+			{
+				tips.text=="";
+			}
+			
+			protected function psd_focusOutHandler(event:Event):void
+			{
+				/* if(psd.text.length<6||psd.text.length>16){
+					psdtip.text=resourceManager.getString('PersonalCenterPage','money_Password_Tips_1');
+				}else{
+					psdtip.text="√";
+				} */
+				
+				if(psd.text.length>=6&&psd.text.length<=16){
+					if(pswTest.test(psd.text)){
+						psdtip.text="√";
+						//trace(pswTest.test(psd.text.toString())+"==="+psd.text.toString());
+					}else{
+						//psdtip.text="√";
+						psdtip.text=resourceManager.getString('PersonalCenterPage','money_Password_Tips_1');
+					}
+				}else{
+					psdtip.text=resourceManager.getString('PersonalCenterPage','money_Password_Tips_1');
+				}
+				
+			}
+			
+			protected function psd_focusInHandler(event:FocusEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(psd.text.length>=6&&psd.text.length<=16){
+					if(pswTest.test(psd.text)){
+						psdtip.text="√";
+						//trace(pswTest.test(psd.text.toString())+"==="+psd.text.toString());
+					}else{
+						//psdtip.text="√";
+						psdtip.text=resourceManager.getString('PersonalCenterPage','money_Password_Tips_1');
+					}
+				}else{
+					psdtip.text=resourceManager.getString('PersonalCenterPage','money_Password_Tips_1');
+				}
+			}
+			
+			protected function copy_clickHandler(event:MouseEvent):void
+			{
+				System.setClipboard(urlAddress.text);
+				seqeffect.play([label_succ]);
+				
+				/* var alert:AlertMsgCenter = new AlertMsgCenter();
+				alert.show("已复制到粘贴板", "温馨提示"); */
+			}
+			
+			private function urlClickHandler(e:Event):void
+			{
+				var obj:Object = new Object();
+				/* if(rebateBelow.selectedIndex == 0)
+				{
+					var alert:AlertMsgCenter = new AlertMsgCenter();
+					alert.show("请确认添加信息是否正确！", "温馨提示");
+					return;
+				} */
+				obj.Rebate = rebateBelow.selectedItem.rebate;
+				var ser:ServerToolImpl = new ServerToolImpl();
+				ser.setUserPromotionRebate(obj, userPromotionResultHandler, faultHandler);
+			}
+			
+			private function userPromotionResultHandler(e:ResultEvent):void
+			{
+				var obj:Object = JSON.parse(e.result.toString());
+				
+				if(obj.hasOwnProperty("SystemState")){
+					if(obj.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(obj.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				
+				if(obj.SystemState == 64)
+				{
+					urlState = true;
+					urlAddress.text = CurrentBusinessInfo.registerUrl+"" + CurrentUserInfo.myUserID;
+					refresnUserDetail();
+					//需求要求去掉弹出框提示（修改返点时也不弹框提示）
+					/* var alert:AlertMsgCenter = new AlertMsgCenter();
+					alert.show("设置成功！", "温馨提示"); */
+				}
+			}
+			
+			private function refresnUserDetail():void{
+				var server:ServerToolImpl = new ServerToolImpl();
+				server.getUserDetailNew({}, resultHandler1);
+			}
+			/**
+			 *查询用户信息 
+			 **/
+			private function resultHandler1(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64){
+					var userVo:UserDetailVo = new UserDetailVo();
+					if(obj.hasOwnProperty("UserName")){
+						userVo.UserName=obj.UserName;
+					}
+					if(obj.hasOwnProperty("IDCardNumber")){
+						userVo.IDCardNumber=obj.IDCardNumber;
+					}
+					if(obj.hasOwnProperty("UserRealName")){
+						userVo.UserRealName=obj.UserRealName;
+					}
+					if(obj.hasOwnProperty("BankCode")){
+						userVo.BankCode=obj.BankCode;
+					}
+					if(obj.hasOwnProperty("CardNumber")){
+						userVo.CardNumber=obj.CardNumber;
+					}
+					if(obj.hasOwnProperty("EMail")){
+						userVo.EMail=obj.EMail;
+					}
+					if(obj.hasOwnProperty("Mobile")){
+						userVo.Mobile=obj.Mobile;
+					}
+					if(obj.hasOwnProperty("Province")){
+						userVo.Province=obj.Province;
+					}
+					if(obj.hasOwnProperty("City")){
+						userVo.City=obj.City;
+					}
+					if(obj.hasOwnProperty("QQ")){
+						userVo.QQ=obj.QQ;
+					}
+					if(obj.hasOwnProperty("IsAgent")){
+						userVo.IsAgent=obj.IsAgent;
+					}
+					if(obj.hasOwnProperty("StopAddChild")){
+						userVo.StopAddChild=obj.StopAddChild;
+					}
+					CurrentUserInfo.qRebate=obj.QRebate;
+					CurrentUserInfo.hRebate=obj.HRebate;
+					CurrentUserInfo.xRebate=obj.XRebate;
+					CurrentUserInfo.myRebate=obj.MyRebate;
+					CurrentUserInfo.myRebateDifference=obj.MyRebateDifference;
+					CurrentUserInfo.generalRebate=obj.GeneralRebate;
+					CurrentUserInfo.myUserID=obj.MyUserID;	
+					CurrentUserInfo.rRebate=obj.RRebate;
+					if(obj.hasOwnProperty("WEBUrl")){
+						CurrentBusinessInfo.registerUrl = obj.WEBUrl;
+					}
+					if(obj.Status){
+						if(obj.Status == 1 ){
+							CurrentUserInfo.userStatus = true;
+						}else{
+							CurrentUserInfo.userStatus = true;
+						}
+						
+					}
+//					PersonCenterInfo.userInfoDetail = userVo;
+					PersonCenterInfo.userInfoDetail.UserLevel = obj.UserLevel;
+					
+					PersonCenterInfo.userInfoDetail.ChildCount = obj.ChildCount;
+					PersonCenterInfo.userInfoDetail.TeamMemberCount = obj.TeamMemberCount;
+				}else if(obj.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					
+				}
+			}
+			
+			//订单状态
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:100},
+				{title:"b",w:100},
+				{title:"c",w:100}]);
+			private var models:ArrayCollection=new ArrayCollection([
+				{orderMask:"Rebate",width:100},
+				{orderMask:"Capacity",width:100},
+				{orderMask:"RegisNum",width:100}]);
+			
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					//					gridItem.styleName = "RecordsGridItemStyle_borderBlack";
+					gridItem.horizontalScrollPolicy = "off";
+					gridItem.verticalScrollPolicy = "off";
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = "返点";
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = "总配额";
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = "剩余配额";
+					}
+					label.styleName="personalCenterDetailLabelStyle_1";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				
+				getAgentsRenbate();
+			}
+			
+			/**
+			 * 查询数据
+			 */
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			private var service:ServerToolImpl;
+			protected function getAgentsRenbate():void{
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var object:Object = new Object();
+				service.getAgentsRenbate(object,getAgentsRenbateHandler);
+			}
+			protected function getAgentsRenbateHandler(event:ResultEvent):void
+			{
+				trace(event.result.toString());
+				var object:Object = JSON.parse(event.result.toString());
+				if(object.SystemState== 64)
+				{
+					var array:Array = object.GetRm as Array;
+					if(array.length==0){
+						createGridOneRow();
+						return;
+					}
+					updateViewPropertysValue(array);
+					 
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bets_records_error'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+				}
+			}
+			
+			public function updateViewPropertysValue(source:Array):void
+			{
+				if(source == null){
+					return;
+				}
+				//数据进行筛选;
+				var arr:Array = new Array();
+				for(var j:int=0; j<source.length; j++)
+				{
+					//if( CurrentUserInfo.hRebate <= source[j].Rebate )
+					if( 1950 <= source[j].Rebate )
+					{
+						arr.push(source[j]);
+					}
+				}
+				source = new Array();
+				source = arr;
+				
+				var d:Date=new Date();
+				var promptGrid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				promptGrid.removeAllChildren();//清空所有子项
+				for(var j:int=0; j<source.length; j++){
+					var promptRow:GridRow = new GridRow();
+					promptRow.height = 30;
+					promptGrid.addChild(promptRow);
+					var label1:Label;
+					for(var n:int=0; n<models.length; n++){
+						var promptItem:GridItem = new GridItem();
+						promptItem.width = models.getItemAt(n).width;
+						var str:String = models.getItemAt(n).orderMask;
+						label1=new Label();
+						if(str == "Rebate"){
+							label1.text = source[j].Rebate;
+						}else if(str == "Capacity")
+						{
+							label1.text = source[j].Capacity;
+						}else if(str == "RegisNum"){
+							if( Number(source[j].Capacity) < 0  )
+							{
+								label1.text = "无限制";
+							}else{
+								label1.text = (int(source[j].Capacity) - int(source[j].RegisNum)).toString();
+							}
+						}
+						
+						promptItem.addChild(label1);
+						label1.styleName="personalCenterDetailLabelStyle_1";								
+						promptRow.addChild(promptItem);
+					}
+				}
+				vg.addElementAt(promptGrid,1);
+			} 
+			
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.horizontalScrollPolicy = "off";
+				item.verticalScrollPolicy = "off";
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:VGroup gap="20"  left="50" width="90%" height="100%" horizontalAlign="center">
+		<s:Spacer/>
+		<s:HGroup width="100%">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','register_Next_Level')}"  styleName="personalCenterDetailLabelStyle_black"/>
+		</s:HGroup>
+		<s:VGroup top="40" width="90%"  gap="10">
+			<s:HGroup width="100%" verticalAlign="middle">
+				<mx:Label text="{resourceManager.getString('PersonalCenterPage','next_Level_Style')}：" width="10%"  styleName="personalCenterDetailLabelStyle_1"/>
+				<s:RadioButton id="agent" label="{resourceManager.getString('PersonalCenterPage','agency')}" selected="true" styleName="personalCenterRadioButtonStyle" click="agentOrNotclickHandler(event)" buttonMode="true"/>
+				<s:RadioButton id="nAgent" label="{resourceManager.getString('PersonalCenterPage','member')}" styleName="personalCenterRadioButtonStyle" click="agentOrNotclickHandler(event)" buttonMode="true"/>
+			</s:HGroup>
+			<s:HGroup width="100%" verticalAlign="middle">
+				<mx:Label text="{resourceManager.getString('PersonalCenterPage','userName')}：" width="10%" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput id="userName"  styleName="personalCenterDetailTextInputStyle" focusIn="userName_focusInHandler(event)"  maxChars="25" focusOut="checkUserName(event)" />
+				<mx:Label text="*" styleName="personalCenterDetailLabelStyle_4"/>
+				<mx:Label text="" styleName="personalCenterDetailLabelStyle_4" id="tips"/>
+			</s:HGroup>
+			<s:HGroup width="100%" verticalAlign="middle">
+				<mx:Label text="{resourceManager.getString('PersonalCenterPage','password')}：" width="10%" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput id="psd" text="a123456" visible="false" includeInLayout="false"  restrict="0-9A-Za-z_"  styleName="personalCenterDetailTextInputStyle" displayAsPassword="true" focusIn="psd_focusInHandler(event)" change="psd_focusOutHandler(event)"/>
+				<mx:Label text="初始密码“a123456”" styleName="personalCenterDetailLabelStyle_4"/>
+				<mx:Label text="*" styleName="personalCenterDetailLabelStyle_4"/>
+				<mx:Label text="" visible="false" styleName="personalCenterDetailLabelStyle_4" id="psdtip"/>
+			</s:HGroup>
+			<s:HGroup width="100%" verticalAlign="middle">
+				<mx:Label text="{resourceManager.getString('PersonalCenterPage','rebates')}：" width="10%" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:ComboBox initialize="rebateCombox.textInput.editable = false" id="rebateCombox" styleName="personalCenterDetailComboBoxStyle" labelField="rebate"/>
+			</s:HGroup>
+			<s:HGroup width="100%" verticalAlign="middle">
+				<s:Spacer width="77"/>
+				<s:Button label="{resourceManager.getString('PersonalCenterPage','save')}" styleName="personalSubmitButtonStyle" click="userRegistHandler(event)" buttonMode="true"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:HGroup width="100%" verticalAlign="middle">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','generate_Promotion_Link')}"   styleName="personalCenterDetailLabelStyle_black"/>
+		</s:HGroup>
+	    <s:VGroup width="90%" gap="10">
+			<s:HGroup verticalAlign="middle"  >
+				<mx:Label text="{resourceManager.getString('PersonalCenterPage','member_Rebates')}：" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:ComboBox initialize="rebateBelow.textInput.editable = false" id="rebateBelow" styleName="personalCenterDetailComboBoxStyle" labelField="rebate"/>
+				<s:Spacer width="30"/>
+				<s:Button label="{resourceManager.getString('PersonalCenterPage','generate')}" styleName="personalSubmitButtonStyle" click="urlClickHandler(event)" buttonMode="true"/>
+			</s:HGroup>
+			<s:HGroup width="100%" horizontalCenter="0" verticalCenter="0"  verticalAlign="middle" visible="{urlState}" includeInLayout="{urlState}">
+				<mx:Label text="{resourceManager.getString('PersonalCenterPage','link')}：" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput id="urlAddress"  styleName="personalCenterDetailTextInputStyle" width="70%" editable="false"/>
+				<s:Button  label="{resourceManager.getString('PersonalCenterPage','copy')}" styleName="personalSubmitButtonStyle" click="copy_clickHandler(event)" buttonMode="true"/>
+				<mx:Label id="label_succ" styleName="personalCenterDetailLabelStyle_3"  right="5" top="230" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+			</s:HGroup>
+			<s:HGroup height="10%" left="30" bottom="60" horizontalAlign="left" width="100%" visible="{urlState}" includeInLayout="{urlState}">
+				<mx:Label text="{resourceManager.getString('PersonalCenterPage','promotion_Link_Tips')}" styleName="personalCenterDetailLabelStyle_4"/>
+			</s:HGroup>
+		</s:VGroup>
+	</s:VGroup>
+	
+	<s:Group visible="false" includeInLayout="false">
+		<s:Scroller styleName="personalCenterScrollerStyle_1" left="570" top="50" width="310" height="240" horizontalScrollPolicy="off">
+			<s:VGroup  gap="0" horizontalAlign="center" id="vg" />
+		</s:Scroller>
+		<mx:Label x="572" y="20" styleName="personalCenterDetailLabelStyle_black" text="配额列表"/>
+	</s:Group>
+</s:Group >

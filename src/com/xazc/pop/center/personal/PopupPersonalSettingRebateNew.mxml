@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var imgArr:Array = [
+				"css/skin1/images/SettingRebateNew/ssc.jpg",
+				"css/skin1/images/SettingRebateNew/11to5.jpg",
+				"css/skin1/images/SettingRebateNew/ssl.jpg",
+				"css/skin1/images/SettingRebateNew/fc3D.jpg",
+				"css/skin1/images/SettingRebateNew/pl3.jpg",
+				"css/skin1/images/SettingRebateNew/pl5.jpg",
+				"css/skin1/images/SettingRebateNew/kl8.jpg",
+				"css/skin1/images/SettingRebateNew/pk10.jpg",
+				"css/skin1/images/SettingRebateNew/k3.jpg"
+			];
+			private var title_imgArr:Array = [
+				"css/skin1/images/SettingRebateNew/title_four.jpg",
+				"css/skin1/images/SettingRebateNew/title_three.jpg"
+			];
+			
+			[Bindable]
+			private var playtypeArr:ArrayCollection=new ArrayCollection([
+				{label:"时时彩"},
+				{label:"11选5"},
+				{label:"时时乐"},
+				{label:"3D"},
+				{label:"排列三"},
+				{label:"排列五"},
+				{label:"快乐8"},
+				{label:"PK拾"},
+				{label:"快3"},
+			]);
+			
+			protected function PlayType_changeHandler(event:IndexChangeEvent):void
+			{
+				if(PlayType.selectedIndex == 6 || PlayType.selectedIndex == 7 || PlayType.selectedIndex == 8){
+					title_img.source = title_imgArr[1];
+				}else{
+					title_img.source = title_imgArr[0];
+				}
+				
+				img.source = imgArr[PlayType.selectedIndex];
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" gap="10" left="3" right="3" top="10">
+		<s:HGroup width="100%" verticalAlign="bottom">
+			<s:ComboBox width="150" id="PlayType" styleName="personalCenterDetailComboBoxStyle"  selectedIndex="0"
+						initialize="PlayType.textInput.editable = false"
+						dataProvider="{playtypeArr}" change="PlayType_changeHandler(event)" />
+			<s:Label width="100%" textAlign="right" text="奖金按1800奖金模式计算" styleName="personalCenterDetailLabelStyle_4" />
+		</s:HGroup>
+		
+		<s:VGroup gap="-1">
+			<s:Image id="title_img" source="{title_imgArr[0]}" />	
+			<s:Scroller width="933" height="375" styleName="personalCenterScrollerStyle_1"  buttonMode="true" horizontalScrollPolicy="off">
+				<s:Group width="100%" height="100%">
+					<s:Image id="img" source="{imgArr[0]}" />	
+				</s:Group>
+			</s:Scroller>
+		</s:VGroup>
+		
+	</s:VGroup>
+	
+</s:Group>

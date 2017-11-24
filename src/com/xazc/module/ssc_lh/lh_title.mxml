@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.Util;
+			protected function group1_rollOverHandler(event:MouseEvent):void
+			{
+				banben.setStyle("color","0xe1af2d");
+			}
+			
+			protected function group1_rollOutHandler(event:MouseEvent):void
+			{
+				banben.setStyle("color","0xffffff");
+			}
+			
+			protected function qiehuan_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.lotteryID = "12";
+				Util.getInstance().dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE, obj));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Image source="css/skin1/images/lhImg/lh_title_ico.png"/>
+	
+	<s:HGroup x="1" y="77" width="99" height="30" horizontalAlign="center" verticalAlign="middle" buttonMode="true"
+			  click="qiehuan_clickHandler(event)"
+			  rollOut="group1_rollOutHandler(event)"
+			  rollOver="group1_rollOverHandler(event)">
+		<s:Label id="banben" text="切换到普通版" fontSize="14" fontFamily="微软雅黑" color="0xffffff"/>
+	</s:HGroup>
+	
+</s:Group>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:lotteryindex="com.xazc.view.index.lotteryindex.*"
+		 xmlns:index="com.xazc.view.index.*"
+		 width="100%">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.Util;
+			
+			private var alert:AlertMsg = new AlertMsg();
+			protected function button1_clickHandler(num:Number):void
+			{
+				var arr:Array=CurrentBusinessInfo.canSalableLotteries.split(",");
+				var obj:Object = new Object();
+				obj.lotteryID = num;
+				for(var i:int = 0;i<arr.length;i++){
+					if(arr[i]==num){
+						Util.getInstance().dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE, obj));
+						return;
+					}
+				}
+				alert.show('该彩种暂停销售!','温馨提示');
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Group width="100%">
+		
+		<s:VGroup width="100%" gap="-3">
+			<s:Group width="100%">
+				<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/huodongbg.jpg')" width="100%" smooth="true"/>
+				<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="bottom">
+					<lotteryindex:LotteryIndexViewNewBanner/>
+					<!--<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/act_1.png')" />-->
+				</s:HGroup>
+			</s:Group>
+			<s:Group width="100%">
+				<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/index_lotterys.jpg')" smooth="true" width="100%"/>
+				<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" gap="30">
+					<!--<lotteryindex:LotteryIndexItem LotteryId="12"  buttonMode="true"  click="button1_clickHandler(12)"/>-->
+					<s:Button styleName="lotterySelectBtnStyle_12"   buttonMode="true"  click="button1_clickHandler(12)"/>
+					<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/Lottery_line.png')" />
+					
+					<!--<lotteryindex:LotteryIndexItem LotteryId="50"  buttonMode="true"   click="button1_clickHandler(50)"/>-->
+					<s:Button styleName="lotterySelectBtnStyle_50"   buttonMode="true"  click="button1_clickHandler(50)"/>
+					<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/Lottery_line.png')" />
+					
+					<!--<lotteryindex:LotteryIndexItem LotteryId="51"  buttonMode="true"  click="button1_clickHandler(51)"/>-->
+					<s:Button styleName="lotterySelectBtnStyle_51"   buttonMode="true"  click="button1_clickHandler(51)"/>
+					<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/Lottery_line.png')" />
+					
+					<!--<lotteryindex:LotteryIndexItem LotteryId="19"   buttonMode="true"  click="button1_clickHandler(19)"/>-->
+					<s:Button styleName="lotterySelectBtnStyle_19"   buttonMode="true"  click="button1_clickHandler(19)"/>
+					<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/Lottery_line.png')" />
+					
+					<!--<lotteryindex:LotteryIndexItem LotteryId="61"   buttonMode="true"  click="button1_clickHandler(61)"/>-->
+					<s:Button styleName="lotterySelectBtnStyle_61"   buttonMode="true"  click="button1_clickHandler(61)"/>
+				</s:HGroup>
+			</s:Group>
+			<s:SkinnableContainer backgroundColor="0x2c2b2b" width="100%" height="400">
+				<lotteryindex:LotteryIndexHelp/>
+			</s:SkinnableContainer>
+		</s:VGroup>
+	</s:Group>
+</mx:VBox>

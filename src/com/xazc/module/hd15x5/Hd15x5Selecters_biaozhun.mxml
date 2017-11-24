@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:hd15x5="com.xazc.module.hd15x5.*"
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  width="100%" height="100%" creationComplete="vgroup1_creationCompleteHandler(event)"
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  gap="35"
+		  >
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			
+			public var configNumber:Number = 15;
+			
+			
+			public static const SEND_BIAOZHUN_NUMBERS_CLICK:String = "sendBiaozhunNumbersClick";
+			
+			private var tempNumberArr:Array = new Array();
+			
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				
+				
+			}
+			
+			
+			public function clear():void
+			{
+				tempNumberArr = new Array();
+				var togbtn:ToggleButton;
+				for(var i:int = 0; i < numbers.numElements; i++)
+				{
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = false;
+				}
+			
+			}
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var btn:ToggleButton;
+				for(var i:int = 1; i <= configNumber; i++)
+				{
+					btn = new ToggleButton();
+					
+					btn.id = "num_" + i;
+					if(i < 10)
+						btn.label = "0" + i;
+					else
+						btn.label = i.toString();
+					btn.addEventListener(MouseEvent.CLICK, nums_click);
+					btn.styleName="numberSelectSkinStyle_large";
+					numbers.addElement(btn);
+				}
+				
+				
+				
+				this.addEventListener(Hd15x5Help.HELP_ALL,selectQuan);
+				this.addEventListener(Hd15x5Help.HELP_BIG,selectDa);
+				this.addEventListener(Hd15x5Help.HELP_SMALL,selectXiao);
+				this.addEventListener(Hd15x5Help.HELP_ODD,selectJi);
+				this.addEventListener(Hd15x5Help.HELP_EVEN,selectOu);
+				this.addEventListener(Hd15x5Help.HELP_CLEAR,selectQing);
+				
+			}
+			
+			private function nums_click(event:MouseEvent):void
+			{
+				var btnTemp:ToggleButton = event.target as ToggleButton;
+				// TODO Auto-generated method stub
+				if(btnTemp.selected==true){
+					tempNumberArr.push(btnTemp.label);
+				}else{
+					tempNumberArr.splice(tempNumberArr.indexOf(btnTemp.label),1);
+				}
+				dispatchEvent(new CustomEvent(SEND_BIAOZHUN_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				
+			}
+			
+			
+			public function selectQuan(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 0;i<numbers.numElements;i++){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				dispatchEvent(new CustomEvent(SEND_BIAOZHUN_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			
+			public function selectDa(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = (numbers.numElements/2)+1;i<numbers.numElements;i++){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				dispatchEvent(new CustomEvent(SEND_BIAOZHUN_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			
+			public function selectXiao(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 0;i<(numbers.numElements/2);i++){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				dispatchEvent(new CustomEvent(SEND_BIAOZHUN_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			public function selectJi(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 0;i<numbers.numElements;i+=2){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				dispatchEvent(new CustomEvent(SEND_BIAOZHUN_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			public function selectOu(event:CustomEvent):void
+			{
+				this.selectQing();
+				var togbtn:ToggleButton;
+				for(var i:int = 1;i<numbers.numElements;i+=2){
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = true;
+					this.tempNumberArr.push(togbtn.label);
+				}
+				dispatchEvent(new CustomEvent(SEND_BIAOZHUN_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			public function selectQing(event:CustomEvent=null):void
+			{
+				this.clear();
+				dispatchEvent(new CustomEvent(SEND_BIAOZHUN_NUMBERS_CLICK,tempNumberArr.join(",")));
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" height="30">
+		<bettings:LineLeftRadiusItem width="40%" height="2" left="20" top="3"/>
+		<s:Label text="{resourceManager.getString('LotteryTips','at_Least_select_5_numbers')}" styleName="labelStyles2"/>
+		<bettings:LineRightRadiusItem width="40%" height="2" right="20" top="3"/>
+	</s:HGroup>
+	<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" gap="20">
+		<s:Button label="{resourceManager.getString('LotteryTips','select_Numbers_Area')}" styleName="orderButtonSkinStyle_large"/>
+		<s:HGroup id="numbers" gap="20"/>
+	</s:HGroup>
+	<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle">
+		<hd15x5:Hd15x5Help horizontalAlign="center">
+		</hd15x5:Hd15x5Help>
+	</s:HGroup>
+</s:VGroup>

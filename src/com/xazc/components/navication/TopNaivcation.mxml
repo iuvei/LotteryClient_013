@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  horizontalAlign="center"
+		  verticalAlign="middle"
+		  creationComplete="creationCompleteHandler(event)">
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenLite;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.controls.Image;
+			import mx.core.UIComponent;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var btnScale:Number = 0.8;
+			
+			private var lotterys:Array;
+			
+			private var showItemIndex:int = 0;
+			
+			private var visableLotterysNum:int = 0;
+			
+			private var visableLotterysNumFlag:Boolean = false;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				lotterys = CurrentBusinessInfo.canSalableLotteries.split(",");
+				var count:int = 0;
+				for(var i:int = 0; i < lotterys.length; i++)
+				{
+					
+					var imageItem:LotteryTopItem = new LotteryTopItem();
+					var colNum:Number = count;
+					imageItem.x = colNum * (imageItem.width+20);
+					imageItem.y = 40;
+					imageItem.lotteryId=lotterys[i];
+					imageItem.addEventListener("lotteryTopSelectClickEvent",clickHandler);
+					if(imageItem.x > lotterysContainer.width && !visableLotterysNumFlag)
+					{
+						visableLotterysNumFlag = true;
+						visableLotterysNum = count;
+					}
+					count++;
+					lotterysContainer.addElementAt(imageItem, i);
+				}
+				
+			 	var maskUI:UIComponent = new UIComponent();
+				maskUI.graphics.beginFill(0xff0000, 1);
+				maskUI.graphics.drawRect(0, 0, 900, 200);
+				lotterysContainer.mask = maskUI; 
+			}
+			
+			private function clickHandler(e:DynamicEvent):void
+			{
+				var id:String=e.lotteryID;
+				var obj:Object = new Object();
+				obj.lotteryID = Number(id);
+				Util.getInstance().dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE, obj));
+			}
+			
+			protected function left_btn_clickHandler(event:MouseEvent):void
+			{
+				if(showItemIndex == 0)
+					return;
+				showItemIndex--;
+				for(var i:int = 0; i < lotterysContainer.numElements; i++)
+				{
+					var imgItem:LotteryTopItem = lotterysContainer.getElementAt(i) as LotteryTopItem;
+					TweenLite.to(imgItem, 2, {x:(i - showItemIndex) * 140, y:40});
+				}
+			}
+			
+			protected function right_btn_clickHandler(event:MouseEvent):void
+			{
+				if(showItemIndex == (lotterysContainer.numElements - visableLotterysNum))
+					return;
+				showItemIndex++;
+				for(var i:int = 0; i < lotterysContainer.numElements; i++)
+				{
+					var imgItem:LotteryTopItem = lotterysContainer.getElementAt(i) as LotteryTopItem;
+					TweenLite.to(imgItem, 2, {x:(i - showItemIndex) * 140, y:40});
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer id="bc" skinClass="css.skin1.TopNavBorderContainerSkin"><!-- styleName="topNavContainerStyle">-->
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+			<s:Button id="left_btn" click="left_btn_clickHandler(event)" skinClass="css.skin1.TopNavLeftBtnStyle"/>
+			<s:HGroup width="100%" height="200" verticalAlign="middle" horizontalAlign="center">
+				<s:Group id="lotterysContainer" height="200" width="900">
+				</s:Group>
+			</s:HGroup>
+			<s:Button id="right_btn" click="right_btn_clickHandler(event)"  skinClass="css.skin1.TopNavRightBtnStyle"/>
+		</s:HGroup>
+	</s:BorderContainer>
+</s:HGroup>

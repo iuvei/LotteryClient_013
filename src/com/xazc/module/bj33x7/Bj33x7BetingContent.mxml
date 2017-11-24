@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:bj33x7="com.xazc.module.bj33x7.*"
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  width="100%" height="100%"
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  creationComplete="group1_creationCompleteHandler(event)"
+		  gap="0"
+		  >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.MathUtil;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			//注数
+			[Bindable]
+			private  var zhushu:Number = 0;
+			//钱数
+			[Bindable]
+			private  var qianshu:Number = 0;
+			//当前玩法id
+			private var game_ID:String = "2901";
+			private var sntuo:Number = 0;
+			
+			private var touzhuContent:Array = new Array();
+			
+			private var touzhuContent_1:Array = new Array();
+			private var touzhuContent_2:Array = new Array();
+			
+			
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.init();
+				
+			}
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				showSelecterItem();
+				this.addEventListener(Bj33x7Selecters_biaozhun.SEND_BIAOZHUN_NUMBERS_CLICK,numbersSelecterHandler);
+				this.addEventListener(Bj33x7Selecters_dantuo.SEND_DANTUO_NUMBERS_CLICK,numbersSelecterHandler);
+				
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_ID));
+			}
+			
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				var alert:AlertMsg;
+				if(this.sntuo==1&&zhushu==1){
+					alert = new AlertMsg();
+					//alert.show("胆拖玩法至少选择2注！", "温馨提示");
+					alert.show(resourceManager.getString("LotteryTips","lotteryAlert_001"), resourceManager.getString("LotteryTips","message_004"));
+					return;
+				}
+				
+				if(zhushu > 0){
+					var cathectic:Cathectic = new  Cathectic();
+					cathectic.lottery_type = CurrentLotteryInfo.lotteryId;
+					cathectic.game_id = game_ID;
+					cathectic.sntuo = this.sntuo;
+					cathectic.tzzs = zhushu;
+					if(this.sntuo==0){
+						cathectic.tzcontent = touzhuContent.join(",");
+					}else{
+						cathectic.tzcontent = touzhuContent_1.join(",")+"#"+touzhuContent_2.join(",");
+						
+					}
+					dispatchEvent(new BetsClickEvent(BetsClickEvent.BETS_NUMBER_CLICK,cathectic));
+					//清空选择的号码
+					this.clear();
+				}else{
+					alert = new AlertMsg();
+					//alert.show("请选择正确内容进行投注！", "温馨提示");
+					alert.show(resourceManager.getString("LotteryTips","lotteryAlert_002"), resourceManager.getString("LotteryTips","message_004"));
+				}
+				
+				
+				
+			}
+			
+			/**
+			 * 切换元角分模式，改变金额方法
+			 */		
+			public function switchModeForChangeMoney():void{
+				calcTotalNums();
+			}
+			
+			public function calcTotalNums():void
+			{
+				if(sntuo==0){
+					zhushu = touzhuContent.length * (touzhuContent.length - 1) * (touzhuContent.length - 2) * (touzhuContent.length - 3) * 
+						(touzhuContent.length - 4) * (touzhuContent.length - 5) * (touzhuContent.length - 6) / (7 * 6 * 5 * 4 * 3 * 2);
+				}else{
+					if(touzhuContent_1.length>0&&touzhuContent_2.length>0&&(touzhuContent_1.length+touzhuContent_2.length)>6){
+						
+						zhushu=MathUtil.getCCombination(touzhuContent_2.length,7-touzhuContent_1.length);
+					}else{
+						zhushu = 0;
+					}
+				}
+				qianshu = zhushu*CurrentLotteryInfo.perPrice/CurrentLotteryInfo.yuanjiaoMoshi;
+			}
+			
+			/**
+			 * 处理选择玩法处的事件
+			 * 
+			 */
+			protected function gameSelecterHandler(event:CustomEvent):void
+			{
+			}
+			/**
+			 *  处理选号区的事件
+			 * 
+			 */
+			protected function numbersSelecterHandler(event:CustomEvent):void
+			{
+				switch(event.type)
+				{
+					case Bj33x7Selecters_biaozhun.SEND_BIAOZHUN_NUMBERS_CLICK:
+					{
+						touzhuContent = (event.body as String).split(",");
+						break;
+					}
+					case Bj33x7Selecters_dantuo.SEND_DANTUO_NUMBERS_CLICK:
+					{
+						touzhuContent_1 = (event.body as Array)[0] ;
+						
+						touzhuContent_2= (event.body as Array)[1] ;
+						break;
+					}
+						
+					default:
+					{
+						break;
+					}
+				}
+				this.calcTotalNums();
+			}
+			
+			/**
+			 * 清除状态 
+			 *
+			 */
+			public function clear():void
+			{
+				this.touzhuContent = new Array();
+				this.touzhuContent_1 = new Array();
+				this.touzhuContent_2 = new Array();
+				
+				selecters_1.clear();
+				selecters_2.clear();
+				
+				this.calcTotalNums();
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				
+				
+			}
+			
+			protected function dantuo_clickHandler(sntuo:Number):void
+			{
+				this.sntuo = sntuo;
+				//切换选号页面
+				showSelecterItem();
+				//清空当前数据
+				
+			}
+			private function showSelecterItem():void
+			{
+				if(this.sntuo==0){
+					selecters_1.visible = true;
+					selecters_1.includeInLayout = true;
+					selecters_2.visible = false;
+					selecters_2.includeInLayout = false;
+					selecters_1.init();
+					paly_1.selected = true;
+					paly_2.selected = false;
+				}else{
+					selecters_1.visible = false;
+					selecters_1.includeInLayout = false;
+					selecters_2.visible = true;
+					selecters_2.includeInLayout = true;
+					selecters_2.init();
+					paly_1.selected = false;
+					paly_2.selected = true;
+				}
+				this.clear();
+			}
+			protected function game_clickHandler(event:MouseEvent):void
+			{
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_ID));
+				(event.target as ToggleButton).selected = true;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--  玩法列表  -->
+	<s:HGroup width="100%" height="37" paddingLeft="10" verticalAlign="bottom">
+		<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Number_Bet')}" selected="true" styleName="menuSelectSkinStyle" click="game_clickHandler(event)"/>
+	</s:HGroup>
+	<!--  玩法类别提示  -->
+	<s:HGroup verticalAlign="middle" width="100%" height="32" gap="1">
+		<s:Label left="30" width="115" styleName="labelStyles1" text="{resourceManager.getString('LotteryTips','play_Selected')}" textAlign="center"
+				 verticalAlign="middle" verticalCenter="0"/>
+		<s:ToggleButton label="{resourceManager.getString('LotteryTips','stander_Selected')}" id="paly_1"  verticalCenter="0" click="dantuo_clickHandler(0)" styleName="standardButtonSkinStyle" selected="true"/>
+		<s:ToggleButton label="{resourceManager.getString('LotteryTips','danTuo_Selected')}" id="paly_2" verticalCenter="0" click="dantuo_clickHandler(1)" styleName="standardButtonSkinStyle"/>
+	</s:HGroup>
+	<s:HGroup  width="100%" height="60%">
+		<bj33x7:Bj33x7Selecters_biaozhun id="selecters_1">
+		</bj33x7:Bj33x7Selecters_biaozhun>
+		<bj33x7:Bj33x7Selecters_dantuo id="selecters_2">
+		</bj33x7:Bj33x7Selecters_dantuo>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="middle"  bottom="0">
+		<!--<s:Spacer width="20"/>
+		<bettings:LineItem width="{this.width-this.width*0.4-hg_content.width-confimBtn.width-100}" height="1"/>-->
+		<s:HGroup id="hg_content" gap="0" width="82%" horizontalAlign="right">
+			<s:Label  text="{resourceManager.getString('LotteryTips','you_Selected')}" styleName="labelStyles2"/>
+			<s:Label  text="{zhushu}" styleName="labelStyles3"/>
+			<s:Label  text="{resourceManager.getString('LotteryTips','pour_Total')}" styleName="labelStyles2"/>
+			<s:Label  text="{qianshu}" styleName="labelStyles3"/>
+			<s:Label  text="{CurrentUserInfo.moneyType}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="18%" horizontalAlign="center">
+			<s:Button id="confimBtn" label="{resourceManager.getString('LotteryTips','confirm_Selected')}" click="button1_clickHandler(event)" styleName="submitButtonSkinStyle"/>
+		</s:HGroup>
+		<!--<s:Spacer width="20"/>
+		<bettings:LineItem width="40%" height="1"/>-->
+	</s:HGroup>
+</s:VGroup>

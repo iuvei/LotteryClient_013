@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  creationComplete="createGridInitProperties()" 
+		  xmlns:load="com.xazc.components.load.*" width="900" height="455"
+		  xmlns:common="com.xazc.pop.center.common.*" xmlns:member="com.xazc.pop.center.proxy.member.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import flashx.textLayout.formats.TextAlign;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.rpc.events.ResultEvent;
+			private var service:ServerTool;
+			
+			private var myPattern1:RegExp=/-|:| /g; 
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=10;//当页行数
+			
+			
+			[Bindable]
+			private var totalPage:String="";
+			[Bindable]
+			private var totalRecords:String="";
+			[Bindable]
+			private var betsSumMoney:Number=0;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:150},
+				{title:"b",w:150},
+				{title:"c",w:150},
+				{title:"d",w:150},
+				{title:"e",w:150},
+				{title:"f",w:150}
+			]);
+			
+			private var values:ArrayCollection=new ArrayCollection([
+				{column:"UserName",w:150},
+				{column:"ParentName",w:150},
+				{column:"LotteryMoney",w:150},
+				{column:"CreateTime",w:150},
+				{column:"LastLoginTime",w:150},
+				{column:"userState",w:150}
+			]);
+			
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = resourceManager.getString('PersonalCenterPage','userName');
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = resourceManager.getString('PersonalCenterPage','belongs');
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = resourceManager.getString('PersonalCenterPage','lottery_Money');
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = resourceManager.getString('PersonalCenterPage','register_Next_Time');
+					}else if(titles.getItemAt(i).title == "e"){
+						label.text = resourceManager.getString('PersonalCenterPage','last_Login_Time');
+					}else if(titles.getItemAt(i).title == "f"){
+						label.text = resourceManager.getString('PersonalCenterPage','whether_Online');
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				//查询下级会员列表
+				this.getmyteam();
+				
+			}
+			private function getmyteam():void
+			{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object=filterSelectCondition();
+				service.getmyteam(obj,getmyteamReturn);
+			
+			}
+			private var myTeamObject:Object;
+			private var myTeamObject2:Object;
+			
+			private  function getmyteamReturn(e:ResultEvent):void
+			{
+				loading.suspend();
+				var obj:Object = JSON.parse(e.result.toString(),null); 
+				trace(e.result.toString());
+				if(obj.SystemState==64){
+					var a:Array=obj.MyteamList as Array;
+					if(a.length==0){
+						createGridOneRow();
+						return;
+					}
+					this.myTeamObject = obj;
+					page.setPage(currentPage,obj.PageCount,obj.DataCount);	
+					betsSumMoney=obj.TotalMoney;
+					totalPage=obj.PageCount;
+					totalRecords=obj.DataCount;
+					g_page.visible=true;
+					g_page.includeInLayout=true;
+					show(obj.MyteamList as Array)
+					//查询该代理下级列表数据
+					//this.getUsersLoginState();
+					//updateViewPropertysValue(obj.MyteamList as Array);
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					if(obj.SystemState==32){
+						createGridOneRow();
+						return;
+					}
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_member_error1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			
+			}
+			//下级用户个数
+			private var currentChildNum:int = 10;
+			
+			private function show(arr:Array):void
+			{
+				currentChildNum = arr.length;
+				lastMessages=arr;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				for(var i:int=0;i<lastMessages.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=30;
+					grid.addChild(row);
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=values.getItemAt(j).w;
+						var lb:Label=new Label();
+						item.addChild(lb);
+						var strColumn:String=values.getItemAt(j).column;
+						var strvalue:String="";
+						if(strColumn=="CreateTime"){
+							lb.text=df.format(lastMessages[i][strColumn]);
+						}else if(strColumn=="LastLoginTime"){
+							lb.text="--";
+						}else if(strColumn=="userState"){
+							lb.text="--";
+						}else if(strColumn=="LotteryMoney"){
+							lb.text=lastMessages[i][strColumn];
+							
+						}else{
+							lb.text=lastMessages[i][strColumn];
+						}
+						lb.width=values.getItemAt(j).w-5;
+						if(j==0){
+							lb.styleName="personalCenterDetailLabelStyle_3";
+							//lb.maxWidth = 90;
+							lb.name = lastMessages[i].UserID;
+							//lb.width=values.getItemAt(j).w-5;
+							//							lb.selectable=true;
+							lb.buttonMode=true;
+							lb.useHandCursor=true;
+							lb.mouseChildren=false;
+							lb.addEventListener(MouseEvent.CLICK,labelMouseClickHandler);
+						}else{
+							lb.styleName="personalCenterDetailLabelStyle_1";
+							//lb.maxWidth = values.getItemAt(j).w;
+						}
+					}
+				}
+			
+				for(var k:int = 0;k<arr.length;k++){
+					//`trace(arr[k].UserID+"*****");
+					getUsersLoginStateItem(arr[k].UserID);
+				}
+			}
+			private function getUsersLoginStateItem(userId:Number):void
+			{
+				var obj:Object = new Object();
+				var tempArr:Array = new Array();
+				tempArr.push(userId);
+				obj.UserIDList = tempArr;
+				service.getUsersLoginState(obj,getUsersLoginStateItemReturn);
+			}
+			
+			private function getUsersLoginStateItemReturn(e:ResultEvent):void
+			{
+				var obj:Object = JSON.parse(e.result.toString(),null); 
+				trace(e.result.toString());
+				if(obj.SystemState==64){
+					//查询该代理下级列表数据
+					//this.updateViewPropertysValue();
+					this.updateDateByItem(obj.UserLoginStateList[0] as Object);
+					
+					
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_member_error2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			
+			private function updateDateByItem(obj:Object):void
+			{
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				for(var i:int=0;i<currentChildNum;i++){
+					var row:GridRow=grid.getChildAt(i) as GridRow;
+					var state:Boolean = false;
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=row.getChildAt(j) as GridItem;
+						var lb:mx.controls.Label=item.getChildAt(0) as mx.controls.Label;
+						lb.maxWidth = (item.getChildAt(0) as mx.controls.Label).maxWidth;
+						var strColumn:String=values.getItemAt(j).column;
+						if(strColumn=="UserName"){
+							if(lb.name == obj.UserID){
+								state =true;
+							}
+						}
+						if(state){
+							if(strColumn=="LastLoginTime"){
+								lb.text=df.format(obj.Flex.LoginTime);
+								//lb.maxWidth = 70-5;
+							}else if(strColumn=="userState"){
+								
+								if(obj.Flex.OperationTypeEnum==0){
+									lb.text=resourceManager.getString('PersonalCenterPage','online');
+								}else{
+									lb.text=resourceManager.getString('PersonalCenterPage','offline');
+								}
+							}
+						}
+						if(j==values.length-1){
+							state = false;
+						} 
+					}
+				}
+				for(var j:int  = 0;j<lastMessages.length;j++){
+					if(obj.UserID==lastMessages[j].UserID){
+						lastMessages[j].LastLoginTime = df.format(obj.Flex.LoginTime);
+						lastMessages[j].userState = obj.Flex.OperationTypeEnum;
+					}
+				}
+			}
+			
+			
+			
+			/**
+			 * 根据userId列表查询所有用户登录状态
+			 * 
+			 */
+			/* private function getUsersLoginState():void
+			{
+				
+				var obj:Object = new Object();
+				var tempArr:Array = new Array();
+				for(var i:int = 0;i<(myTeamObject.MyteamList as Array).length;i++){
+					tempArr.push((myTeamObject.MyteamList as Array)[i].UserID);
+				}
+				obj.UserIDList = tempArr;
+				service.getUsersLoginState(obj,getUsersLoginStateReturn);
+			
+			}
+			private function getUsersLoginStateReturn(e:ResultEvent):void
+			{
+				var obj:Object = JSON.parse(e.result.toString(),null); 
+				trace(e.result.toString());
+				if(obj.SystemState==64){
+					this.myTeamObject2 = obj;
+					//查询该代理下级列表数据
+					this.updateViewPropertysValue();
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show("账号已在异地登录，您被踢出下线！","提示信息");
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show("查询代理记录失败！","提示信息");
+				}
+			} */
+			
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				g_page.visible=false;
+				g_page.includeInLayout=false;
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			
+			private var lastMessages:Array=[];
+			
+			private function updateViewPropertysValue():void
+			{
+				//组合封装数据
+				var lastObjectArr:Array = new Array();
+				
+				var tempArr:Array = myTeamObject.MyteamList as Array;
+				var tempArr2:Array = myTeamObject2.UserLoginStateList as Array;
+				var obj:Object;
+				for(var k:int = 0;k<tempArr.length;k++){
+					for(var g:int = 0;g<tempArr2.length;g++){
+						if(tempArr[k].UserID ==tempArr2[g].UserID){
+							//obj = new Object();
+							obj = tempArr[k];
+							obj.userState = tempArr2[g].Flex.OperationTypeEnum;
+							obj.LastLoginTime = tempArr2[g].Flex.LoginTime;
+							lastObjectArr.push(obj);
+						}
+					}
+				}
+				lastMessages=lastObjectArr;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				for(var i:int=0;i<lastObjectArr.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=30;
+					grid.addChild(row);
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=values.getItemAt(j).w;
+						var lb:Label=new Label();
+						item.addChild(lb);
+						var strColumn:String=values.getItemAt(j).column;
+						var strvalue:String="";
+						if(strColumn=="CreateTime"){
+							lb.text=df.format(lastObjectArr[i][strColumn]);
+						}else if(strColumn=="LastLoginTime"){
+							lb.text=df.format(lastObjectArr[i][strColumn]);
+						}else if(strColumn=="userState"){
+							if(lastObjectArr[i][strColumn]==0){
+								lb.text=resourceManager.getString('PersonalCenterPage','online');
+							}else{
+								lb.text=resourceManager.getString('PersonalCenterPage','offline');
+							}
+						}else if(strColumn=="LotteryMoney"){
+							lb.text=lastObjectArr[i][strColumn];
+							
+						}else{
+							lb.text=lastObjectArr[i][strColumn];
+						}
+						lb.width=values.getItemAt(j).w-5;
+						if(j==0){
+							lb.styleName="personalCenterDetailLabelStyle_3";
+							//lb.maxWidth = 90;
+							lb.name = lastObjectArr[i].UserID;
+							//lb.width=values.getItemAt(j).w-5;
+//							lb.selectable=true;
+							lb.buttonMode=true;
+							lb.useHandCursor=true;
+							lb.mouseChildren=false;
+							lb.addEventListener(MouseEvent.CLICK,labelMouseClickHandler);
+						}else{
+							lb.styleName="personalCenterDetailLabelStyle_1";
+							//lb.maxWidth = values.getItemAt(j).w;
+						}
+					}
+				}
+			}
+			
+			/**
+			 * 显示订单详情
+			 **/
+			private function labelMouseClickHandler(e:MouseEvent):void{
+				var label:Label=e.currentTarget as Label;
+//				trace(label.name+"**"+label.text);
+				var obj:Object= new Object();
+				for(var i:int=0;i<lastMessages.length;i++){
+					if(lastMessages[i].UserID==label.name){
+						obj=lastMessages[i];
+						break;
+					}
+				}
+				
+				//是否显示日工资设置页面
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj_data = new Object();
+				obj_data.UserName = obj.UserName;
+				service.showDailyWagesSetting(obj_data,showDailyWagesSettingReturn);
+				
+				pmd.objectItem=obj;
+				pmd.selectedMenuItemClick(1);
+//				pmd.visible=true;
+				vg_main.visible=false;
+				g_content.visible=false;
+			}
+			
+			private function showDailyWagesSettingReturn(e:ResultEvent):void
+			{
+				var obj:Object = JSON.parse(e.result.toString(),null); 
+				trace(e.result.toString());
+				if(obj.SystemState==64)
+				{
+//					ShowDailyWages  true 显示日工设置  false 不显示
+//					MySettlementRatio string  自身日工资比例
+//					LowerLevelSettlementRatio 直属下级日工资比例
+//					LowerLevelState 直属下级状态 1 开启 0 关闭
+
+					var obj_info:Object = new Object();
+					obj_info.ShowDailyWages = obj.ShowDailyWages;
+					obj_info.MySettlementRatio = obj.MySettlementRatio;
+					obj_info.LowerLevelSettlementRatio = obj.LowerLevelSettlementRatio;
+					obj_info.LowerLevelState = obj.LowerLevelState;
+					
+					pmd.ShowDailyWages(obj_info);
+					
+				}else{
+					alert.show("获取日工资设置失败！","提示信息");
+				}
+				//不管成功与否，显示下级代理（会员）信息页面；
+				pmd.visible=true;
+			}
+			
+			protected function df_start_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(df_start.text==""){
+					return;
+				}
+				var str:Array=df_start.text.split("-");
+				df_end.disabledRanges=[{rangeEnd:new Date(int(str[0]),int(str[1])-1,int(str[2])-1)}];
+			}
+			protected function df_end_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(df_end.text==""){
+					return;
+				}
+				var str:Array=df_end.text.split("-");
+				df_start.disabledRanges=[{rangeStart:new Date(int(str[0]),int(str[1])-1,int(str[2])+1)}];
+			}
+			/**
+			 *过滤封装查询条件
+			 **/
+			private function filterSelectCondition():Object{
+				var obj:Object=new Object();
+				obj.IsP=1;//1 平级  0 不可平级
+				if(username.text!=""){
+					obj.LikeUserName=username.text;
+				}
+				obj.CurrentPageIndex=currentPage-1;
+				obj.CurrentPageSize=currentPageSize;
+				if(df_start.text && df_end.text){
+					obj.BeginDate=df_start.text+" 00:00:00";
+					obj.EndDate=df_end.text+" 23:59:59";
+				}
+				obj.TreeType = dateType.selectedItem.value;
+				return obj;
+			}
+			
+			protected function page_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				// TODO Auto-generated method stub
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				var page:int=int(event.body);
+				currentPage=page;
+				getmyteam();
+			}
+			private function checkPropertys():Boolean{
+				if(df_start.text!="" && df_end.text==""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_member_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(df_start.text=="" && df_end.text!=""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_member_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(df_start.text!="" && df_end.text!=""){
+					var start:String=df.format(df_start.text);
+					start=start.replace(myPattern1,"");
+					var end:String=df.format(df_end.text);
+					end=end.replace(myPattern1,"");
+					if(start>end){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_member_check2'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				}
+				return true;
+			}
+			/**
+			 *查询操作 
+			 **/
+			protected function submit(event:MouseEvent):void
+			{
+				if(!checkPropertys()){
+					return;
+				}
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=1;
+				getmyteam();
+			}
+			
+			protected function pmd_rollBackProxyMemberEventHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				pmd.visible=false;
+				vg_main.visible=true;
+				g_content.visible=true;
+				submit(null);
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			[Bindable]
+			private var dateTypeArr:ArrayCollection=new ArrayCollection([{label:"直属下级",value:2},{label:"全部下级",value:1}]);
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 过滤条件 -->
+	<s:HGroup  id="vg_main" top="10" verticalAlign="middle" width="100%" gap="0">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','userName')}：" styleName="personalCenterDetailLabelStyle_1"  />
+		<mx:TextInput width="120" styleName="personalCenterDetailTextInputStyle" id="username" maxChars="20" />
+		<s:Spacer width="20" />
+		
+		<mx:Label text="范围：" styleName="personalCenterDetailLabelStyle_1"  />
+		<s:ComboBox  width="90" initialize="dateType.textInput.editable = false" id="dateType" styleName="personalCenterDetailComboBoxStyle" dataProvider="{dateTypeArr}" selectedIndex="0"/>
+		
+		<s:Spacer width="20" />
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','register_Next_Time')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:DateField width="120" id="df_start" styleName="personalCenterDateFieldStyle" formatString="YYYY-MM-DD" 
+					  change="df_start_changeHandler(event)" buttonMode="true"/>
+		<mx:Label text="至" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:DateField width="120" id="df_end" styleName="personalCenterDateFieldStyle" formatString="YYYY-MM-DD" 
+					  change="df_end_changeHandler(event)" buttonMode="true"/>
+		<s:Spacer width="20" />	
+		<s:Button label="{resourceManager.getString('PersonalCenterPage','ensure')}" styleName="personalLookButtonStyle"
+					  click="submit(event)" buttonMode="true" verticalCenter="0"/>	
+	</s:HGroup>
+	<!--具体内容-->
+	<s:Group id="g_content" top="{vg_main.height+20}">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff" alpha="0"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect id="fill1" width="100%" height="35">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x6a6969" alpha="1"/>
+					<s:GradientEntry color="0x595858" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:VGroup gap="-1" height="100%" id="vg">
+			<s:Group height="70"   width="100%" id="g_page" includeInLayout="false" visible="false">
+				<s:Rect x="0" id="border" width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient >
+							<s:GradientEntry color="0xcfcece" alpha="1"/>
+						</s:LinearGradient>
+					</s:fill>
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<s:VGroup  left="10" right="10" height="100%" verticalAlign="middle">
+					<s:HGroup  horizontalAlign="left" verticalAlign="middle" width="100%" height="30%">
+						<mx:Label text="{resourceManager.getString('PersonalCenterPage','Lottery_Team_Total_Balance')}：" styleName="personalCenterDetailLabelStyle_1"/>
+						<mx:Label text="{betsSumMoney}" styleName="personalCenterDetailLabelStyle_3"/>
+						<mx:Label text="{CurrentUserInfo.moneyType}" styleName="personalCenterDetailLabelStyle_1"/>
+					</s:HGroup>
+					<s:HGroup horizontalAlign="right" verticalAlign="middle" height="30%" width="100%">
+						<common:PopUpChangePageComponent width="100%" height="100%" id="page" ChangePageIndex="page_ChangePageIndexHandler(event)"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:Group>
+	<!-- 子项 -->
+	<member:PopUpProxyMemberDetail id="pmd" width="100%" height="100%" top="10" visible="false" rollBackProxyMemberEvent="pmd_rollBackProxyMemberEventHandler(event)"/>
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading"/>
+</s:Group>

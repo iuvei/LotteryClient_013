@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="310" height="440"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			//模块显示按钮
+			[Bindable]
+			public var  chessIndexImages:String='';
+			//棋牌名称
+			[Bindable]
+			public var  chessIndexName:String='';
+			//棋牌类型
+			[Bindable]
+			public var  chessIndexType:Number=1;
+			
+			[Bindable]
+			public var  type_1:String='百人牛牛：\n     牛牛游戏最早流行于江浙一代，是可以同时上百人进行的简单押注类扑克游戏。满足坐庄条件的玩家即可坐庄，闲家分别与庄家比较牌型大小定胜负，与其他闲家无任何关系。 由于该游戏简单有趣且上手极快娱乐性强的特点，广受扑克爱好者们的青睐。';
+			[Bindable]
+			public var  type_2:String='百家乐介绍：\n     根据恒运娱乐调查，在网络赌场博彩游戏当中，最受欢迎的应该是百家乐。因为在玩家眼中是赌场占优势最少的游戏。意思就是较为公平的游戏。在恒运娱乐这里你可以看到百家乐教学，百家乐玩法，以及免费网路百家乐下载。';
+			[Bindable]
+			public var  type_3:String='龙虎斗介绍：\n     龙虎斗游戏为一款极具趣味性的牌类游戏，最早出现在十六世纪，起源于法国，法语称：vingt-et-un (单单字面来看是20和1，因为法文数字本身的复杂性，就是简单的21),是一种起源于欧洲流行于全世界的牌类游戏，由Merle Robbins于1971年发明。';
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.addEventListener(MouseEvent.MOUSE_OVER,mouseOverHandler);
+				this.addEventListener(MouseEvent.MOUSE_OUT,mouseOutHandler);
+			}
+			
+			private function mouseOverHandler(e:MouseEvent):void
+			{
+				contentBg.setStyle("borderColor","0xf2e5ad");
+			}
+			
+			private function mouseOutHandler(e:MouseEvent):void
+			{
+				contentBg.setStyle("borderColor","0x393939");
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer backgroundColor="0x292929" borderColor="0x393939" id="contentBg" width="100%" height="100%">
+		<s:VGroup width="100%" horizontalAlign="center" verticalAlign="middle">
+			<s:Image source="{chessIndexImages}"/>
+		</s:VGroup>
+	</s:BorderContainer>
+</s:Group>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="645" height="485"
+		 creationComplete="init(event)" xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			public var dataArr:Array = new Array();
+			
+			protected function init(event:FlexEvent):void
+			{
+				createGridInitProperties();
+			}
+			
+			//订单状态
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:200},
+				{title:"b",w:200}]);
+			private var models:ArrayCollection=new ArrayCollection([
+				{orderMask:"ReceivePerson",width:200},
+				{orderMask:"EmailState",width:200}]);
+			
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=30;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					//					gridItem.styleName = "RecordsGridItemStyle_borderBlack";
+					gridItem.horizontalScrollPolicy = "off";
+					gridItem.verticalScrollPolicy = "off";
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = "收件人";
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = "状态";
+					}
+					label.styleName="personalCenterDetailLabelStyle_1";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg_1.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,0);
+				
+				setData(dataArr);
+			}
+			
+			public function setData(source:Array):void
+			{
+				if(source == null){
+					return;
+				}
+				
+				var promptGrid:Grid=vg.getChildAt(0) as Grid;//取出显示内容的grid
+				promptGrid.removeAllChildren();//清空所有子项
+				for(var j:int=0; j<source.length; j++){
+					var promptRow:GridRow = new GridRow();
+					promptRow.height = 30;
+					promptGrid.addChild(promptRow);
+					var label1:Label;
+					for(var n:int=0; n<models.length; n++){
+						var promptItem:GridItem = new GridItem();
+						promptItem.width = models.getItemAt(n).width;
+						var str:String = models.getItemAt(n).orderMask;
+						label1=new Label();
+						if(str == "ReceivePerson"){
+							if(source[j].ReceivePerson != "")
+							{
+								label1.text = source[j].ReceivePerson;
+							}else{
+								label1.text = "上级";
+							}
+						}else if(str == "EmailState"){
+							if(source[j].EmailState == 1 ){label1.text = "已读";
+							}else if(source[j].EmailState == 2 ){label1.text = "未读";
+							}else if(source[j].EmailState == 3 ){label1.text = "已撤回";}
+						}
+						promptItem.addChild(label1);
+						label1.styleName="personalCenterDetailLabelStyle_1";								
+						promptRow.addChild(promptItem);
+					}
+				}
+				vg.addElementAt(promptGrid,0);
+			}
+			
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:BitmapImage id="img" width="645" height="485"  source="@Embed('css/skin1/universal/images/alert_bg.png',
+				   scaleGridLeft='100', scaleGridRight='110', scaleGridTop='100', scaleGridBottom='110')"/>
+	
+	<s:Label x="35" y="48" width="575" height="19" text="收件人详情" textAlign="center" color="0xffffff" fontSize="14"/>
+	<s:Image id="imgClose" x="585" y="45" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+			 rollOut="imgClose_rollOutHandler(event)"
+			 rollOver="imgClose_rollOverHandler(event)"/>
+	
+	<s:Rect x="130" y="82" width="400" height="30">
+		<s:fill>
+			<s:LinearGradient >
+				<s:GradientEntry color="0xfff0c5" alpha="1"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:VGroup  x="130" y="82" width="400" height="355" gap="5" horizontalAlign="center">
+		<s:VGroup  id="vg_1" />
+		<s:Scroller width="400" height="320" horizontalScrollPolicy="off" styleName="personalCenterScrollerStyle_1">
+			<s:VGroup  id="vg" />
+		</s:Scroller>
+	</s:VGroup>
+	
+</s:Group>

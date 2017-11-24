@@ -1,0 +1,854 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="createGridInitProperties()"
+		 width="900" height="405"
+		 xmlns:load="com.xazc.components.load.*" 
+		 xmlns:common="com.xazc.pop.center.common.*" xmlns:single="com.xazc.single.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			public var accountlItem:Object;
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=9;//当页行数
+			
+			[Bindable]
+			private var dateTimeType:ArrayCollection=new ArrayCollection([{label:"当前记录",value:0},{label:"历史记录",value:1}]);
+			
+			
+			
+			[Bindable]
+			private var perLabel:String="<<上一页";
+			[Bindable]
+			private var nextLabel:String="下一页>>";
+			private var myPattern1:RegExp=/-|:| /g;
+			//共几页
+			[Bindable]
+			private var totalPage:int = 10;
+			//共多少条记录
+			[Bindable]
+			private var totalRecords:int = 0;
+			
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			private var _state:int = 0;
+			
+			//当前查询是否是历史库
+			private var isHistory:Boolean = false; 
+			
+			
+			//交易类型
+			[Bindable]
+			private var tradeArrayList:ArrayCollection = new ArrayCollection([
+				{type:"全部",value:"0"},
+				{type:"充值",value:"18"},
+				{type:"提款",value:"26"},
+				{type:"投注",value:"1"},
+				{type:"中奖",value:"2"},
+				/* {type:"转账",value:"3"},  */
+				{type:"撤单",value:"4"},
+				{type:"撤奖",value:"5"},
+				{type:"活动",value:"6"}, 
+				{type:"下级返点",value:"7"},
+				{type:"自身投注返点",value:"8"},
+				{type:"给下级充值",value:"9"},
+				{type:"来自上级的充值",value:"10"},
+				{type:"管理员添加",value:"11"}
+				/* ,{type:"日工资",value:"24"} */
+			]);
+			
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:150},
+				{title:"b",w:150},
+				{title:"c",w:150},
+				{title:"d",w:150},
+				{title:"e",w:150},
+				{title:"f",w:150}]);
+			private var values:ArrayCollection=new ArrayCollection([
+				{column:"OrderID",w:150},
+				{column:"UseMoney",w:150},
+				{column:"ThenBalance",w:150},
+				{column:"DetailsSource",w:150},
+				{column:"InsertTime",w:150},
+				{column:"Marks",w:150}]);
+			
+			private var dataList:ArrayCollection;
+			public var service:ServerToolImpl;
+			
+			override protected function resourcesChanged():void
+			{
+				for (var i:int = 0; i < tradeArrayList.length; i++) 
+				{
+					switch(tradeArrayList[i].value)
+					{
+						case "0":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','all');
+							break;
+						case "1":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','beting');
+							break;
+						case "2":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','awarding');
+							break;
+						case "3":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','transferAccounts');
+							break;
+						case "4":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','order_Cancle');
+							break;
+						case "5":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','award_Cancle');
+							break;
+						case "6":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','active');
+							break;
+						case "7":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','next_Rebates');
+							break;
+						case "8":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','oneself_Bets_Rebates');
+							break;
+						case "9":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','next_Recharge');
+							break;
+						case "10":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','from_Last_Recharge');
+							break;
+						case "11":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','add_Admin');
+							break;
+						case "24":
+							tradeArrayList[i].type = resourceManager.getString('PersonalCenterPage','rigongzi');
+							break;
+						default:
+							break;
+					}
+				}
+			}
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = resourceManager.getString('PersonalCenterPage','ChaseOrderID');
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = resourceManager.getString('PersonalCenterPage','trad_Money');
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = resourceManager.getString('PersonalCenterPage','lottery_Money');
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = resourceManager.getString('PersonalCenterPage','trad_Type');
+					}else if(titles.getItemAt(i).title == "e"){
+						label.text = resourceManager.getString('PersonalCenterPage','trad_Time2');
+					}else{
+						label.text = resourceManager.getString('PersonalCenterPage','remark');
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				
+				initPropertys();
+				
+			}
+			
+			
+			/**
+			 * 初始化
+			 */
+			public function initPropertys():void{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=1;
+				_state = 0;
+				df_start.text = "";
+				df_end.text = "";
+				tradeContent.selectedIndex = 0;
+				timeType.selectedIndex = 0;
+				
+				//默认实现
+				this.timeType_changeHandler(null);
+				
+				//var d:Date=new Date();
+				//df_start.selectedDate=new Date(d.fullYear,d.month,1);
+				//df_start.selectedDate=new Date();
+				//df_end.selectedDate= new Date();
+				//df_start.text=df1.format(df_start.selectedDate);
+				//df_end.text=df1.format(df_end.selectedDate);
+				
+				changePage.pageSelector.text="";
+				getAccountDetails();
+				
+				//查询标签  是否有日工资、分红标签；根据后台配置控制前台是否显示。
+				var obj:Object = new Object();
+				//日工资
+				//if(CurrentUserInfo.IsDayWages){
+					obj = new Object();
+					obj.type = "日工资";
+					if(CurrentUserInfo.IsDayWages){
+						obj.value = "29";
+					}else{
+						obj.value = "24";
+					}
+					tradeArrayList.addItem(obj);
+				//}
+				//分红
+				if(CurrentUserInfo.IsContract){
+					obj = new Object();
+					obj.type = "分红";
+					obj.value = "28";
+					tradeArrayList.addItem(obj);
+				}
+				
+			}
+
+			/**
+			 * 查询订单详情
+			 */
+			public function getAccountDetails():void
+			{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object = filterSelectCondition();
+				
+				//日工资开启——接口
+				service.dailyWagesGetUserFundList(obj,returnCheckTradeData);
+				//日工资关闭——接口
+				//service.getUserFundList(obj,returnCheckTradeData);
+			}
+			/**
+			 * 校验查询条件 
+			 */
+			private function checkPropertys():Boolean{
+				if(df_start.text!="" && df_end.text==""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_account_detail_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(df_start.text=="" && df_end.text!=""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_account_detail_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				var start:String=df.format(df_start.text);
+				start=start.replace(myPattern1,"");
+				var end:String=df.format(df_end.text);
+				end=end.replace(myPattern1,"");
+				if(start>end){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_account_detail_check2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				return true;
+			}
+			/**
+			 * 过滤条件 
+			 */
+			private function filterSelectCondition():Object
+			{
+				var object:Object = new Object();
+				object.CurrentPageIndex = currentPage-1;
+				object.CurrentPageSize = currentPageSize;
+				object.UserID=accountlItem.UserID;
+				object.ThisUserName=accountlItem.UserName;
+				trace(accountlItem.UserID);
+				
+				if(tradeContent.selectedItem){
+					object.Source = Number(tradeContent.selectedItem.value);
+					//object.Source = 1;
+				}
+				if(df_start.text && df_end.text){
+					object.insertTimeMin = df_start.text + " 00:00:00";
+					object.insertTimeMax = df_end.text + " 23:59:59";
+				}
+				object.IsHistory = this.isHistory;
+				return object;
+			}
+			/**
+			 * 返回查询数据
+			 */
+			private function returnCheckTradeData(event:ResultEvent):void
+			{
+				loading.suspend();
+				var array:Object = JSON.parse(event.result.toString());
+				trace(event.result.toString());
+				if(array.SystemState==64){
+					totalPage = parseInt(array.PageCount);
+					totalRecords = parseInt(array.DataCount);
+					changePage.setPage(currentPage,totalPage,array.DataCount);
+					dataList = new ArrayCollection(array.UfInfo as Array);
+					if(dataList.length==0){
+						createGridOneRow();
+						return;
+					}
+					updateViewPropertysValue();
+					h_page.visible=true;
+					h_page.includeInLayout=true;
+				}else if(array.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(array.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					if(array.SystemState==32){
+						createGridOneRow();
+						return;
+					}
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_account_detail_error'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				
+			}
+			
+			private function updateViewPropertysValue():void{
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				if(dataList){
+					for(var j:int=0; j<dataList.length; j++){
+						var promptRow:GridRow = new GridRow();
+						promptRow.height=30;
+						for(var n:int=0; n<values.length; n++){
+							var promptItem:GridItem = new GridItem();
+							promptItem.width=values.getItemAt(n).w;
+							var label1:Label = new Label();
+							label1.width=values.getItemAt(n).w-5;
+							var column:String=values.getItemAt(n).column;
+							var strvalue:String=dataList.getItemAt(j)[column];
+							 if(column=="OrderID"){
+								label1.text=strvalue;
+								label1.selectable=true;
+							}else  if(column=="InsertTime"){
+								label1.text = df.format(strvalue);
+							}else if(column=="UseMoney"){
+								//当为转盘活动时（再接再厉和iphone时，显示备注信息）
+								if(257==dataList.getItemAt(j)['DetailsSource']&&'0'==strvalue){
+									label1.text=dataList.getItemAt(j)['Marks'];
+								}else{
+									label1.text=strvalue;
+								}
+							}else if(column=="ThenBalance"){
+								label1.text = strvalue;
+							}else if(column=="DetailsSource"){
+								switch(parseInt(strvalue))
+								{
+									case 1:
+										label1.text = resourceManager.getString('PersonalCenterPage','beting');
+										break;
+									case 10:
+									case 11:
+									case 12:
+									case 13:
+										label1.text = resourceManager.getString('PersonalCenterPage','order_Cancle');
+										break;
+									case 17:
+										label1.text = resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type1');
+										break;
+									case 20 :
+										label1.text = resourceManager.getString('PersonalCenterPage','put_Ticket');
+										break;
+									case 30:
+										label1.text = resourceManager.getString('PersonalCenterPage','oneself_Bets_Rebates');
+										break;
+									case 40:
+										label1.text = resourceManager.getString('PersonalCenterPage','next_Rebates');
+										break;
+									case 50:
+										label1.text = resourceManager.getString('PersonalCenterPage','awarding');
+										break;
+									case 60:
+										label1.text = resourceManager.getString('PersonalCenterPage','award_Cancle');
+										break;
+									case 70:
+										label1.text = resourceManager.getString('PersonalCenterPage','ewithdrawal');
+										break;
+									case 80:
+										label1.text = resourceManager.getString('PersonalCenterPage','apply_Withdrawal_Failed');
+										break;
+									case 90:
+										label1.text = resourceManager.getString('PersonalCenterPage','ewithdrawal');
+										break;
+									case 100:
+										label1.text = resourceManager.getString('PersonalCenterPage','artificial_Out_Money');
+										break;
+									case 110:
+										label1.text = resourceManager.getString('PersonalCenterPage','atomate_Out_Money');
+										break;
+									case 120:
+										if(0==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "后台自动出款";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type2');
+										}else if(1==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "人工出款";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type3');
+										}else if(2==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "人工扣款";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type4');
+										}
+										//label1.text = resourceManager.getString('PersonalCenterPage','withdrawals_Success');
+										break;
+									case 121:
+										label1.text = resourceManager.getString('PersonalCenterPage','withdrawals_Success_Refresh');
+										break;
+									case 122:
+										label1.text = resourceManager.getString('PersonalCenterPage','artificial_Deductions');
+										break;
+									case 130:
+										label1.text = resourceManager.getString('PersonalCenterPage','withdrawal_Failed');
+										break;
+									case 131:
+										label1.text = resourceManager.getString('PersonalCenterPage','withdrawals_Failed_Refresh');
+										break;
+									case 140:
+										label1.text = resourceManager.getString('PersonalCenterPage','apply_Recharge');
+										break;
+									case 150:
+										if(0==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "网银充值";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type5');
+										}else if(1==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "在线转账";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type6');
+										}else if(2==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "其他";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type7');
+										}else if(3==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "存款未自动到账";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type8');
+										}else if(4==dataList.getItemAt(j)["RechargeType"]){
+//											label1.text = "活动";
+											label1.text =  resourceManager.getString('PersonalCenterPrompt','alert_account_detail_type1');
+										}else if(CurrentBusinessInfo.onlineTypeCorrespondObj["online_type_"+ dataList.getItemAt(j)["RechargeType"]]){
+											var obj111:Object = CurrentBusinessInfo.onlineTypeCorrespondObj;
+											label1.text = CurrentBusinessInfo.onlineTypeNamesObj["online_"+ CurrentBusinessInfo.onlineTypeCorrespondObj["online_type_"+ dataList.getItemAt(j)["RechargeType"]]+"_name"];
+										}
+										//label1.text = resourceManager.getString('PersonalCenterPage','recharge_Success');
+										break;
+									case 151:
+										label1.text = "其他加款";
+										break;
+									case 152:
+										label1.text = resourceManager.getString('PersonalCenterPage','save_Money_No_Automate_To_Accounts');
+										break;
+									case 153:
+										label1.text = "活动加款";
+										break;
+									case 160:
+										label1.text = resourceManager.getString('PersonalCenterPage','recharge_Failed');
+										break;
+									case 170:
+									case 180:
+										label1.text = resourceManager.getString('PersonalCenterPage','transferAccounts');
+										break;
+									case 190:
+										label1.text = resourceManager.getString('PersonalCenterPage','next_Recharge');
+										break;
+									case 200:
+										label1.text = resourceManager.getString('PersonalCenterPage','from_Last_Recharge');
+										break;
+									case 210:
+										label1.text = resourceManager.getString('PersonalCenterPage','dividend');
+										break;
+									case 220:
+									case 230:
+									case 231:
+									case 240:
+									case 241:
+									case 251:
+									case 252:
+									case 253:
+									case 254:
+									case 255:
+									case 256:
+									case 257:
+										label1.text = resourceManager.getString('PersonalCenterPage','system_Active');
+										break;
+									case 261:
+										label1.text = "按比例发放日工资";
+										break;
+									case 262:
+										label1.text = "按阶梯发放日工资";
+										break;
+									case 263:
+										label1.text = "来自上级的日工资";
+										break;
+									case 264:
+										label1.text = "发给下级的日工资";
+										break;
+									case 265:
+										label1.text = "人工添加日工资";
+										break;
+									case 266:
+										label1.text = "人工扣除日工资";
+										break;
+									case 267:   //分红
+									case 268:   //分红
+									case 269:   //分红
+										label1.text = "分红";
+										break;
+									case 303:   
+										label1.text = "其他扣款";
+										break;
+									case 304:   
+										label1.text = "活动扣款";
+										break;
+									default:
+										break;
+								}
+							}else if(column=="Marks"){
+								var temp:Number = Number(dataList.getItemAt(j)["DetailsSource"]) ;
+								if(temp==1){
+									label1.text=resourceManager.getString('PersonalCenterPage','purchase')+lotteryNameHelp.getCaizhong(strvalue);
+								}else if(temp==10){
+									label1.text=resourceManager.getString('PersonalCenterPage','user_Order_Cancle');
+								}else if(temp==11){
+									label1.text=resourceManager.getString('PersonalCenterPage','admin_Order_Cancle');
+								}else if(temp==12){
+									label1.text=resourceManager.getString('PersonalCenterPage','follow_Drawing_Order_Cancle');
+								}else if(temp==13){
+									label1.text='系统撤单';
+								}else if(temp==20){
+									label1.text=lotteryNameHelp.getCaizhong(strvalue)+resourceManager.getString('PersonalCenterPage','put_Ticket');
+								}else if(temp==30){
+									label1.text=resourceManager.getString('PersonalCenterPage','oneself_Bets_Rebates');
+								}else if(temp==40){
+									label1.text=strvalue+resourceManager.getString('PersonalCenterPage','from_Last_Rebates');
+								}else if(temp==50){
+									label1.text=resourceManager.getString('PersonalCenterPage','system_Sent_Award');
+								}else if(temp==60){
+									label1.text=resourceManager.getString('PersonalCenterPage','admin_Award_Cancle');
+								}else if(temp==70){
+									label1.text=resourceManager.getString('PersonalCenterPage','apply_Withdrawal');
+								}else if(temp==90){
+									label1.text=resourceManager.getString('PersonalCenterPage','withdrawals_Approval_Refuse');
+								}else if(temp==100){
+									label1.text=resourceManager.getString('PersonalCenterPage','user_Cash');
+								}else if(temp==110){
+									label1.text=resourceManager.getString('PersonalCenterPage','user_Cash');
+								}else if(temp==120){
+									label1.text=resourceManager.getString('PersonalCenterPage','user_Cash');
+								}else if(temp==140){
+									label1.text=resourceManager.getString('PersonalCenterPage','apply_Recharge');
+								}else if(temp==150){
+									label1.text=resourceManager.getString('PersonalCenterPage','user_Recharge');
+								}else if(temp==170){
+									label1.text=resourceManager.getString('PersonalCenterPage','from_Money_To_Lottery');
+								}else if(temp==180){
+									label1.text=resourceManager.getString('PersonalCenterPage','from_Lottery_To_Money');
+								}else if(temp==190){
+									label1.text=resourceManager.getString('PersonalCenterPage','get')+strvalue;
+								}else if(temp==200){
+									if(strvalue.indexOf("]")!= -1)
+									{
+										var TempArr:Array = strvalue.split("]");
+										label1.text="来自上级的"+TempArr[1];
+									}
+									else
+									{
+										label1.text="来自上级"+strvalue;
+									}
+								}else if(temp==210){
+									label1.text=resourceManager.getString('PersonalCenterPage','system_Dividend');
+								}else if(temp==220){
+									label1.text=resourceManager.getString('PersonalCenterPage','account_Opening_Gifts')+"("+strvalue+")";
+								}else if(temp==230){
+									label1.text=resourceManager.getString('PersonalCenterPage','recharge_Opening_Gifts');
+								}else if(temp==231){
+									label1.text=strvalue+resourceManager.getString('PersonalCenterPage','recharge_Commission');
+								}else if(temp==240){
+									label1.text=resourceManager.getString('PersonalCenterPage','bets_Opening_Gifts');
+									//开户送礼
+									//充值送礼
+									//Xxx的充值佣金
+									//投注送礼
+									//Xxx的投注佣金
+									//重庆时时彩加奖
+									
+									//220	注册活动
+									//230	冲值活动
+									//240	投注活动
+									//231	冲值活动给上级的值
+									//241	投注活动给上级的值
+								}else if(temp==241){
+									label1.text=strvalue+resourceManager.getString('PersonalCenterPage','bets_Commission');
+								}else if(temp==251){
+									label1.text="满就送";
+								}else if(temp==252){
+									label1.text="亏损补贴";
+								}else if(temp==253){
+									label1.text=strvalue+"的亏损佣金";
+								}else if(temp==254){
+									label1.text=strvalue+"的满就送佣金";
+								}else if(temp==255){
+									label1.text="消费拿红包";
+								}else if(temp==256){
+									label1.text="土豪签到";
+								}else if(temp==257){
+									label1.text="转盘活动";
+								}else if(temp==267){
+									label1.text="来自系统的分红";
+								}else if(temp==268){
+									label1.text="来自上级的分红";
+								}else{
+									label1.text=strvalue;
+								}
+								
+							}else{
+								label1.text=strvalue;
+							}
+							label1.maxWidth = values.getItemAt(n).w;
+							label1.styleName="personalCenterDetailLabelStyle_1";
+							promptItem.addChild(label1);
+							promptRow.addChild(promptItem);
+						}
+						grid.addChild(promptRow);
+					}
+				}
+			}
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				h_page.visible=false;
+				h_page.includeInLayout=false;
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			/**
+			 * 点击确定查询数据
+			 */
+			protected function submit(event:MouseEvent):void
+			{
+				if(!checkPropertys())
+					return;
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=1;
+				getAccountDetails();
+			}
+			
+			protected function df_start_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				if(df_start.text==""){
+					return;
+				}
+				var str:Array=df_start.text.split("-");
+				var temp:Date = new Date();
+				if(this.timeType.selectedIndex==0){
+					df_end.disabledRanges=[{rangeStart:new Date(temp.fullYear,temp.month,temp.date+1)},{rangeEnd:new Date(int(str[0]),int(str[1])-1,int(str[2])-1)}];
+				}else{
+					df_end.disabledRanges=[{rangeStart:new Date(temp.fullYear,temp.month,temp.date-3)},{rangeEnd:new Date(int(str[0]),int(str[1])-1,int(str[2])-1)}];
+				}
+			}
+			protected function df_end_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				if(df_end.text==""){
+					return;
+				}
+				var str:Array=df_end.text.split("-");
+				var temp:Date = new Date();
+				if(this.timeType.selectedIndex==0){
+					df_start.disabledRanges=[{rangeStart:new Date(int(str[0]),int(str[1])-1,int(str[2])+1)},{rangeEnd:new Date(temp.fullYear,temp.month,temp.date-4)}];
+				}else{
+					df_start.disabledRanges=[{rangeStart:new Date(int(str[0]),int(str[1])-1,int(str[2])+1)},{rangeEnd:new Date(temp.fullYear,temp.month,temp.date-33)}];
+				}
+			}
+			
+			protected function changePage_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				var page:int=int(event.body);
+				currentPage=page;
+				getAccountDetails();
+			}
+			
+			public function myLabelToItem(value:String):Object
+			{
+				return {style:value};
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			/**
+			 *	切换查询区间时执行
+			 *
+			 */
+			protected function timeType_changeHandler(event:IndexChangeEvent):void
+			{
+				trace(timeType.selectedIndex+"");
+				var d:Date=new Date();
+				if(0==timeType.selectedIndex){
+					this.isHistory = false;
+					//开始时间默认时间
+					df_start.selectedDate=new Date();
+					df_start.text=df1.format(df_start.selectedDate);
+					//开始时间可选设置
+					df_start.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date+1)},{rangeEnd:new Date(d.fullYear,d.month,d.date-4)}];
+					//结束时间默认时间
+					df_end.selectedDate= new Date();
+					df_end.text=df1.format(df_end.selectedDate);
+					//结束时间可选设置
+					df_end.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date+1)},{rangeEnd:new Date(df_start.selectedDate.fullYear,df_start.selectedDate.month,df_start.selectedDate.date-1)}];
+				}else{
+					this.isHistory = true;
+					//开始时间默认时间
+					df_start.selectedDate=new Date(d.fullYear,d.month,d.date-4);
+					df_start.text=df1.format(df_start.selectedDate);
+					//开始时间可选设置
+					df_start.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date-3)},{rangeEnd:new Date(d.fullYear,d.month,d.date-35)}];
+					//结束时间默认时间
+					df_end.selectedDate= new Date(d.fullYear,d.month,d.date-4);
+					df_end.text=df1.format(df_end.selectedDate);
+					//结束时间可选设置
+					df_end.disabledRanges=[{rangeStart:new Date(d.fullYear,d.month,d.date-3)},{rangeEnd:new Date(df_start.selectedDate.fullYear,df_start.selectedDate.month,df_start.selectedDate.date-1)}];
+					
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" top="10" gap="10">
+		<s:HGroup  verticalAlign="middle" width="100%"  gap="0">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','trad_Type')}：" styleName="personalCenterDetailLabelStyle_1"/>
+			<s:ComboBox width="120" id="tradeContent" dataProvider="{tradeArrayList}"  initialize="tradeContent.textInput.editable = false" selectedIndex="0" labelField="type" prompt="全部" labelToItemFunction="myLabelToItem" styleName="personalCenterDetailComboBoxStyle"/>
+			<s:Spacer width="20" />
+			<mx:Label text="选择：" styleName="personalCenterDetailLabelStyle_1"/>
+			<s:ComboBox width="100" change="timeType_changeHandler(event)" initialize="timeType.textInput.editable = false" id="timeType" styleName="personalCenterDetailComboBoxStyle" dataProvider="{dateTimeType}" labelField="label"/>
+			<s:Spacer width="20" />
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','trad_Time2')}：" styleName="personalCenterDetailLabelStyle_1"/>
+			<single:MyDateField width="120" id="df_start" formatString="YYYY-MM-DD"  buttonMode="true"  
+						  styleName="personalCenterDateFieldStyle" change="df_start_changeHandler(event)"/>
+			<mx:Label text="至" styleName="personalCenterDetailLabelStyle_1"/>
+			<single:MyDateField width="120" id="df_end" formatString="YYYY-MM-DD" buttonMode="true" 
+						  styleName="personalCenterDateFieldStyle" change="df_end_changeHandler(event)"/>
+			<s:Spacer width="20" />	
+			<s:Button label="{resourceManager.getString('PersonalCenterPage','checking')}" click="submit(event)" 
+						  styleName="personalLookButtonStyle" buttonMode="true" verticalCenter="0"/>	
+		</s:HGroup>
+		<s:Group  width="100%">
+			<s:Rect id="fill" width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0xffffff" alpha="0"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Rect id="fill1" width="894" height="35">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0x6a6969" alpha="1"/>
+						<s:GradientEntry color="0x595858" alpha="1"/>
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<!-- 内容详情 -->
+			<s:VGroup gap="-1" height="100%" id="vg">
+				<s:Group height="50" width="100%" id="h_page" visible="false" includeInLayout="false">
+					<s:Rect x="0" id="border" width="100%" height="100%">
+						<s:fill>
+							<s:LinearGradient >
+								<s:GradientEntry color="0xcfcece" alpha="1"/>
+							</s:LinearGradient>
+						</s:fill>
+						<s:stroke>
+							<s:LinearGradientStroke>
+								<s:GradientEntry color="0xc9d2dc"/>
+							</s:LinearGradientStroke>
+						</s:stroke>
+					</s:Rect>
+					
+					<s:VGroup  left="10" right="10" height="100%" verticalAlign="middle">
+						<s:HGroup horizontalAlign="right" verticalAlign="middle" height="30%" width="100%">
+							<common:PopUpChangePageComponent id="changePage" width="100%" height="100%" ChangePageIndex="changePage_ChangePageIndexHandler(event)"/>
+						</s:HGroup>
+					</s:VGroup>
+					
+				</s:Group>
+			</s:VGroup>
+		</s:Group>
+	</s:VGroup>
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading"/>
+</s:Group>

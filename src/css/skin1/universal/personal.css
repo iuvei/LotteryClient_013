@@ -1,0 +1,473 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+/***个人中心  详情背景  大***/
+s|BorderContainer.threeLevelBg_large
+{
+	bg:Embed(source='css/skin1/universal/center/three_bg_large.png');
+	skinClass:ClassReference("css.skin1.universal.BorderContainerSkin")
+}
+/***个人中心 详情背景 中***/
+s|BorderContainer.threeLevelBg_mid
+{
+	bg:Embed(source='css/skin1/universal/center/three_bg_mid.png');
+	skinClass:ClassReference("css.skin1.universal.BorderContainerSkin")
+}
+/***个人中心 详情背景 特殊号***/
+s|BorderContainer.threeLevelBg_special
+{
+	bg:Embed(source='css/skin1/universal/center/three_bg_special.png');
+	skinClass:ClassReference("css.skin1.universal.BorderContainerSkin")
+}
+/*** 三级菜单按钮样式 ***/
+s|ToggleButton.threeLevelMenu
+{
+	fontSize:15;
+	site:'center';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	disabledImg:Embed(source='css/skin1/universal/center/three_menu.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_checked.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_checked.png');
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnSkin")
+}
+/***三级菜单按钮样式 方向向右边***/
+s|ToggleButton.threeLevelMenu_right
+{
+	fontSize:15;
+	site:'left';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	getLeft:20;
+	disabledImg:Embed(source='css/skin1/universal/center/three_menu_right.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_right_checked.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_right_checked.png');
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnRightSkin")
+}
+/*** 三级菜单按钮样式 方向向左边***/
+s|ToggleButton.threeLevelMenu_left
+{
+	fontSize:15;
+	site:'right';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	disabledImg:Embed(source='css/skin1/universal/center/three_menu_left_1.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_1.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_1.png');
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnLeftSkin")
+}
+
+
+/*** 三级菜单按钮样式 ***/
+s|ToggleButton.threeLevelMenu_1
+{
+	fontSize:15;
+	site:'center';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	disabledImg:Embed(source='css/skin1/universal/center/three_menu_1.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_checked_1.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_checked_1.png');
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnSkin")
+}
+/***三级菜单按钮样式 方向向右边***/
+s|ToggleButton.threeLevelMenu_right_1
+{
+	fontSize:15;
+	site:'left';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	getLeft:10;
+	disabledImg:Embed(source='css/skin1/universal/center/three_menu_right_1.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_right_checked_1.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_right_checked_1.png');
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnRightSkin")
+}
+/*** 三级菜单按钮样式 方向向左边***/
+s|ToggleButton.threeLevelMenu_left_1
+{
+	fontSize:15;
+	site:'right';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	disabledImg:Embed(source='css/skin1/universal/center/three_menu_left_2.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_2.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_2.png');
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnLeftSkin")
+}
+/**个人中心 菜单上显示的字体样式**/
+s|Label.personalCenterLabelStyle
+{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.personalCenterLabelStyle
+{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**白色字体 加粗**/
+s|Label.personalCenterDetailLabelStyle_bold
+{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+}
+mx|Label.personalCenterDetailLabelStyle_bold
+{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+}
+/**白色字体**/
+s|Label.personalCenterDetailLabelStyle_1
+{
+	fontSize:13;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Label.personalCenterDetailLabelStyle_1
+{
+	fontSize:13;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/**白色字体**/
+mx|Label.personalCenterDetailLabelStyle_1_mx
+{
+	fontSize:13;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/**黄色字体**/
+s|Label.personalCenterDetailLabelStyle_2
+{
+	fontSize:13;
+	color:#f5f377;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Label.personalCenterDetailLabelStyle_2
+{
+	fontSize:13;
+	color:#f5f377;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/**蓝色字体**/
+s|Label.personalCenterDetailLabelStyle_3
+{
+	fontSize:13;
+	color:#428cb3;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.personalCenterDetailLabelStyle_3
+{
+	fontSize:13;
+	color:#428cb3;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**红色字体**/
+s|Label.personalCenterDetailLabelStyle_4
+{
+	fontSize:13;
+	color:#d92a47;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.personalCenterDetailLabelStyle_4
+{
+	fontSize:13;
+	color:#d92a47;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**textinput 输入框样式**/
+s|TextInput.personalCenterDetailTextInputStyle
+{
+	contentBackgroundColor:#000000;
+	contentBackgroundAlpha:0.5;
+	focusedTextSelectionColor:#000000;
+	borderVisible:false;
+	color:#ffffff;
+}
+/**textinput 输入框样式**/
+mx|TextInput.personalCenterDetailTextInputStyle
+{
+	contentBackgroundColor:#000000;
+	contentBackgroundAlpha:0.5;
+	focusedTextSelectionColor:#000000;
+	borderVisible:false;
+	color:#ffffff;
+}
+/**combobox下拉框样式**/
+s|ComboBox.personalCenterDetailComboBoxStyle
+{
+	contentBackgroundColor:#000000;
+	contentBackgroundAlpha:0.8;
+	selectionColor:#000000;
+	rollOverColor:#000000;
+	focusedTextSelectionColor:#000000;
+	borderColor:#000000;
+	color:#ffffff;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterComboBoxSkin")
+}
+/**button 操作按钮样式  蓝色 小号**/
+s|Button.personalCenterBlueButtonStyle_small
+{
+	fontSize:12;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:45;
+	h:20	;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBlueButtonSkin")
+}
+/**button 操作按钮样式  蓝色 大号**/
+s|Button.personalCenterBlueButtonStyle_large
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:80;
+	h:25;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBlueButtonSkin")
+}
+
+/**button 操作按钮样式  褐色 大号**/
+s|Button.personalCenterBrownButtonStyle_large
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:80;
+	h:25;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBrownButtonSkin")
+}
+/**button 操作按钮样式  褐色 中号**/
+s|Button.personalCenterBrownButtonStyle_mid
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:60;
+	h:25;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBrownButtonSkin")
+}
+s|RadioButton.personalCenterRadioButtonStyle
+{
+	fontSize:13;
+	fontFamily:"Microsoft YaHei,微软雅黑";
+	color:#ffffff;
+}
+mx|Grid
+{
+	borderStyle: solid;
+	borderColor:#435b67;
+	horizontalGap:-1;
+	verticalGap:-1;
+	paddingLeft:-1;
+	paddingTop:-1;
+	paddingRight:-1;
+	paddingBottom:-1;
+	
+}
+
+mx|GridItem{
+	borderStyle: solid;
+	borderColor:#435b67;
+	horizontalAlign: center;
+	verticalAlign: middle;
+	paddingTop:-1;
+	paddingBottom:-1;
+	
+}
+/**text 蓝色字体**/
+mx|Text.personalCenterTextStyle_1
+{
+	fontSize:13;
+	color:#428cb3;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**text 白色字体**/
+mx|Text.personalCenterTextStyle_2
+{
+	fontSize:13;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+s|ToggleButton.personalCenterToggleButtonStyle
+{
+	w:20;
+	h:20;
+	color:#ffffff;
+	fontSize:13;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterPageToggleButtonSkin")
+}
+/*个人中心滚动条样式*/
+s|Scroller.personalCenterScrollerStyle
+{
+	symbolColor:#FFFFFF;
+	skinClass:ClassReference("css.skin1.universal.scroll.personalCenterScrollerSkin")
+}
+s|Scroller.personalCenterScrollerStyle_1
+{
+	symbolColor:#FFFFFF;
+	skinClass:ClassReference("css.skin1.universal.scroll.personalCenterScrollerSkin1")
+}
+/*mx VScrollBar的组件样式*/
+mx|VScrollBar.mxVScrollBarStyle{
+	symbolColor:#FFFFFF;
+	chromeColor:#222732;
+}
+/*mx Tree样式*/
+mx|Tree.mxTreeStyle
+{
+	rollOverColor:#336699;
+	selectionColor:#003366;
+}
+/*###########倒计时############*/
+mx|Label.timerLabelYellowStyle{
+	color:#f5f377;
+	fontSize:18;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########在线充值############*/
+mx|Label.zxLabelStyle{
+	color:#428cb3;
+	fontSize:15;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########充值 wating############*/
+s|Button.zxWatingButtonStyle{
+	skinClass:ClassReference("css.skin1.universal.closeBtnSkin")
+}
+mx|Label.zxWatingLabelStyle_1{
+	color:#ffffff;
+	fontSize:13;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.zxWatingLabelStyle_2{
+	color:#ffffff;
+	fontSize:18;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+s|BorderContainer.czLoadingBgBorderContainerStyle_1{
+	bgColor1:#000000;
+	bgAlpha1:0.6;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupBgBorderContainerSkin")
+}
+s|BorderContainer.czLoadingBgBorderContainerStyle_2{
+	bgColor1:#435b67;
+	bgAlpha1:1;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupBgBorderContainerSkin")
+}
+/*##############*/
+/*###########详细信息弹出框#############*/
+s|BorderContainer.personalPopUpTitleBorderContainerStyle_1{
+	bgColor1:#595959;
+	bgAlpha1:0.33333;
+	bgColor2:#2b2d2f;
+	bgAlpha2:0.33333;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupTitleBorderContainerSkin")
+}
+s|BorderContainer.personalPopUpBgBorderContainerStyle_1{
+	bgColor1:#000000;
+	bgAlpha1:0.9;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupBgBorderContainerSkin")
+}
+/*##################*/
+/*###########三级导航菜单style#############*/
+mx|Label.threeMenuLabelStyle{
+	fontSize:15;
+	color:#ffffff; 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##################*/
+/*###########领取奖金style#############*/
+s|Button.personalPrizeButtonStyle{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	skinClass:ClassReference("css.skin1.universal.PersonalButtonSkin")
+}
+/*##################*/
+/*###########MemberTabButtonItem style#############*/
+mx|Label.memberTabButtonItemLabelStyle{
+	fontSize:14;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##################*/
+/*###########ProxyMemberDetail style############*/
+mx|Label.personalPMDStyle_1{
+	color:#ffffff;
+	fontSize:15;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########公告  NoticeItem.mxml############*/
+mx|Label.noticeItemLabelStyle_1{
+	color:#ffffff;
+	fontSize:13;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.noticeItemLabelStyle_2{
+	color:#ffffff;
+	fontSize:20;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########个人中心   SecondButtonItem.mxml############*/
+mx|Label.personalSecondButtonItemLabelStyle_1{
+	color:#ffffff;
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+s|SkinnableContainer.pseronalSecondButtonItemImageStyle_1{
+	getImage:Embed("css/skin1/universal/center/two_menu_mask.png");
+	skinClass:ClassReference("css.skin1.universal.moduelSkinnableContainerSkin");
+}
+/*##############*/
+/*#########登录textinput 圆角##########*/
+s|TextInput.loginTextInputStyle_user{
+	borderColor:#345e8a;
+	color:#FFFFFF; 
+	contentBackgroundAlpha:1;  
+	contentBackgroundColor:#17324c; 
+	fontFamily:"Microsoft YaHei,微软雅黑"; 
+	fontSize:12;
+	logoImage:Embed("css/skin1/universal/images/login_user.png");
+	skinClass:ClassReference("css.skin1.universal.RoundCornerTextInputSkin")
+}
+s|TextInput.loginTextInputStyle_psd{
+	borderColor:#345e8a;
+	color:#FFFFFF; 
+	contentBackgroundAlpha:1;  
+	contentBackgroundColor:#17324c; 
+	fontFamily:"Microsoft YaHei,微软雅黑"; 
+	fontSize:12;
+	logoImage:Embed("css/skin1/universal/images/login_psd.png");
+	skinClass:ClassReference("css.skin1.universal.RoundCornerTextInputSkin")
+}
+s|TextInput.loginTextInputStyle{
+	borderColor:#345e8a;
+	color:#FFFFFF; 
+	contentBackgroundAlpha:1;  
+	contentBackgroundColor:#17324c; 
+	fontFamily:"Microsoft YaHei,微软雅黑"; 
+	fontSize:12;
+	skinClass:ClassReference("css.skin1.universal.RoundCornerTextInputSkin")
+}
+/*###########*/
+

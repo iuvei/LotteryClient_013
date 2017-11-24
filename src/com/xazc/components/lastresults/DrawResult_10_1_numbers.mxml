@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" horizontalAlign="center" verticalAlign="middle"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="464" height="189"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Button;
+			[Bindable]
+			public var numbers:String = "";
+			public var lotteryID:int;
+			private var _timer:Timer;
+			private var palyTimes:int = 0;
+			private var runIndex:int = 0;
+			private var newTextArray:Array = new Array();
+			private var numberKey:int = 5
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				_timer = new Timer(150);
+				_timer.addEventListener(TimerEvent.TIMER,ontime);
+				var numbersArray:Array = numbers.split(",");
+				createNumbers(numbersArray);
+			}
+			private function ontime(event:Event):void{
+				palyTimes++;
+				if(palyTimes <= numberKey*5)
+				{
+					var mc:spark.components.Button = tittleGroup.getElementAt(runIndex) as spark.components.Button;
+					var mc0:spark.components.Button = tittleGroup.getElementAt(runIndex+5) as spark.components.Button;
+					var index: String;
+					var index0: String;
+					if(showtype())
+					{
+						index = randRange(1,11).toString(); 
+						if(index.toString().length == 1){
+							index = "0"+index;
+						}
+						index0 = randRange(1,11).toString(); 
+						if(index0.toString().length == 1){
+							index0 = "0"+index0;
+						}
+					}
+					else
+					{
+						index = randRange(0,9).toString(); 
+						index0 = randRange(0,9).toString(); 
+					}
+					if(palyTimes%5 == 0)
+					{
+						var numbersArray:Array = numbers.split(",");
+						mc.label = numbersArray[runIndex].toString();
+						mc0.label = numbersArray[runIndex+5].toString();
+						runIndex++
+					}
+					else
+					{
+						mc.label = index;
+						mc0.label = index0;
+					}
+				}
+				else
+				{
+					palyTimes = 0;
+					runIndex = 0;
+					if(_timer!=null)
+					{
+						_timer.stop();
+						_timer.removeEventListener(TimerEvent.TIMER, ontime);
+						_timer =null;
+					}
+				}
+			}
+			/**
+			 * 创建号码
+			 */
+			public function createNumbers(array:Array):void
+			{
+				var mc:*;
+				newTextArray = array;
+				if(newTextArray.length<3)
+					return;
+				tittleGroup.removeAllElements();
+				for (var j:int = 0; j < array.length; j++) 
+				{
+					mc = new spark.components.Button();
+//					mc.styleName = "PK10_Show_NumberStyle";
+					mc.styleName = "Happy8_Show_NumberStyle";
+					tittleGroup.addElementAt(mc,j);
+				}
+				_timer.start();
+			}
+			/**
+			 * 是否是11选5(双号)
+			 */
+			private function showtype():Boolean
+			{
+				if(lotteryID == 16 || lotteryID == 5 || lotteryID == 4 || lotteryID == 61 || lotteryID == 63 || lotteryID == 9 || lotteryID == 10){
+					return true;
+				}
+				else{
+					return false;
+				}
+			}
+			private function randRange(min:Number, max:Number):Number {
+				var randomNum:Number = Math.floor(Math.random() * (max - min + 1)) + min;
+				return randomNum;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:TileGroup id="tittleGroup" requestedColumnCount="5" paddingTop="0" paddingLeft="-10">
+	</s:TileGroup>
+</s:HGroup>

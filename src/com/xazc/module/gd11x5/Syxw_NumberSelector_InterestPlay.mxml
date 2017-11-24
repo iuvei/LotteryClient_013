@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  implements="com.xazc.interfaces.IInit" gap="25" horizontalAlign="left" verticalAlign="middle"
+		  creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			//绑定位数
+			[Bindable]
+			public var weiShu:String = "";
+			//号码
+			public var btns:Array = new Array();
+			//选号数组
+			public var numbersArray:Array = new Array();
+			//派发事件所用变量
+			public static const NUMBER_CLICK:String = "InterestPlay_number_click";
+			/**
+			 *初始化 
+			 */
+			public function init():void{
+				numbersArray = new Array();
+				clean();
+			}
+			/**
+			 * 清除选号状态
+			 */
+			public function clean():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=0; i<numbersHGroup.numElements; i++){
+					toggleBtn = numbersHGroup.getElementAt(i) as ToggleButton;
+					toggleBtn.selected = false;
+				}
+			}
+			/**
+			 * 组件初始化完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				createToggleBtn();
+				createcontrolBtn();
+			}
+			/**
+			 * 创建选号
+			 */
+			public function createToggleBtn():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=3; i<10; i++){
+					toggleBtn = new ToggleButton();
+					if(i > 9){toggleBtn.label = i.toString();}
+					else{toggleBtn.label = "0" + i.toString();}
+					toggleBtn.styleName = "numberSelectSkinStyle_large";
+					btns.push(toggleBtn);
+					toggleBtn.addEventListener(MouseEvent.CLICK,toggleBtn_clickHandler);
+					numbersHGroup.addElement(toggleBtn);
+				}
+			}
+			/**
+			 * 创建控制按钮
+			 */
+			public function createcontrolBtn():void
+			{
+				var btn:Button;
+				for(var i:int=1; i<7; i++){
+					btn = new Button();
+					if(i == 1){btn.label = resourceManager.getString('LotteryTips','all');}
+					if(i == 2){btn.label = resourceManager.getString('LotteryTips','large');}
+					if(i == 3){btn.label = resourceManager.getString('LotteryTips','small');}
+					if(i == 4){btn.label = resourceManager.getString('LotteryTips','Odd');}
+					if(i == 5){btn.label = resourceManager.getString('LotteryTips','Even');}
+					if(i == 6){btn.label = resourceManager.getString('LotteryTips','clean');}
+					btn.id = "btn_0" + i.toString();
+					btn.styleName = "strSelectSkinStyle_mid";
+					btn.addEventListener(MouseEvent.CLICK,qdxjoq_clickHandler);
+					controlBtnHGroup.addElement(btn);
+				}
+			}
+			/**
+			 * 设置全，大小，奇偶点击事件
+			 */
+			public function qdxjoq_clickHandler(event:MouseEvent):void{
+				//清除号码样式
+				init();
+				var target:Button = event.target as Button;
+				switch(target.id)
+				{
+					case "btn_01":
+						//全选状态
+						setAllButtonState(true); 
+						break;
+					case "btn_02":
+						//选大状态
+						setBigButtonState(true);
+						break;
+					case "btn_03":
+						//选小状态
+						setSmallButtonState(true);
+						break;
+					case "btn_04":
+						//选奇状态
+						setEvenButtonState(true);
+						break;
+					case "btn_05":
+						//选偶状态
+						setOddButtonState(true);
+						break;
+					case "btn_06":
+						//全不选状态
+						setAllButtonState(false); 
+						break;
+					default:
+						break;
+				}
+			}
+			/**
+			 *	设置全选按钮选中状态
+			 */
+			public function setAllButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						if(selected == true){
+							numbersArray.push(temp.label);
+						}else{
+							numbersArray = [];
+						}
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选大号按钮选中状态
+			 */
+			public function setBigButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=3;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选小号按钮选中状态
+			 */
+			public function setSmallButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<3;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选偶按钮选中状态
+			 */
+			public function setOddButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp && i % 2 != 0){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选奇按钮选中状态
+			 */
+			public function setEvenButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp && i % 2 == 0){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+			/**
+			 * 处理点击按钮事件
+			 */
+			protected function toggleBtn_clickHandler(event:MouseEvent):void
+			{
+				var temp:ToggleButton = event.target as ToggleButton;
+				if(temp.selected == true){
+					numbersArray.push(temp.label);
+				}else{
+					numbersArray.splice(numbersArray.indexOf(temp.label),1);
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Button label="{weiShu}" styleName="orderButtonSkinStyle_large"/>
+	<s:HGroup id="numbersHGroup" gap="10" horizontalAlign="center" verticalAlign="middle">
+	</s:HGroup>
+	<s:Spacer width="70"/>
+	<s:HGroup id="controlBtnHGroup" gap="10" horizontalAlign="left">
+	</s:HGroup>
+</s:HGroup>

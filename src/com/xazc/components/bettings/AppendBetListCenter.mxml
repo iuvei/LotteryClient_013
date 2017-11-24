@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:bettings="com.xazc.components.bettings.*" 
+		 width="730" height="480"
+		 creationComplete="init(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.UsersLotteryDate;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.DynamicEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.utils.StringUtil;
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			[Bindable]
+			private var betType = 1; 
+			protected function init(event:FlexEvent):void
+			{
+				betIssusListMain.addEventListener("closeOrderDetailsEvent",closeAppendNumberGroupHandler);
+				betIssusListMain.addEventListener("appendListUpdate",appendListUpdateHandler);
+				
+			}
+			/**
+			 * 更新旗号 
+			 */
+			private function appendListUpdateHandler(e:CustomEvent):void
+			{
+				
+				this.addIssusNum.text = (e.body as Number).toString();
+			}
+			/**
+			 * 关闭追号信息（新）
+			 * 
+			 */
+			private function closeAppendNumberGroupHandler(e:DynamicEvent):void{
+				//var appendNumberGroup:AppendBetListIssus=e.parentCurrent as AppendBetListIssus;
+				var evt:DynamicEvent=new DynamicEvent("closeOrderDetailsEvent");
+				evt.parentCurrent=this;
+				if(e.hasOwnProperty("parameters")){evt.parameters=e.parameters;}
+				dispatchEvent(evt);
+				betIssusListMain.removeEventListener("closeOrderDetailsEvent",closeAppendNumberGroupHandler);
+			}
+			
+			[Bindable]
+			private var stopBetState:Boolean = true;//中奖后是否停止追号
+			
+			private var baseZhu:Number = 0;//投注注数
+			
+			private var baseMoney:Number = 0;//投注金额
+			
+			private var winningMoney:Number = 0;//中奖金额
+			
+			private var data:ArrayCollection;
+			public function setData(cathectics:ArrayCollection):void
+			{
+				this.data = cathectics;
+				var gameAward:Number = 0;
+				var gameSingleAward:Number = 0;
+				for(var i:int = 0 ; i < cathectics.length ; i++ )
+				{
+					var obj:Cathectic = cathectics[i] as Cathectic;
+					baseZhu += obj.tzzs;
+					baseMoney += (obj.tzzs*2)/obj.tzbmoshi;
+					
+					//计算可中奖金额
+					gameAward = CurrentLotteryInfo.getPlayInfoByGameId(obj.game_id)
+					gameSingleAward = Number(((Number(gameAward)*Number(obj.awreturn))/1000/Number(obj.tzbmoshi)).toFixed(6));
+					gameSingleAward = Number(Math.floor((gameSingleAward+0.000001)*100))/100;
+					
+					winningMoney +=gameSingleAward;
+					
+				}
+				//判断是否有利润率追号显示功能
+				if(cathectics.length>1){//当投注框中订单多于一单时，不能利润率追号
+					this.add_3.visible = false;
+				}else{
+					var cathectic:Cathectic =  cathectics.getItemAt(0) as Cathectic;
+					//北京快乐8的所有玩法 和 江苏快3的和值玩法，不能利润率追号
+					var lotteryType:String = Util.getInstance().getLotteryTypesByLotteryId(cathectic.lottery_type);
+					if("happy8"==lotteryType){//快乐8
+						this.add_3.visible = false;
+					}else if("kuai3"==lotteryType){
+						if((cathectic.lottery_type+'01')==cathectic.game_id){//快三和值玩法
+							this.add_3.visible = false;
+						}
+					}
+					//当该玩法具有多奖级时，不能利润率追号
+					var obj2:Object = UsersLotteryDate.getInstance().getThisLotteryDateByLoteryId(CurrentLotteryInfo.lotteryId);
+					for(var i:int = 0;i<obj2.LotteryInfo.PlayInfo.length;i++){
+						var date = obj2.LotteryInfo.PlayInfo[i];
+						if(cathectic.game_id==date.PlayCode){
+							if((date.AwardLevelInfo as Array).length>1){
+								this.add_3.visible = false;
+							}
+							return;
+						}
+						
+					}
+				}
+			}
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				var evt:DynamicEvent=new DynamicEvent("closeOrderDetailsEvent");
+				evt.parentCurrent=this;
+				dispatchEvent(evt); 
+			}
+			/**
+			 *发送关闭窗口时间 
+			 **/
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				var evt:DynamicEvent=new DynamicEvent("closeOrderDetailsEvent");
+				evt.parentCurrent=this;
+				dispatchEvent(evt);
+			}
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			protected function change_betType(type:Number):void
+			{
+				//修改当前选中类型
+				this.betType =type;
+				this["add_"+type].selected = true;
+				//还原数据参数
+				this.clearAllSelectDate();
+			}
+			private function clearAllSelectDate():void
+			{
+				//初始化数据
+				this.beginMultiple.text = "1";
+				this.intervalNum.text = "1";
+				this.intervalMultiple.text = "2";
+				this.minRate.text = "50";
+				this.addIssusNum.text = "10";
+				this.addIssusNum.text = "10";
+				//清除已生成数据
+				this.betIssusListMain.clearAllSelectDate();
+			}
+			
+			protected function generateAppengPlan_clickHandler(event:MouseEvent):void
+			{
+				//判断空值，初始化数字
+				if(0==Number(StringUtil.trim(beginMultiple.text))){this.beginMultiple.text = "1";}
+				if(0==Number(StringUtil.trim(intervalNum.text))){this.intervalNum.text = "1";}
+				if(0==Number(StringUtil.trim(intervalMultiple.text))){this.intervalMultiple.text = "1";}
+				if(0==Number(StringUtil.trim(minRate.text))){this.minRate.text = "1";}
+				if(0==Number(StringUtil.trim(addIssusNum.text))){this.addIssusNum.text = "1";}
+				if(Number(StringUtil.trim(addIssusNum.text))>120){
+					this.addIssusNum.text = "120";
+				}
+				
+				var obj:Object = new Object();
+				obj.betType = this.betType;
+				obj.beginMultiple = Number(this.beginMultiple.text);
+				obj.intervalNum = Number(this.intervalNum.text);
+				obj.intervalMultiple = Number(this.intervalMultiple.text);
+				obj.minRate = Number(this.minRate.text);
+				obj.addIssusNum = Number(this.addIssusNum.text);
+				obj.baseMoney = Number(this.baseMoney);
+				obj.baseZhu = Number(this.baseZhu);
+				obj.winningMoney = Number(this.winningMoney);
+				obj.baseData = data;
+				
+				this.betIssusListMain.createAppendIssusDate(obj);
+			}
+			protected function checkbox_changeHandler(event:Event):void
+			{
+				stopBetState = (event.target as CheckBox).selected;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+		[Event(name="closeOrderDetailsEvent",type="mx.events.DynamicEvent")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<s:Rotate id="rotateEffect"  autoCenterTransform="true"
+				  duration="250"  angleFrom="0" angleTo="360"
+				  target="{imgClose}" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	<s:BitmapImage id="img" width="730" height="480"  source="@Embed('css/skin1/universal/images/alert_bg.png',
+				   scaleGridLeft='100', scaleGridRight='110', scaleGridTop='100', scaleGridBottom='110')"/> 
+	
+	<s:Group width="670" height="420" x="30" y="30">
+		<s:Group width="100%" height="43"  >
+			<mx:Label verticalCenter="0" left="20" text="温馨提示" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			<s:HGroup left="75" height="100%" verticalAlign="middle" gap="2">
+				<mx:Label verticalCenter="0"  text="（距离当前期" styleName="popupWindowTitleStyle"  fontSize="14"/>
+				<mx:Label verticalCenter="0"  text="{CurrentLotteryInfo.currentIssue}" color="0xd7b045" styleName="popupWindowTitleStyle"  fontSize="14"/>
+				<mx:Label verticalCenter="0"  text="期,投注截止时间还有" styleName="popupWindowTitleStyle"  fontSize="14"/>
+				<mx:Label verticalCenter="0"  text="{CurrentLotteryInfo.currentIssueTime}" color="0xd7b045" styleName="popupWindowTitleStyle"  fontSize="14"/>
+				<mx:Label verticalCenter="0"  text="）" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			</s:HGroup>
+			<s:Image id="imgClose" x="632" y="18" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+					 rollOut="imgClose_rollOutHandler(event)"
+					 rollOver="imgClose_rollOverHandler(event)"/>
+		</s:Group>
+		
+		<s:VGroup width="100%"  top="48" height="100%" gap="0" verticalAlign="top" paddingBottom="0">
+			<s:HGroup paddingLeft="10" paddingRight="10" paddingTop="10" width="100%" height="40" verticalAlign="middle">
+				<s:ToggleButton id="add_1" selected="{betType==1?true:false}" skinClass="css.skin1.universal.ZhuiToggleButtonSkins" label="同倍追号" click="change_betType(1)"/>
+				<s:ToggleButton id="add_2" selected="{betType==2?true:false}" skinClass="css.skin1.universal.ZhuiToggleButtonSkins" label="翻倍追号"  click="change_betType(2)"/>
+				<s:ToggleButton id="add_3" selected="{betType==3?true:false}" skinClass="css.skin1.universal.ZhuiToggleButtonSkins" label="利润率追号"  click="change_betType(3)"/>
+				<s:Spacer width="100%"/>
+				<s:CheckBox label="中奖后是否停止追号？" styleName="zhuihaoCheckBoxStyle" selected="true" change="checkbox_changeHandler(event)"/>
+			</s:HGroup>
+			<!--  追号  -->
+			<s:HGroup paddingLeft="10" paddingRight="10" paddingTop="10" width="100%" gap="1" height="40" verticalAlign="middle">
+				<mx:Label verticalCenter="0" color="0x000000"  text="起始倍数：" styleName="popupWindowTitleStyle"  fontSize="14"/>
+				<s:TextInput width="40" maxChars="4" text="1" id="beginMultiple" restrict="0-9"/>
+				<s:Spacer width="5"/>
+				<!-- 翻倍追号 -->
+				<s:HGroup gap="1" visible="{betType==2?true:false}" includeInLayout="{betType==2?true:false}">
+					<mx:Label verticalCenter="0" color="0x000000"  text="隔" styleName="popupWindowTitleStyle"  fontSize="14"/>
+					<s:TextInput width="40" text="1" id="intervalNum" maxChars="3" restrict="0-9"/>
+					<mx:Label verticalCenter="0" color="0x000000"  text="期  X" styleName="popupWindowTitleStyle"  fontSize="14"/>
+					<s:TextInput width="40" text="2" maxChars="4" id="intervalMultiple" restrict="0-9"/>
+					<mx:Label verticalCenter="0" color="0x000000"  text="倍" styleName="popupWindowTitleStyle"  fontSize="14"/>
+					<s:Spacer width="5"/>
+				</s:HGroup>
+				<!--  利润率追号  -->
+				<s:HGroup gap="1" visible="{betType==3?true:false}" includeInLayout="{betType==3?true:false}">
+					<mx:Label verticalCenter="0" color="0x000000"  text="最低收益率：" styleName="popupWindowTitleStyle"  fontSize="14"/>
+					<s:TextInput width="40" text="50" id="minRate" restrict="0-9"/>
+					<mx:Label verticalCenter="0" color="0x000000"  text="%" styleName="popupWindowTitleStyle"  fontSize="14"/>
+					<s:Spacer width="5"/>
+				</s:HGroup>
+				
+				<mx:Label verticalCenter="0" color="0x000000"  text="追号期数：" styleName="popupWindowTitleStyle"  fontSize="14"/>
+				<s:TextInput width="40" text="10" maxChars="3" id="addIssusNum" restrict="0-9"/>
+				<mx:Label verticalCenter="0" color="0x000000" text="(最多可追120期)" styleName="popupWindowTitleStyle"  fontSize="14"/>
+				<s:Spacer width="100%"/>
+				<s:Button label="生成追号计划" click="generateAppengPlan_clickHandler(event)" styleName="personalSubmitButtonStyle"/>
+			</s:HGroup>
+			<s:Spacer height="10"/>
+			<s:Group width="100%">
+				<s:Rect left="10" right="10" top="0" bottom="0">
+					<s:fill>
+						<s:LinearGradient rotation="90">
+							<s:GradientEntry color="0x605f5f" alpha="1" ratio="0.2"/>
+						</s:LinearGradient>
+					</s:fill>
+				</s:Rect>
+				<s:HGroup width="100%"   paddingRight="15" gap="0" height="30" verticalAlign="middle">
+					<s:Label text="序号" width="10%" textAlign="center" color="0xffffff"/>
+					<s:Label text="期号" width="25%" textAlign="center" color="0xffffff"/>
+					<s:Label text="倍数" width="10%" textAlign="center" color="0xffffff"/>
+					<s:Label text="金额(元)" width="25%" textAlign="center" color="0xffffff"/>
+					<s:Label text="投注截止时间" width="30%" textAlign="center" color="0xffffff"/>
+				</s:HGroup>
+			</s:Group>
+			<bettings:AppendBetListIssus id="betIssusListMain" stopBetState="{stopBetState}" width="100%" height="100%"/>
+		</s:VGroup>
+	</s:Group>
+</s:Group>

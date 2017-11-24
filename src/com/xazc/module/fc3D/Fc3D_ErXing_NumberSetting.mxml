@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" implements="com.xazc.interfaces.IInit"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:fc3D="com.xazc.module.fc3D.*">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.Util;
+			
+			import mx.events.FlexEvent;
+			//玩法显示变量
+			[Bindable]
+			public var playTypes:int = 1;
+			//按钮切换变量
+			[Bindable]
+			public var changeTypes:int = 1;
+			//gameID
+			public var game_ID:String = "09";
+			//是否为胆拖
+			public var sntuo:int = 0;
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				this.gameType.text = "从百、十位上各选1个或多个号码进行投注，选号与开奖号码前2位按位一致即中奖。";
+				this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_10');
+				Straight.numbers_1.headerText = resourceManager.getString('LotteryTips','hundred');
+				Straight.numbers_2.headerText = resourceManager.getString('LotteryTips','ten');
+				changeTypes = 1;
+				playTypes = 1;
+				clean();
+			}
+			/**
+			 * 清除选号
+			 */
+			public function clean():void
+			{
+				Straight.init();
+				stick.init();
+			}
+			/**
+			 * 切换玩法
+			 */
+			public function changePlay(event:MouseEvent):void
+			{
+				init();
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				target.selected = true;
+				switch(event.currentTarget)
+				{
+					case q2_straight_TogBtn:
+						changeTypes = 1;
+						playTypes = 1;
+						game_ID = "09";
+						sntuo = 0;
+						this.gameType.text = "从百、十位上各选1个或多个号码进行投注，选号与开奖号码前2位按位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_10');
+						Straight.numbers_1.headerText = resourceManager.getString('LotteryTips','hundred');
+						Straight.numbers_2.headerText = resourceManager.getString('LotteryTips','ten');
+						Straight.playerTipText = resourceManager.getString('LotteryTips','play_Tips_19');
+						break;
+					case q2_Stick_TogBtn:
+						changeTypes = 2;
+						playTypes = 2;
+						game_ID = "09";
+						this.gameType.text = "任选2个号码组成一注，选号与开奖号码前2位按位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_11');
+						stick.styleTips = resourceManager.getString('LotteryTips','forword_2_Straight');
+						sntuo = 3;
+						break;
+					case h2_straight_TogBtn:
+						changeTypes = 3;
+						playTypes = 1;
+						sntuo = 0;
+						game_ID = "11";
+						this.gameType.text = "从十、个位上各选1个或多个号码进行投注，选号与开奖号码后2位按位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_12');
+						Straight.numbers_1.headerText = resourceManager.getString('LotteryTips','ten');
+						Straight.numbers_2.headerText = resourceManager.getString('LotteryTips','single');
+						Straight.playerTipText = resourceManager.getString('LotteryTips','play_Tips_20');
+						break;
+					case h2_Stick_TogBtn:
+						changeTypes = 4;
+						playTypes = 2;
+						sntuo = 3;
+						this.gameType.text = "任选2个号码组成一注，选号与开奖号码后2位按位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_12');
+						stick.styleTips = resourceManager.getString('LotteryTips','back_2_Straight');
+						game_ID = "11";
+						break;
+					default:
+						break;
+				}
+				dispatchEvent(new CustomEvent(CustomEvent.COUNT_ZERO,game_ID));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,CurrentLotteryInfo.lotteryId+game_ID));
+			}
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				addEventListener(Fc3D_Stick_NumberSelector.GET_STICK_NUMBERS,getNumbersHandler);
+			}
+			/**
+			 * 监听并派发选号
+			 */
+			protected function getNumbersHandler(event:CustomEvent):void
+			{
+				switch(event.type)
+				{
+					case Fc3D_Stick_NumberSelector.GET_STICK_NUMBERS:
+						dispatchEvent(new CustomEvent(CustomEvent.STICK_NUMBERS,event.body));
+						break;
+					default:
+						break;
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="24" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Play_Tips_12')}"  styleName="labelStyles1" />
+			<s:ToggleButton id="q2_straight_TogBtn" label="{resourceManager.getString('LotteryTips','straight_Selected_1')}" selected="{changeTypes == 1}"
+							styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="q2_Stick_TogBtn" label="{resourceManager.getString('LotteryTips','stick_Selected_1')}" selected="{changeTypes == 2}"
+							styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+		</s:HGroup>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Play_Tips_13')}"  styleName="labelStyles1"/>
+			<s:ToggleButton id="h2_straight_TogBtn" label="{resourceManager.getString('LotteryTips','straight_Selected_1')}" selected="{changeTypes == 3}"
+							styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="h2_Stick_TogBtn" label="{resourceManager.getString('LotteryTips','stick_Selected_1')}" selected="{changeTypes == 4}"
+							styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="从百、十位上各选1个或多个号码进行投注，选号与开奖号码前2位按位一致即中奖。" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_10')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	
+	<fc3D:Fc3D_ErXing_Straight_NumberSelector id="Straight" width="100%"  height="280" paddingLeft="15" verticalAlign="middle" gap="24"
+											  playerTipText="{resourceManager.getString('LotteryTips','play_Tips_19')}"
+									          visible="{playTypes == 1 ? true : false}" includeInLayout="{playTypes == 1 ? true : false}"/>
+	<s:VGroup width="100%" height="280" verticalAlign="middle" visible="{playTypes == 2 ? true : false}" includeInLayout="{playTypes == 2 ? true : false}">
+		<fc3D:Fc3D_Stick_NumberSelector id="stick" width="100%" height="250" paddingLeft="15" verticalAlign="middle" gap="58"
+										checkNums="2" numberStyle="12" styleTips="{resourceManager.getString('LotteryTips','forword_2_Straight')}" checkSameBoolean="false"
+										textTip_1="{resourceManager.getString('LotteryTips','stick_Tips_2_1')}" textTip_2="{resourceManager.getString('LotteryTips','stick_Tips_3')}"/>
+	</s:VGroup>
+</s:Group>

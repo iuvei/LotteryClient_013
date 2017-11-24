@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:happy8="com.xazc.module.happy8.*"
+		 xmlns:happy10="com.xazc.components.happy10.*"
+		 xmlns:bettings="com.xazc.components.bettings.*"
+		 width="100%" height="100%"
+		 implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			
+			//注数
+			[Bindable]
+			private  var zhushu:Number = 0;
+			//钱数
+			[Bindable]
+			private  var qianshu:Number = 0;
+			//当前玩法id
+			private var game_ID:String = "01";
+			private var game_Sntuo:String = "0";
+			
+			//投注信息
+			private var touzhuContent:Array = new Array();
+			private var touzhuContent2:Array = new Array();
+			private var touzhuContent3:Array = new Array();
+			
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.init();
+				
+			}
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				if(happy10GamesSelecters){this.happy10GamesSelecters.init();}
+				//if(happy8NumSelecters){this.happy8NumSelecters.init();}
+				
+				this.game_ID = "01";
+				this.game_Sntuo = "0";
+				this.zhushu = 0;
+				this.qianshu = 0;
+				this.calcTotalNums();
+				
+				this.addEventListener(Happy10GamesSelecter.CHANG_HAPPY10_GAME_TYPE,gameSelecterHandler);
+				
+				this.addEventListener(Happy10Selecter_x1st.SEND_NUMBERS_CLICK,numbersSelecterHandler);
+				this.addEventListener(Happy10Selecter_x1ht.SEND_NUMBERS_CLICK,numbersSelecterHandler);
+				this.addEventListener(Happy10Selecter_biaozhun.SEND_NUMBERS_CLICK,numbersSelecterHandler);
+				this.addEventListener(Happy10Selecter_dantuo.SEND_NUMBERS_CLICK,numbersSelecterHandler);
+				this.addEventListener(Happy10Selecter_q2.SEND_NUMBERS_CLICK,numbersSelecterHandler);
+				this.addEventListener(Happy10Selecter_q3.SEND_NUMBERS_CLICK,numbersSelecterHandler);
+				
+				
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,CurrentLotteryInfo.lotteryId+game_ID));
+				
+			}
+			
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				var alert:AlertMsg = new AlertMsg();
+				if(int(this.game_Sntuo)==1&&zhushu==1){
+					alert = new AlertMsg();
+					//alert.show("胆拖玩法至少选择2注！", "温馨提示");
+					alert.show(resourceManager.getString("LotteryTips","lotteryAlert_001"), resourceManager.getString("LotteryTips","message_004"));
+					return;
+				}
+				
+				if(zhushu > 0){
+					var cathectic:Cathectic = new  Cathectic();
+					cathectic.lottery_type = CurrentLotteryInfo.lotteryId;
+					cathectic.game_id = CurrentLotteryInfo.lotteryId+game_ID;
+					cathectic.sntuo = Number(game_Sntuo);
+					cathectic.tzzs = zhushu;
+					
+					if(this.game_Sntuo=="0"){
+						if(this.game_ID=="08"){
+							cathectic.tzcontent=touzhuContent.join(",")+"|"+touzhuContent2.join(",");
+						}else if(this.game_ID=="10"){
+							cathectic.tzcontent=touzhuContent.join(",")+"|"+touzhuContent2.join(",")+"|"+touzhuContent3.join(",");
+						}else{
+							cathectic.tzcontent = touzhuContent.join(",");
+						}
+					
+					}else{
+						cathectic.tzcontent = touzhuContent.join(",")+"#"+touzhuContent2.join(",");
+					}
+					
+					dispatchEvent(new BetsClickEvent(BetsClickEvent.BETS_NUMBER_CLICK,cathectic));
+					//清空选择的号码
+					this.clear();
+				}else{
+					
+					alert = new AlertMsg();
+					//alert.show("请选择正确内容进行投注！", "温馨提示");
+					
+					alert.show(resourceManager.getString("LotteryTips","lotteryAlert_002"), resourceManager.getString("LotteryTips","message_004"));
+					
+					/*Alert.show("请选择正确的号码");*/
+				}
+			}
+			
+			/**
+			 * 切换元角分模式，改变金额方法
+			 */		
+			public function switchModeForChangeMoney():void{
+				calcTotalNums();
+			}
+			
+			public function calcTotalNums():void
+			{
+				//当为标准选号时
+				if(game_Sntuo=="0"){
+					if(this.game_ID=="01"||this.game_ID=="02"){
+						zhushu = touzhuContent.length;
+					}else if(this.game_ID=="03"){
+						zhushu = (touzhuContent.length*(touzhuContent.length-1))/2
+					}else if(this.game_ID=="04"){
+						zhushu = touzhuContent.length*(touzhuContent.length-1)*(touzhuContent.length-2)/6;
+					}else if(this.game_ID=="05"){
+						zhushu = touzhuContent.length*(touzhuContent.length-1)*(touzhuContent.length-2)*(touzhuContent.length-3)/24;
+					}else if(this.game_ID=="06"){
+						zhushu = touzhuContent.length*(touzhuContent.length-1)*(touzhuContent.length-2)*(touzhuContent.length-3)*(touzhuContent.length-4)/120;
+					}else if(this.game_ID=="07"){
+						zhushu = (touzhuContent.length*(touzhuContent.length-1))/2
+					}else if(this.game_ID=="08"){
+						zhushu = touzhuContent.length*touzhuContent2.length;
+					}else if(this.game_ID=="09"){
+						zhushu = touzhuContent.length*(touzhuContent.length-1)*(touzhuContent.length-2)/6;
+					}else if(this.game_ID=="10"){
+						zhushu = touzhuContent.length*touzhuContent2.length*touzhuContent3.length;
+					}
+				
+				}else{//胆拖选号
+					if(this.game_ID=="03"){
+						
+						if(touzhuContent.length == 0){
+							zhushu = 0;
+						}
+						if(touzhuContent.length == 1){
+							zhushu = touzhuContent2.length;
+						}
+					}else if(this.game_ID=="04"){
+						
+						if(touzhuContent.length == 0){
+							zhushu = 0;
+						}
+						if(touzhuContent.length == 1){
+							zhushu = touzhuContent2.length*(touzhuContent2.length-1)/2;
+						}
+						if(touzhuContent.length == 2){
+							zhushu = touzhuContent2.length;
+						}
+						
+					}else if(this.game_ID=="05"){
+						
+						if(touzhuContent.length == 0){
+							zhushu = 0;
+						}
+						
+						if(touzhuContent.length == 1){
+							zhushu = touzhuContent2.length*(touzhuContent2.length-1)*(touzhuContent2.length-2)/6;
+						}
+						if(touzhuContent.length == 2){
+							zhushu = touzhuContent2.length*(touzhuContent2.length-1)/2;
+						}
+						if(touzhuContent.length == 3){
+							zhushu = touzhuContent2.length;
+						}
+					}else if(this.game_ID=="06"){
+						
+						if(touzhuContent.length == 0){
+							zhushu = 0;
+						}
+						if(touzhuContent.length == 1){
+							zhushu = touzhuContent2.length*(touzhuContent2.length-1)*(touzhuContent2.length-2)*(touzhuContent2.length-3)/24;
+						}
+						if(touzhuContent.length == 2){
+							zhushu = touzhuContent2.length*(touzhuContent2.length-1)*(touzhuContent2.length-2)/6;
+						}
+						if(touzhuContent.length == 3){
+							zhushu = touzhuContent2.length*(touzhuContent2.length-1)/2;
+						}
+						if(touzhuContent.length == 4){
+							zhushu = touzhuContent2.length;
+						}
+					}else if(this.game_ID=="07"){
+						if(touzhuContent.length == 0){
+							zhushu = 0;
+						}
+						if(touzhuContent.length == 1){
+							zhushu = touzhuContent2.length;
+						}
+					}else if(this.game_ID=="09"){
+						if(touzhuContent.length == 0){
+							zhushu = 0;
+						}
+						if(touzhuContent.length == 1){
+							zhushu = touzhuContent2.length*(touzhuContent2.length-1)/2;
+						}
+						if(touzhuContent.length == 2){
+							zhushu = touzhuContent2.length;
+						}
+					}
+				}
+				qianshu = zhushu*CurrentLotteryInfo.perPrice/CurrentLotteryInfo.yuanjiaoMoshi;
+			}
+			
+			/**
+			 * 处理选择玩法处的事件
+			 * 
+			 */
+			protected function gameSelecterHandler(event:CustomEvent):void
+			{
+				var tempGameId:String =event.body as String;
+				var tempGameArr:Array = tempGameId.split("_");
+				this.game_ID = tempGameArr[0] as String;
+				this.game_Sntuo = tempGameArr[1] as String;
+				this.changeSelecterType();
+				this.clear();
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,CurrentLotteryInfo.lotteryId+game_ID));
+				
+			}
+			/**
+			 * 根据玩法id切换组件
+			 * 
+			 */
+			private function changeSelecterType():void
+			{
+				var tempIdStr:String  = getSelecterType(game_ID,game_Sntuo);
+				var selecters:UIComponent;
+				for(var i:int = 0;i<numberSelecters.numElements;i++){
+					selecters = numberSelecters.getElementAt(i) as UIComponent;
+					if(selecters.id.toString()==tempIdStr){
+						selecters.visible = true;
+						selecters.includeInLayout = true;
+					}else{
+						selecters.visible = false;
+						selecters.includeInLayout = false;
+					}
+				}
+				if(tempIdStr=="selecter_3"){
+					if(this.game_ID=="07"){
+						this.selecter_3.manyNum=1;
+					}else if(this.game_ID=="09"){
+						this.selecter_3.manyNum=2;
+					}else{
+						this.selecter_3.manyNum=Number(this.game_ID)-2;
+					}
+				}
+			}
+			
+			
+			/**
+			 *  处理选号区的事件
+			 * 
+			 */
+			protected function numbersSelecterHandler(event:CustomEvent):void
+			{
+				if(this.game_Sntuo=="1"){
+					touzhuContent = (event.body as Array)[0];
+					touzhuContent2 = (event.body as Array)[1];
+				}else{
+					if(this.game_ID=="08"){
+						touzhuContent = (event.body as Array)[0];
+						touzhuContent2 = (event.body as Array)[1];
+					}else if(this.game_ID=="10"){ 
+						touzhuContent = (event.body as Array)[0];
+						touzhuContent2 = (event.body as Array)[1];
+						touzhuContent3 = (event.body as Array)[2];
+					}else{
+						touzhuContent = (event.body as String).split(",");
+					}
+				}
+				calcTotalNums();
+			}
+			
+			
+			/**
+			 * 清除状态 
+			 *
+			 */
+			public function clear():void
+			{
+				touzhuContent = new Array();
+				if(happy10GamesSelecters){this.happy10GamesSelecters.clear();}
+				this[this.getSelecterType(this.game_ID,this.game_Sntuo)].clear();
+				calcTotalNums();
+				
+			}
+			
+			public function getSelecterType(gameId:String,gameSntuo:String):String
+			{
+				if(gameSntuo=="0"){
+					if(gameId=="01"){
+						return "selecter_0";
+					}else if(gameId=="02"){
+						return "selecter_1";
+					}else if(gameId=="03"||gameId=="04"||gameId=="05"||gameId=="06"||gameId=="07"||gameId=="09"){
+						return "selecter_2";
+					}else if(gameId=="08"){
+						return "selecter_4";
+					}else if(gameId=="10"){
+						return "selecter_5";
+					}
+				}else{//胆拖选号
+					return "selecter_3";
+				}
+				return "selecter_0";
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<!--  玩法列表  -->
+	<happy10:Happy10GamesSelecter  id="happy10GamesSelecters" top="10">
+	</happy10:Happy10GamesSelecter>
+	
+	<s:HGroup  width="100%" top="75" horizontalAlign="center" id="numberSelecters">
+		<!--  选号区域 -->
+		<happy10:Happy10Selecter_x1st  width="100%" horizontalAlign="center" id="selecter_0" >
+		</happy10:Happy10Selecter_x1st>
+		<happy10:Happy10Selecter_x1ht  width="100%" horizontalAlign="center" id="selecter_1" visible="false" includeInLayout="false">
+		</happy10:Happy10Selecter_x1ht>
+		<happy10:Happy10Selecter_biaozhun  width="100%" horizontalAlign="center" id="selecter_2" visible="false" includeInLayout="false">
+		</happy10:Happy10Selecter_biaozhun>
+		<happy10:Happy10Selecter_dantuo  width="100%" horizontalAlign="center" id="selecter_3" visible="false" includeInLayout="false">
+		</happy10:Happy10Selecter_dantuo>
+		<happy10:Happy10Selecter_q2  width="100%" horizontalAlign="center" id="selecter_4" visible="false" includeInLayout="false">
+		</happy10:Happy10Selecter_q2>
+		<happy10:Happy10Selecter_q3  width="100%" horizontalAlign="center" id="selecter_5" visible="false" includeInLayout="false">
+		</happy10:Happy10Selecter_q3>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="middle"  bottom="0" id="hg" horizontalAlign="right">
+		<!--<mx:Spacer width="20"/>
+		<bettings:LineItem width="{hg.width-hg.width*0.4-hg_content.width-confimBtn.width-100}" height="1"/>-->
+		<s:HGroup id="hg_content" gap="0" width="82%" horizontalAlign="right">
+			<mx:Label  text="{resourceManager.getString('LotteryTips','you_Selected')}" styleName="labelStyles2"/>
+			<mx:Label  text="{zhushu}" styleName="labelStyles3"/>
+			<mx:Label text="{resourceManager.getString('LotteryTips','pour_Total')}" styleName="labelStyles2"/>
+			<mx:Label  text="{qianshu}" styleName="labelStyles3"/>
+			<mx:Label  text="{CurrentUserInfo.moneyType}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="18%" horizontalAlign="center">
+			<s:Button id="confimBtn" label="{resourceManager.getString('LotteryTips','confirm_Selected')}" click="button1_clickHandler(event)" styleName="submitButtonSkinStyle"/>
+		</s:HGroup>
+		<!--<mx:Spacer width="20"/>
+		<bettings:LineItem width="40%" height="1"/>-->
+	</s:HGroup>
+</s:Group>

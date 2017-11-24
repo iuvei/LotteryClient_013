@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+					  creationComplete="group1_creationCompleteHandler(event)"
+					  height="189" width="248"  styleName="resultListBgStyle">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.manager.TimerManager;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.Util;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import css.skin1.universal.ListResultSkinableContainerSkin;
+			
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.components.Button;
+			import spark.components.Label;
+			private var tempLottery:String = "0";
+			
+			[Bindable]
+			private var zstState:Boolean = true;
+			
+			[Bindable]
+			private var lotteryName:String = "";
+			
+			public function init():void
+			{
+			}
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+			}
+			
+			private var resultListsObj:Object;
+			
+			public function getKaijiangMessage(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString());
+				resultListsObj = arr;
+				trace(e.result.toString());
+				this.showMoreResults(4);
+			}
+			
+			public function showMoreResults(k:int):void
+			{
+				listVg.removeAllElements();
+				var arr:Object = resultListsObj;
+				if(arr == null)
+					return;
+				var titleGrid:Grid=new Grid();
+				var tempNum:int = 0;
+				if(k == 4){
+					if((arr as Array).length<=3){
+						tempNum = (arr as Array).length;
+					}else{
+						tempNum = 4;
+					}
+				}else{
+					if((arr as Array).length<10){
+						tempNum = (arr as Array).length;
+					}else{
+						tempNum = 10;
+					}
+				}
+				titleGrid.width = 229;
+				titleGrid.setStyle("borderVisible",false);
+				titleGrid.setStyle("verticalGap",0);
+				for(var j:int = 0;j < tempNum; j++){
+					var titlerow:GridRow=new GridRow();
+					titlerow.height=32;
+					for(var i:int= 0;i< 2;i++){
+						if(0==i){
+							var gridItem:GridItem=new GridItem();
+							gridItem.setStyle("borderVisible",false);
+							gridItem.setStyle("horizontalGap",3);
+							gridItem.width = 150;
+							var tempArr:Array = arr[j].CzNum.split(",") as Array;
+							for(var o:int = 0;o<tempArr.length;o++){
+								var btn:Button = new Button();
+								btn=new Button();
+								btn.styleName = "LotteryTheBallBtnStyle";
+								btn.label = tempArr[o] as String
+								gridItem.addChild(btn);
+							}
+							titlerow.addChild(gridItem);
+						}else{
+							var gridItem1:GridItem=new GridItem();
+							gridItem1.setStyle("borderVisible",false);
+							gridItem1.width = 80;
+							var label:Label=new Label();
+							label.text=Util.getInstance().getLastThreePlaysBybetNumbers(arr[j].CzNum);
+							label.styleName = "lastLabelStyles4";
+							gridItem1.addChild(label);
+							titlerow.addChild(gridItem1);
+						}
+					}
+					titleGrid.addChild(titlerow);
+				}
+				listVg.addElementAt(titleGrid,0);
+				listVg.height = tempNum*32+2;
+				if(k==4){
+					if((arr as Array).length<5){
+						this.moreResults.visible = false;
+						this.moreResults.includeInLayout = false;
+					}else{
+						this.moreResults.visible = true;
+						this.moreResults.includeInLayout = true;
+					}
+				}else{
+					this.moreResults.visible = false;
+					this.moreResults.includeInLayout = false;
+				}
+				
+			}
+			
+			
+			
+			public function objItem(value:Object):void
+			{
+				if(value.CzType=="9"){
+					var index:int = (value.CzNum as String).lastIndexOf(",");
+					var tempStr:String = (value.CzNum as String).substring(0,index)+"#"+(value.CzNum as String).substring(index+1);
+					value.CzNum = tempStr;
+				}else if(value.CzType=="24"||value.CzType=="23"){
+					var index1:int = (value.CzNum as String).lastIndexOf(",");
+					var tempStr1:String = (value.CzNum as String).substring(0,index1)+"|"+(value.CzNum as String).substring(index1+1);
+					value.CzNum = tempStr1;
+				}
+				
+				
+			}
+			
+			/**
+			 *  组件初始化完毕后调用
+			 * 
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//初始化
+				//this.init();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+		[Event(name="addResultObjectEvent",type="mx.events.DynamicEvent")]
+		[Event(name="lookResultDetailEvent",type="mx.events.DynamicEvent")]
+	</fx:Metadata>
+	<s:SkinnableContainer id="listVg" width="248" skinClass="css.skin1.universal.ListResultSkinableContainerSkin"
+						  rollOut="showMoreResults(4)" top="28" horizontalCenter="0">
+		<s:layout>
+			<s:VerticalLayout gap="2" horizontalAlign="center"/>
+		</s:layout>
+	</s:SkinnableContainer>
+	<s:HGroup width="100%" height="21" bottom="10" horizontalAlign="center">
+		<s:Image source="css/skin1/universal/images/list_btn.png" id="moreResults" horizontalCenter="0" 
+				 buttonMode="true" click="showMoreResults(10)" visible="false" includeInLayout="false"/>
+	</s:HGroup>
+</s:SkinnableContainer>

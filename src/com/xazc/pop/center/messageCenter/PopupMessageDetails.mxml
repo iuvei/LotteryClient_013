@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="645" height="485"
+		 creationComplete="init(event)" xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			private var _isShowReplyBtn:Boolean = false;
+			
+			[Bindable]
+			public function get isShowReplyBtn():Boolean
+			{
+				return _isShowReplyBtn;
+			}
+
+			public function set isShowReplyBtn(value:Boolean):void
+			{
+				_isShowReplyBtn = value;
+			}
+
+			protected function init(event:FlexEvent):void
+			{
+				
+			}
+			
+			private var pageNum:int = 1;
+			public function setData(obj:Object,pageInt:int):void
+			{
+				//存贮当前在第几页；
+				if(pageInt > 0){
+					
+					pageNum = pageInt;
+				}
+				
+				
+				if(obj.SendPersonLevel == 1 ){
+					//"下级";
+					send_name.text = obj.SendPerson;
+				}else if(obj.SendPersonLevel == 2 ){
+					//"上级";
+					if(CurrentUserInfo.userName==obj.SendPerson){
+						send_name.text = CurrentUserInfo.userName;
+					}else{
+						send_name.text = "上级";
+					}
+				}else if(obj.SendPersonLevel == 3 ){
+					//"系统";
+					send_name.text = "系统消息";
+				}
+				
+				
+				send_time.text = obj.SendDateTime;
+				send_title.text = obj.Title;
+				send_content.text = obj.Content;
+				
+				/*
+				{"StationEmailReceiveBox":
+				{"ID":0,"SendID":141,"Title":"djdjdjdjdj","Content":"吃凉的知识和同学有句话剧团购网友的知识和同学有事儿多",
+				"SendUserID":45,"SendPerson":"kaka","SendDateTime":"2017-03-09 09:32:32","SendPersonLevel":1,
+				"ReceiveUserID":5,"ReceivePerson":"015www","EmailState":1,"Sign":0,
+				"Reserve1":null,"Reserve2":null,"Reserve3":null},
+				"OrderState":0,"PageCount":0,"DataCount":0,"SystemState":64,"StateMark":null}
+				*/
+				/*
+				{"StationEmailSendBox":
+					{"Ispersonal":-1,"ID":0,"Title":"Re:??","Content":"tutyu",
+						"SendRange":20,"SendPersonLevel":2,"SendUserID":5,"SendPerson":"015www","SendDateTime":"2017-03-09 10:46:42",
+						"Sign":0,"AgentLevel":-1,"AgentRebate":-1,"Reserve1":"","Reserve2":"","Reserve3":""},
+					"OrderState":0,"PageCount":0,"DataCount":0,"SystemState":64,"StateMark":null}
+				*/
+				
+				
+			}
+			
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.pageNum = pageNum;
+				Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.INMSSAGE_STATUS,obj));
+				PopUpManager.removePopUp(this);
+			}
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			//删除消息
+			protected function delete_btn_clickHandler(event:MouseEvent):void
+			{
+				var alert_1:AlertMsgCenter=new AlertMsgCenter();
+				alert_1.show("您确认删除所选消息吗？",resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+				alert_1.okBtnBoolean=true;
+				alert_1.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,comfirmDeleteHandler);
+			}
+			private function comfirmDeleteHandler(e:SystemEvent):void
+			{
+				//没有接口！！！！
+				var alert_1:AlertMsgCenter=new AlertMsgCenter();
+				alert_1.show("sorry,没有接口！！！！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+			}
+			
+			//回复消息
+			protected function reply_btn_clickHandler(event:MouseEvent):void
+			{
+				var alert_1:AlertMsgCenter=new AlertMsgCenter();
+				alert_1.show("正在开发中！！！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:BitmapImage id="img" width="645" height="485"  source="@Embed('css/skin1/universal/images/alert_bg.png',
+				   scaleGridLeft='100', scaleGridRight='110', scaleGridTop='100', scaleGridBottom='110')"/>
+	
+	
+	<s:Rect x="136" y="217" width="430" height="174">
+		<s:fill>
+			<s:LinearGradient >
+				<s:GradientEntry color="0xfff0c5" alpha="0"/>
+			</s:LinearGradient>
+		</s:fill>
+		<s:stroke> 
+			<s:SolidColorStroke color="0x4c5d67" alpha="1"/> 
+		</s:stroke>
+	</s:Rect>
+	
+	<s:Label x="35" y="48" width="575" height="19" text="消息详情" textAlign="center" color="0xffffff" fontSize="14"/>
+	<s:Image id="imgClose" x="585" y="45" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+			 rollOut="imgClose_rollOutHandler(event)"
+			 rollOver="imgClose_rollOverHandler(event)"/>
+	
+	<s:VGroup left="35" right="35" top="85" bottom="36">
+		<s:VGroup width="100%" height="318" gap="0">
+			<s:HGroup width="100%" height="40" verticalAlign="middle" >
+				<s:Spacer width="37" />
+				<s:Label text="发件人：" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:Label id="send_name" width="181" styleName="personalCenterDetailLabelStyle_1" text="*****" textAlign="left"/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="40" verticalAlign="middle">
+				<s:Spacer width="23" />
+				<s:Label text="发送时间：" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:Label text="*****" styleName="personalCenterDetailLabelStyle_1" id="send_time"/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="40" verticalAlign="middle">
+				<s:Spacer width="50" />
+				<s:Label text="主题：" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput width="428" styleName="personalCenterDetailTextInputStyle" id="send_title" editable="false"
+							 text="*****" contentBackgroundColor="0xececec"/>
+			</s:HGroup>
+			<s:Spacer width="32" height="8"/>
+			<s:HGroup width="100%" height="181" verticalAlign="middle">
+				<s:Spacer width="50" />
+				<s:Label text="内容：" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:Scroller y="3" width="428" height="172" buttonMode="true"
+							styleName="personalCenterScrollerStyle_1">
+					<s:Group width="100%">
+						<mx:Text id="send_content" letterSpacing="0" leading="0"  selectable="false" width="98%"  color="#4c5d67" fontFamily="Microsoft YaHei,微软雅黑"  fontSize="14" />	
+					</s:Group>
+				</s:Scroller>
+			</s:HGroup>
+		</s:VGroup>
+		<!--<s:HGroup width="100%" height="35" verticalAlign="middle">
+			<s:Spacer y="20" width="95" height="6"/>
+			<s:HGroup width="393" height="100%" verticalAlign="middle" horizontalAlign="center" gap="60">
+				<common:PopUpTabButtonItem id="delete_btn" labelTitle="删    除" click="delete_btn_clickHandler(event)"/>
+				<common:PopUpTabButtonItem id="reply_btn" labelTitle="回    复" click="reply_btn_clickHandler(event)" visible="{isShowReplyBtn}" includeInLayout="{isShowReplyBtn}"/>
+			</s:HGroup>
+		</s:HGroup>-->
+		
+	</s:VGroup>
+	
+</s:Group>

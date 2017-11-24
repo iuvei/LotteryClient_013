@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" implements="com.xazc.interfaces.IInit" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  creationComplete="createGridInitProperties()"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:load="com.xazc.components.load.*"
+		 xmlns:common="com.xazc.pop.center.common.*"
+		 width="900" height="455"
+		 >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.PersonCenterInfo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			private var service:ServerTool;
+			private var myPattern1:RegExp=/-|:| /g; 
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=6;//当页行数
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			[Bindable]
+			private var cbReport:ArrayCollection=new ArrayCollection([
+				{label:"当日",value:0},
+				{label:"昨日",value:1},
+				{label:"二日",value:2},
+				{label:"三日",value:3},
+				{label:"本周",value:4},
+				{label:"本月",value:5}
+			]);
+			
+			[Bindable]
+			private var dateTimeType:ArrayCollection=new ArrayCollection([{label:"当天记录",value:0},{label:"历史记录",value:1}]);
+			
+			
+			
+			private var titles:ArrayCollection;
+			private var values:ArrayCollection;
+			
+			private var details:ArrayCollection;
+			
+			
+			
+			//代理表头显示
+			private var titlesAgent:ArrayCollection=new ArrayCollection([
+				{title:"a",w:225},
+				{title:"b",w:225},
+				{title:"c",w:225},
+				{title:"d",w:225},
+				//				{title:"e",w:162},  
+			]);
+			private var valuesAgent:ArrayCollection=new ArrayCollection([
+				{column:"N_BetMoney",w:225},
+				{column:"N_Freehome_Winlose",w:225},
+				{column:"N_Thebanker_Winlose",w:225},
+				{column:"N_Winlose",w:225},
+				//				{column:"N_HisTime",w:162},
+			]);
+			
+			//会员
+			private var titlesMember:ArrayCollection=new ArrayCollection([
+				{title:"a",w:225},
+				{title:"b",w:225},
+				{title:"c",w:225},
+				{title:"d",w:225},
+				//				{title:"e",w:162},
+			]);
+			private var valuesMember:ArrayCollection=new ArrayCollection([
+				{column:"N_BetMoney",w:225},
+				{column:"N_Freehome_Winlose",w:225},
+				{column:"N_Thebanker_Winlose",w:225},
+				{column:"N_Winlose",w:225},
+				//				{column:"N_HisTime",w:162},
+			]);
+			
+			//代理明细  new
+			private var titlesAgentDetail:ArrayCollection=new ArrayCollection([
+				{title:"N_BetMoney",w:180},
+				{title:"N_Freehome_Winlose",w:180},
+				{title:"N_Thebanker_Winlose",w:180},
+				{title:"N_Winlose",w:180},
+				{title:"N_HisTime",w:180},
+			]);
+			//会员明细 new
+			private var titlesMemberDetail:ArrayCollection=new ArrayCollection([
+				{title:"N_BetMoney",w:180},
+				{title:"N_Freehome_Winlose",w:180},
+				{title:"N_Thebanker_Winlose",w:180},
+				{title:"N_Winlose",w:180},
+				{title:"N_HisTime",w:180},
+			]);
+			
+			
+			
+			/**
+			 * 初始化
+			 */
+			public function init():void
+			{
+				
+			}
+			
+			
+			protected function cb_status_changeHandler(event:IndexChangeEvent):void
+			{
+				var d:Date=new Date();
+				//df_start.selectedDate=new Date(d.fullYear,d.month,1);
+				if(this.cb_status.selectedIndex==0){
+					df_start.selectedDate=new Date();
+				}else if(this.cb_status.selectedIndex==1){
+					df_start.selectedDate=new Date(d.fullYear,d.month,d.date-1);
+				}else if(this.cb_status.selectedIndex==2){
+					df_start.selectedDate=new Date(d.fullYear,d.month,d.date-2);
+				}else if(this.cb_status.selectedIndex==3){
+					df_start.selectedDate=new Date(d.fullYear,d.month,d.date-3);
+				}else if(this.cb_status.selectedIndex==4){
+					df_start.selectedDate=new Date(d.fullYear,d.month,d.date-d.day);
+				}else if(this.cb_status.selectedIndex==5){
+					df_start.selectedDate=new Date(d.fullYear,d.month,1);
+				}
+				df_start.text = df1.format(df_start.selectedDate);
+				
+				df_end.selectedDate= new Date();
+				df_end.text=df1.format(df_end.selectedDate);
+			}
+			
+			
+			
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				//根据用户类型选择生成模板
+				if(PersonCenterInfo.userInfoDetail){
+					if(PersonCenterInfo.userInfoDetail.IsAgent){
+						this.titles = this.titlesAgent;
+						this.values = this.valuesAgent;
+						this.details=this.titlesAgentDetail;
+					}else{
+						this.titles = this.titlesMember;
+						this.values = this.valuesMember;
+						this.details=this.titlesMemberDetail;
+					}
+				}else{
+					this.details=this.titlesMemberDetail;
+				}
+				
+				
+				var d:Date=new Date();
+				//				df_start.selectedDate=new Date(d.fullYear,d.month,d.date-1);
+				df_start.selectedDate=new Date();
+				df_start.text = df1.format(df_start.selectedDate);
+				df_start.enabled = false;
+				//				df_end.selectedDate= new Date(d.fullYear,d.month,d.date-1);
+				df_end.selectedDate= new Date();
+				df_end.text=df1.format(df_end.selectedDate);
+				df_end.enabled = false;
+				this.timeType.selectedIndex = 0;
+				this.cb_status.selectedIndex=0;
+				
+				
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					var label:mx.controls.Label=new mx.controls.Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = "下注总金额";
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = "下注总盈亏";
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = "当庄总盈亏";
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = "总盈亏";
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=35;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:mx.controls.Label=new mx.controls.Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_2"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				
+				
+				//初始化详情表格
+				var d_grid:Grid=new Grid();
+				var d_row:GridRow=new GridRow();
+				d_row.height=35;
+				for(var r1:int=0;r1<details.length;r1++){
+					var field:String=details.getItemAt(r1).title;
+					var d_item:GridItem=new GridItem();
+					d_item.width=details.getItemAt(r1).w;
+					var d_label:mx.controls.Label=new mx.controls.Label();
+					d_label.text=resourceManager.getString('PersonalCenterPage',field);
+					d_label.styleName="personalCenterDetailLabelStyle_1_white";
+					d_item.addChild(d_label);
+					d_row.addChild(d_item);
+				}
+				d_grid.addChild(d_row);
+				vg1.addElementAt(d_grid,0);
+				
+				var v_grid:Grid=new Grid();
+				var v_row:GridRow=new GridRow();
+				v_row.height=35;
+				for(var v1:int=0;v1<details.length;v1++){
+					var v_item:GridItem=new GridItem();
+					v_item.width=details.getItemAt(v1).w;
+					var v_label:mx.controls.Label=new mx.controls.Label();
+					v_label.text="";
+					v_label.styleName="personalCenterDetailLabelStyle_2"; 
+					v_item.addChild(v_label);
+					v_row.addChild(v_item);
+				}
+				v_grid.addChild(v_row);
+				vg1.addElementAt(v_grid,1);
+				
+				
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				this.getmyreportSelf();
+			}
+			
+			//获取自身报表统计
+			private function getmyreportSelf():void
+			{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object = filterSelectCondition2();
+				obj.UserID=-1;
+				obj.Type=1;
+				/* if(currentUser!=-1){
+				obj.UserId = this.currentUser;
+				}else{
+				obj.UserId=-1;
+				} */
+				service.getNNMyReport(obj,getmyreportSelfReturn);
+				
+			}
+			private function getmyreportSelfReturn(e:ResultEvent):void
+			{
+				loading.suspend();
+				var obj:Object = JSON.parse(e.result.toString(),null); 
+				trace(e.result.toString());
+				//Alert.show(e.result.toString());
+				if(obj.SystemState==64){
+					if((obj.Reportlist as Array).length<1){
+						createGridOneRow();
+					}else{
+						this.showDetail(obj.Reportlist as Array);
+						g_page.visible=true;
+						g_page.includeInLayout=true;
+					}
+					
+					this.showSelfReport(obj.ReportComm as Array);
+					
+					/* this.totalPage = obj.PageCount;
+					this.totalRecords = obj.DataCount; */
+					page.setPage(currentPage,obj.PageCount,obj.DataCount);
+					
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					Alert.show(resourceManager.getString('PersonalCenterPrompt','alert_report_error'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),Alert.OK);
+				}
+				
+				
+			}
+			private function createGridOneRow():void{
+				g_page.visible=false;
+				g_page.includeInLayout=false;
+				//				var gt:Grid=vg1.getChildAt(1) as Grid;
+				var grid:Grid=vg1.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.width=vg1.width;
+				row.addChild(item);
+				var label:mx.controls.Label=new mx.controls.Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			
+			private function showSelfReport(arr:Array):void
+			{
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				for(var i:int=0;i<arr.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=35;
+					grid.addChild(row);
+					
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=values.getItemAt(j).w;
+						var lb:mx.controls.Label=new mx.controls.Label();
+						item.addChild(lb);
+						var strColumn:String=values.getItemAt(j).column;
+						lb.text = Number(arr[i][strColumn]).toString();
+						lb.toolTip = Number(arr[i][strColumn]).toString();
+						//						lb.maxDisplayedLines = 0;
+						lb.width = item.width;
+						item.horizontalScrollPolicy = "off";
+						item.verticalScrollPolicy = "off";
+						lb.styleName="personalCenterDetailLabelStyle_1";
+					}
+				}
+			}
+			
+			private function showDetail(arr:Array):void{
+				var grid:Grid=vg1.getChildAt(1) as Grid;
+				grid.removeAllChildren();
+				for(var i:int=0;i<arr.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=35;
+					grid.addChild(row);
+					for(var j:int=0;j<details.length;j++){
+						var field:String=details.getItemAt(j).title;
+						//						field=field.substring(2,field.length);
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=details.getItemAt(j).w;
+						var lb:mx.controls.Label=new mx.controls.Label();
+						if(field=="N_HisTime"){
+							lb.text=lb.toolTip=df1.format(arr[i]["N_InTime"]);	
+						}else {
+							lb.text=lb.toolTip=Number(arr[i][field]).toString()
+						}
+						lb.width=details.getItemAt(j).w-5;
+						lb.styleName="personalCenterDetailLabelStyle_1";
+						item.addChild(lb);
+					}
+				}
+			}
+			
+			/**
+			 *过滤封装查询条件
+			 **/
+			private function filterSelectCondition2():Object{
+				var obj:Object=new Object();
+				
+				obj.CurrentPageIndex=currentPage-1;
+				obj.CurrentPageSize=currentPageSize;
+				
+				if(df_start.text && df_end.text){
+					obj.BeginTime=df_start.text+" 00:00:00";
+					obj.EndTime=df_end.text+" 23:59:59";
+				}
+				return obj;
+			}
+			
+			
+			private function checkPropertys():Boolean{
+				if(df_start.text!="" && df_end.text==""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_report_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(df_start.text=="" && df_end.text!=""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_report_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				var start:String=df.format(df_start.text);
+				start=start.replace(myPattern1,"");
+				var end:String=df.format(df_end.text);
+				end=end.replace(myPattern1,"");
+				if(start>end){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_report_check2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				return true;
+			}
+			
+			protected function df_start_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(df_start.text==""){
+					return;
+				}
+				var str:Array=df_start.text.split("-");
+				var temp:Date = new Date();
+				df_end.disabledRanges=[{rangeStart:new Date(temp.fullYear,temp.month,temp.date)},{rangeEnd:new Date(int(str[0]),int(str[1])-1,int(str[2])-1)}];
+				
+			}
+			protected function df_end_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(df_end.text==""){
+					return;
+				}
+				var str:Array=df_end.text.split("-");
+				var temp:Date = new Date();
+				df_start.disabledRanges=[{rangeStart:new Date(int(str[0]),int(str[1])-1,int(str[2])+1)},{rangeEnd:new Date(temp.fullYear,temp.month-3,temp.date)}];
+				
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				if(!checkPropertys()){
+					return;
+				}
+				
+				this.currentPage=1;
+				/* this.g_page.visible = false;
+				this.g_page.includeInLayout = false; */
+				
+				
+				this.getmyreportSelf();
+			}
+			
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function page_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				// TODO Auto-generated method stub
+				var page:int=int(event.body);
+				currentPage=page;
+				//查询下级代理用户数据
+				//this.getMyChildList();
+				this.getmyreportSelf();
+				//查询自己的报表
+				//this.getmyreportSelf();
+				//查询团队报表
+				//this.getmyreport();
+			}
+			
+			/**
+			 *	切换查询区间时执行
+			 *
+			 */
+			protected function timeType_changeHandler(event:IndexChangeEvent):void
+			{
+				trace(timeType.selectedIndex+"");
+				
+				if(0==timeType.selectedIndex){
+					var d:Date=new Date();
+					df_start.selectedDate=new Date();
+					df_start.text = df1.format(df_start.selectedDate);
+					df_start.enabled = false;
+					df_end.selectedDate= new Date();
+					df_end.text=df1.format(df_end.selectedDate);
+					df_end.enabled = false;
+					this.timeType.selectedIndex = 0;
+				}else{
+					df_start.enabled = true;
+					
+					df_end.enabled = true;
+					
+					var temp:Date = new Date();
+					
+					df_start.selectedDate=new Date(temp.fullYear,temp.month,temp.date-1);
+					df_start.text = df1.format(df_start.selectedDate);
+					df_end.selectedDate=new Date(temp.fullYear,temp.month,temp.date-1);
+					df_end.text = df1.format(df_start.selectedDate);
+					
+					
+					df_start.disabledRanges=[{rangeStart:new Date(df_end.selectedDate.fullYear,df_end.selectedDate.month,df_end.selectedDate.date+1)},{rangeEnd:new Date(temp.fullYear,temp.month-3,temp.date)}];
+					
+					df_end.disabledRanges=[{rangeStart:new Date()},{rangeEnd:new Date(df_start.selectedDate.fullYear,df_start.selectedDate.month,df_start.selectedDate.date-1)}];
+					
+					//以下示例将禁用下列日期：2006 年 1 月 11 日，从 2006 年 1 月 23 至同年 2 月 10 日，以及 2006 年 3 月 1 日及后续所有日期。
+					//disabledRanges="{[new Date(2006,0,11), {rangeStart:new Date(2006,0,23), rangeEnd: new Date(2006,1,10)},{rangeStart: new Date(2006,2,1)}]}"
+					
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<s:HGroup  id="h1" left="15" right="15" top="10" gap="10" verticalAlign="middle">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','time')}："  styleName="personalCenterDetailLabelStyle_1"/>
+		<s:ComboBox initialize="cb_status.textInput.editable = false" id="cb_status" styleName="personalCenterDetailComboBoxStyle" width="80" dataProvider="{cbReport}" labelField="label" change="cb_status_changeHandler(event)" visible="false" includeInLayout="false"/>
+		<s:ComboBox change="timeType_changeHandler(event)" initialize="timeType.textInput.editable = false" id="timeType" width="80" styleName="personalCenterDetailComboBoxStyle" dataProvider="{dateTimeType}" labelField="label"/>
+		
+		<mx:DateField id="df_start" styleName="personalCenterDateFieldStyle" formatString="YYYY-MM-DD" 
+					  change="df_start_changeHandler(event)" buttonMode="true" />
+		<s:Label text="-" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:DateField id="df_end" styleName="personalCenterDateFieldStyle" formatString="YYYY-MM-DD" 
+					  change="df_end_changeHandler(event)" buttonMode="true" />
+		<s:Spacer width="20" />
+		<s:Button label="{resourceManager.getString('PersonalCenterPage','checking')}" click="button1_clickHandler(event)" 
+					  styleName="personalLookButtonStyle" buttonMode="true" right="0" verticalCenter="0"/>
+	</s:HGroup>
+	<s:Group id="g1" top="{h1.height+20}">
+		<s:Rect id="fill2" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff" alpha="0"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect id="fill3" width="100%" height="35">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x6a6969" alpha="1"/>
+					<s:GradientEntry color="0x595858" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<!--详细内容-->
+		<s:VGroup gap="-1" height="100%" id="vg1">
+			<s:Group height="30"   width="100%" id="g_page" >
+				<s:Rect x="0" id="border" width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient >
+							<s:GradientEntry color="0xcfcece" alpha="1"/>
+						</s:LinearGradient>
+					</s:fill>
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<s:VGroup  left="10" right="10" height="100%" verticalAlign="middle">
+					<s:HGroup horizontalAlign="right" verticalAlign="middle" height="30%" width="100%">
+						<common:PopUpChangePageComponent width="100%" height="100%" id="page" ChangePageIndex="page_ChangePageIndexHandler(event)"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+		</s:VGroup>
+		
+	</s:Group>
+	<s:Group top="{h1.height+g1.height+40}">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff" alpha="0"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect id="fill1" width="100%" height="35">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x6a6969" alpha="1"/>
+					<s:GradientEntry color="0x595858" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<!--详细内容-->
+		<s:VGroup gap="-1" height="100%" id="vg"/>
+	</s:Group>
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading"/>
+</s:Group>
+

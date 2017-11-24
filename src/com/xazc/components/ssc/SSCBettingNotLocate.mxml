@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="creationCompleteHandler(event)" 
+		  xmlns:ssc="com.xazc.components.ssc.*" gap="0"
+		  xmlns:bettings="com.xazc.components.bettings.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			private var game_id:String = "24";
+			
+			public var lotteryID:String = "";
+			
+			[Bindable]
+			private var playType:int = 3;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlayContainer = playContainer;
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				
+			}
+			
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				if(playType == 2||playType == 3||playType == 7||playType == 9||playType == 10)
+				{
+					zhushu = top3.selectedNum.length;
+					bettingInfo.tzcontent = top3.selectedNum..toString();
+				}else if(playType == 4||playType == 5||playType == 6||playType == 8||playType == 11){
+					if(top3.selectedNum.length>=2){
+						zhushu = top3.selectedNum.length*(top3.selectedNum.length-1)/2;
+					}else{
+						zhushu = 0;
+					}
+					
+					
+					bettingInfo.tzcontent = top3.selectedNum..toString();
+				}else if(playType == 12){
+					if(top3.selectedNum.length>=3){
+						zhushu = top3.selectedNum.length*(top3.selectedNum.length-1)*(top3.selectedNum.length-2)/6;
+					}else{
+						zhushu = 0;
+					}
+					
+					bettingInfo.tzcontent = top3.selectedNum..toString();
+				}
+				
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			private function clearAll(e:BetsClickEvent = null):void
+			{
+				clearTopSelectedNumber();
+			}
+			
+			
+			
+			private function clearTopSelectedNumber():void
+			{
+				top3.clearAllSelectedNumHandler();
+			} 
+			
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				target.selected = true;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				switch(targetID)
+				{
+					case "play_23":
+						playType = 2;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_40');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_40');
+						break;
+					case "play_24":
+						playType = 3;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_41');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_41');
+						break;
+					case "play_70":
+						playType = 5;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_70');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_70');
+						break;
+					case "play_71":
+						playType = 4;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_71');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_71');
+						break;
+					case "play_72":
+						playType = 9;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_72');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_72');
+						break;
+					case "play_73":
+						playType = 8;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_73');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_73');
+						break;
+					case "play_74":
+						playType = 7;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_74');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_74');
+						break;
+					case "play_75":
+						playType = 6;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_75');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_75');
+						break;
+					case "play_76":
+						playType = 10;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_76');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_76');
+						break;
+					case "play_77":
+						playType = 11;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_77');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_77');
+						break;
+					case "play_78":
+						playType = 12;
+						showPlayContainer(playContainer);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_new_78');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_new_emp_78');
+						break;
+					
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="24" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:Label text="三星" styleName="labelStyles1"/>
+			<s:ToggleButton id="play_24" label="后三一码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 3}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_71" label="后三二码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 4}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_23" label="前三一码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_70" label="前三二码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 5}" click="playClickHandler(event)"/>
+		</s:HGroup>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:Label text="四星" styleName="labelStyles1"/>
+			<s:ToggleButton id="play_74" label="后四一码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 7}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_75" label="后四二码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 6}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_72" label="前四一码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 9}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_73" label="前四二码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 8}" click="playClickHandler(event)"/>
+		</s:HGroup>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:Label text="五星" styleName="labelStyles1"/>
+			<s:ToggleButton id="play_76" label="五星一码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 10}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_77" label="五星二码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 11}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_78" label="五星三码" styleName="standardButtonSkinStyle" 
+							selected="{playType == 12}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','ssc_game_tip_41')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','ssc_game_tip_emp_41')}"/>
+		</s:HGroup>
+	</s:Group>
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<s:VGroup id="playContainer" width="100%" height="310" paddingLeft="15" verticalAlign="middle">
+		<ssc:SSCNumberSelected id="top3" bettingRowName="{resourceManager.getString('LotteryTips','number')}" selectedNumStyle="numberSelectSkinStyle_large"/>
+	</s:VGroup>
+</s:VGroup>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  skinClass="css.skin1.universal.PlayGameSkinnableContainerskin"
+		  width="100%"
+		  creationComplete="hgroup1_creationCompleteHandler(event)"
+		  >
+	<s:layout>
+		
+		<s:HorizontalLayout horizontalAlign="left" verticalAlign="middle"  gap="5" paddingTop="6" paddingBottom="6"/>
+		
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			public static const CHANG_HAPPY8_GAME_TYPE:String = "changeHappy8GameType";
+			
+			protected function hgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.init();
+				
+			}
+			
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				//选中第一个玩法
+				for(var i:int = 1;i<11;i++){
+					if('happy8_1'=="happy8_"+i){
+						this["happy8_"+i].selected = true;
+						dispatchEvent(new CustomEvent(CHANG_HAPPY8_GAME_TYPE,i));
+					}else{
+						this["happy8_"+i].selected = false;
+					}
+				}
+			}
+			/**
+			 * 点击选号按钮 
+			 * 
+			 */
+			protected function clickHandler(event:MouseEvent):void
+			{
+				for(var i:int = 1;i<11;i++){
+					if((event.target as ToggleButton).id.toString()=="happy8_"+i){
+						this["happy8_"+i].selected = true;
+						dispatchEvent(new CustomEvent(CHANG_HAPPY8_GAME_TYPE,i));
+					}else{
+						this["happy8_"+i].selected = false;
+					}
+				}
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function clear():void
+			{
+				trace("清空组件。。。");
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_One')}" id="happy8_1" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Two')}" id="happy8_2" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Three')}" id="happy8_3" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_four')}" id="happy8_4" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_five')}" id="happy8_5" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Six')}" id="happy8_6" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Seven')}" id="happy8_7" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Eight')}" id="happy8_8" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Nine')}" id="happy8_9" 	click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+	<s:ToggleButton label="{resourceManager.getString('LotteryTips','select_Ten')}" id="happy8_10" click="clickHandler(event)" styleName="menuSelectSkinStyle"/>
+</s:SkinnableContainer>

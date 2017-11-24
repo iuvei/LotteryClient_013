@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+					  creationComplete="group1_creationCompleteHandler(event)"
+					  height="201" width="294"  styleName="resultListBgStyle">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.manager.TimerManager;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import css.skin1.universal.ListResultSkinableContainerSkin;
+			
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Label;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.components.Button;
+			private var tempLottery:String = "0";
+			
+			[Bindable]
+			private var zstState:Boolean = true;
+			
+			[Bindable]
+			private var lotteryName:String = "";
+			
+			public function init():void
+			{
+			}
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+			}
+			
+			private var resultListsObj:Object;
+			
+			public function getKaijiangMessage(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString());
+				resultListsObj = arr;
+				trace(e.result.toString());
+				this.showMoreResults(4);
+			}
+			
+			public function showMoreResults(k:int):void
+			{
+				listVg.removeAllElements();
+				var arr:Object = resultListsObj;
+				if(arr == null)
+					return;
+				
+				for(var i:int=0;i<4;i++)
+				{
+					var item:tb_ResultList_item = new tb_ResultList_item();
+					item.iusee = arr[i].CzPeriod;
+					item.result = arr[i].CzNum;
+					var str:String = arr[i].CzNum;
+					var value:int = int(str.split(",")[0]) + int(str.split(",")[1]) + int(str.split(",")[2]);
+					item.daxiao = value>10?"大":"小";
+					item.danshuang = value%2==0?"双":"单";
+					listVg.addElement(item);
+				}
+			}
+			
+			
+			
+			public function objItem(value:Object):void
+			{
+				if(value.CzType=="9"){
+					var index:int = (value.CzNum as String).lastIndexOf(",");
+					var tempStr:String = (value.CzNum as String).substring(0,index)+"#"+(value.CzNum as String).substring(index+1);
+					value.CzNum = tempStr;
+				}else if(value.CzType=="24"||value.CzType=="23"){
+					var index1:int = (value.CzNum as String).lastIndexOf(",");
+					var tempStr1:String = (value.CzNum as String).substring(0,index1)+"|"+(value.CzNum as String).substring(index1+1);
+					value.CzNum = tempStr1;
+				}
+				
+				
+			}
+			
+			/**
+			 *  组件初始化完毕后调用
+			 * 
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//初始化
+				//this.init();
+			}
+			/**
+			 * 期号是否 需要截取(显示不下)
+			 */
+			private function showtype():Boolean
+			{
+				if(CurrentLotteryInfo.lotteryId == "58" 
+					||CurrentLotteryInfo.lotteryId == "57" 
+					||CurrentLotteryInfo.lotteryId == "61" 
+					||CurrentLotteryInfo.lotteryId == "63" 
+					||CurrentLotteryInfo.lotteryId == "84" 
+					||CurrentLotteryInfo.lotteryId == "51"){
+					return true;
+				}
+				else{
+					return false;
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+		[Event(name="addResultObjectEvent",type="mx.events.DynamicEvent")]
+		[Event(name="lookResultDetailEvent",type="mx.events.DynamicEvent")]
+	</fx:Metadata>
+	
+	<s:Image source="css/skin1/images/tbImg/tb_resultlist_bg.png"/>
+	<s:Image x="118" y="12" source="css/skin1/images/tbImg/tb_resultlist_title.png"/>
+	
+	<s:HGroup x="9" y="39" width="270" height="32" gap="0" verticalAlign="middle">
+		<s:Label text="期号" width="100" styleName="tb_14Style" textAlign="center"/>
+		<s:Label text="开奖号码" width="70" styleName="tb_14Style" textAlign="center"/>
+		<s:Label text="大小" width="50" styleName="tb_14Style" textAlign="center"/>
+		<s:Label text="单双" width="50" styleName="tb_14Style" textAlign="center"/>
+	</s:HGroup>
+	
+	<s:VGroup id="listVg" x="10" top="70" width="270" height="132" gap="0">
+	</s:VGroup>
+</s:Group>

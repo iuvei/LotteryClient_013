@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+					 	styleName="countDownBgStyle"
+					  creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.manager.TimerManager;
+			import com.xazc.music.MusicPlayerFactory;
+			import com.xazc.service.SendMessageService;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var isTheFirst:Boolean = true;
+			
+			private var tempLottery:String = "0";
+			
+			[Bindable]
+			private var hh:String = "00";//小时
+			[Bindable]
+			private var mm:String = "00";//分钟
+			[Bindable]
+			private var ss:String = "00";//秒
+			[Bindable]
+			private var currentIssue:String = "";
+			
+			private var isMusicPlaying:Boolean = false;
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				trace("初始化组件。。。");
+				tempLottery = CurrentLotteryInfo.lotteryId;
+				isTheFirst = true;
+				this.getCurrLotteryIssue();
+				
+				Util.getInstance().addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				//Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_MAIN, back2MainScreenHandler);
+				Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_LOGIN,back2MainScreenHandler);
+			}
+			private function selectedLotteryChangeHandler(e:SystemEvent):void{
+				recycle();
+				MusicPlayerFactory.OnStopAll();
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+				TimerManager.getInstance().removeEventListener(CustomEvent.SPACE_8SECONDES, onNewTime);
+				TimerManager.getInstance().removeEventListener(TimerManager.CUSTOM_TIMER, ontime);
+				Util.getInstance().removeEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.removeEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.removeEventListener(JumpEvent.JUMP_TO_MAIN, back2MainScreenHandler);
+				Sendnotification.instance.removeEventListener(JumpEvent.JUMP_TO_LOGIN, back2MainScreenHandler);
+			}
+			public  function back2MainScreenHandler(e:JumpEvent):void
+			{
+				recycle();
+				MusicPlayerFactory.OnStopAll();
+			}
+			private var h:int;//时
+			private var m:int;//分
+			private var s:int;//秒
+			//当前投注时间差
+			public var gotime:int = 0;
+			protected var gettingIssue:Boolean = false;
+			/**
+			 * 查询当前期号 
+			 * 
+			 */
+			private function getCurrLotteryIssue():void
+			{
+				if(CurrentLotteryInfo.lotteryId=="0"){return;}
+				if(CurrentLotteryInfo.lotteryId=="50"){return;}
+				
+				tempLottery = CurrentLotteryInfo.lotteryId;
+				
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.LotteryCodeEnum = CurrentLotteryInfo.lotteryId;
+				serverTool.getCurrLotteryIssue(obj,getCurrLotteryIssueReturn);
+				gettingIssue = true;
+				TimerManager.getInstance().addEventListener(CustomEvent.SPACE_8SECONDES, onNewTime);
+			}
+			private function onNewTime(e:CustomEvent):void
+			{
+				
+				if(gettingIssue)
+				{
+					getCurrLotteryIssue();
+				}
+				else{
+					TimerManager.getInstance().removeEventListener(CustomEvent.SPACE_8SECONDES, onNewTime);
+				}
+			}
+			private var alertaaa:AlertMsg = new AlertMsg();
+			private function getCurrLotteryIssueReturn(e:ResultEvent):void
+			{
+				try
+				{
+					var arr:Object = JSON.parse(e.result.toString(),null);
+				} 
+				catch(error:Error) 
+				{
+					trace(e);
+					return;
+				}
+				if(CurrentLotteryInfo.lotteryId==""){
+					return;
+				}
+				gettingIssue = false;
+				TimerManager.getInstance().removeEventListener(CustomEvent.SPACE_8SECONDES, onNewTime);
+				if(arr.SystemState==-1){
+					//session失效
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}else if(arr.SystemState==-2){
+					//单点登录
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}
+				trace(e.result.toString());
+				//Alert.show(e.result.toString());
+				if(CurrentLotteryInfo.lotteryId=="0"||tempLottery!=CurrentLotteryInfo.lotteryId){
+					TimerManager.getInstance().removeEventListener(TimerManager.CUSTOM_TIMER, ontime);
+					return;
+				}
+				if(arr.SystemState==32){
+					//Alert.show("该彩种无期号！");
+					alertaaa.show("错误代码：0X:00000003QH，请联系客服", "温馨提示");
+					//dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_MAIN));
+					TimerManager.getInstance().removeEventListener(TimerManager.CUSTOM_TIMER, ontime);
+					return;
+				}
+				
+				
+				
+				if(!isTheFirst){
+					if((CurrentLotteryInfo.currentIssue==arr.IssueNumber)||(CurrentLotteryInfo.currentIssue=="")){
+						
+						
+					}else{
+						var alert:AlertMsg = new AlertMsg();
+						if(CurrentUserInfo.indexSelectedItemIndex!=1){//表示当前页面没有切换到彩种投注页面
+							return;
+						}
+						
+						alert.show("第"+CurrentLotteryInfo.currentIssue+"期销售已截止，\n当前为"+arr.IssueNumber+"期!\n本页面将在5秒后自动关闭!", "温馨提示",2,false,true);
+					}
+				}
+				isTheFirst = false;
+				currentIssue = arr.IssueNumber;
+				CurrentLotteryInfo.currentIssue = arr.IssueNumber;
+				
+				gotime = Number(arr.SS)*1000;
+				count_down();
+			}
+			
+			
+			protected function count_down():void
+			{
+				h=gotime/(60*60*1000);
+				m=(gotime-h*60*60*1000)/(60*1000);//分
+				s=(gotime -h*60*60*1000- m*60*1000)/1000;//秒
+				TimerManager.getInstance().addEventListener(TimerManager.CUSTOM_TIMER, ontime);
+				
+			}
+			private function ontime(e:CustomEvent):void{
+				if(h>72){
+					hh = " > ";
+					mm = " 3 ";
+					ss = " 天 ";
+				}else{
+					if(h<10){hh="0"+h;}else{hh=""+h;}
+					if(m<10){mm="0"+m;}else{mm=""+m;}
+					if(s<10){ss="0"+s;}else{ss=""+s;}
+				}
+				CurrentLotteryInfo.currentIssueTime = hh+":"+mm+":"+ss;
+				
+				if(h == 0 && m == 0 && 20<= s && s <= 30 && !isMusicPlaying){
+					isMusicPlaying = true;
+					MusicPlayerFactory.OnPlayClick(1,true);
+				}
+				else if(h == 0 && m == 0 && s == 20){
+					isMusicPlaying = false;
+					MusicPlayerFactory.OnStopAll();
+				}
+				s -= 1;
+				if(s<0)
+				{
+					s=59;
+					m--;
+				}if(m<0)
+				{
+					m=59;
+					h--;
+				}
+				if(h<0)
+				{
+					TimerManager.getInstance().removeEventListener(TimerManager.CUSTOM_TIMER, ontime);
+					//searchCurrentDate();
+					this.getCurrLotteryIssue();
+				}
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//init();
+			}
+			
+			private var selectedLotteryFlag:Boolean=false;
+			protected function group2_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("selectedLotterysTabButtonEvent"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+		[Event(name="selectedLotterysTabButtonEvent",type="flash.events.Event")]
+	</fx:Metadata>
+	
+	<s:Image source="css/skin1/images/tbImg/tb_time_bg.png"/>
+	
+	<s:VGroup width="100%" gap="6" horizontalAlign="center" verticalAlign="middle" paddingTop="40">
+		<s:HGroup width="100%" gap="6" horizontalAlign="center" verticalAlign="middle">
+			<s:Label  text="第" styleName="tb_14Style"/>
+			<s:Label  text="{currentIssue}" styleName="tb_14Style" color="0xe1af2d"/>
+			<s:Label  text="{resourceManager.getString('LotteryTips','issue')}" styleName="tb_14Style"/>
+		</s:HGroup>
+		<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle">
+			<s:Label  text="离投注截止还有" styleName="tb_14Style"/>
+		</s:HGroup>
+	</s:VGroup>
+	<s:HGroup  paddingTop="110" paddingLeft="37" gap="4">
+		<s:Button label="{hh}"  styleName="tb_timeButtonStyle" id="hh_btn"/>
+		<s:Button label="{mm}"  styleName="tb_timeButtonStyle"/>
+		<s:Button label="{ss}" styleName="tb_timeButtonStyle" />
+	</s:HGroup>
+</s:Group>

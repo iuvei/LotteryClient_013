@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="creationCompleteHandler(event)" gap="0"
+		  xmlns:ssc="com.xazc.components.ssc.*" xmlns:bettings="com.xazc.components.bettings.*" xmlns:miaomiaocai="com.xazc.module.miaomiaocai.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.MathUtil;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			private var game_id:String = "38";
+			
+			public var lotteryID:String = "";
+			
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var selectedHZNum_Group:Array = [];
+			private var selectedHZNum_Straight:Array = [];
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			private var checkSelected:Array = [];
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlayContainer = playContainer1;
+				for (var i:int = 0; i < 28; i++)
+				{
+					var tog:ToggleButton = new ToggleButton();
+					tog.label = "" + i;
+					tog.styleName = "numberSelectSkinStyle_large";
+					straightAddBets.addElement(tog);
+					tog.addEventListener(MouseEvent.CLICK, addBetsClickHandler_Straight);
+				}
+				
+				for (var j:int = 1; j < 27; j++)
+				{
+					var tog0:ToggleButton = new ToggleButton();
+					tog0.label = "" + j;
+					tog0.styleName = "numberSelectSkinStyle_large";
+					grouptAddBets.addElement(tog0);
+					tog0.addEventListener(MouseEvent.CLICK, addBetsClickHandler_Group);
+				}
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+			}
+			private function addBetsClickHandler_Straight(e:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = e.target as ToggleButton;
+				if(TogBtn.selected == true){
+					selectedHZNum_Straight.push(TogBtn.label);
+				}else{
+					selectedHZNum_Straight.splice(selectedHZNum_Straight.indexOf(TogBtn.label),1);
+				}
+				betsNumberClickHandler(null);
+			}
+			private function addBetsClickHandler_Group(e:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = e.target as ToggleButton;
+				if(TogBtn.selected == true){
+					selectedHZNum_Group.push(TogBtn.label);
+				}else{
+					selectedHZNum_Group.splice(selectedHZNum_Group.indexOf(TogBtn.label),1);
+				}
+				betsNumberClickHandler(null);
+			}
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				checkSelected.sort();
+				if(playType == 1)
+				{
+					var wwhm:Array = tenThousand.selectedNum;
+					var qwhm:Array = oneThousand.selectedNum;
+					var bwhm:Array = hundred.selectedNum;
+					var swhm:Array = ten.selectedNum;
+					var gwhm:Array = one.selectedNum;
+					zhushu = wwhm.length * qwhm.length * bwhm.length
+						+ wwhm.length * bwhm.length * swhm.length
+						+ wwhm.length * swhm.length * qwhm.length
+						+ wwhm.length * gwhm.length * qwhm.length
+						+ qwhm.length * bwhm.length * swhm.length
+						+ qwhm.length * swhm.length * gwhm.length
+						+ qwhm.length * gwhm.length * bwhm.length
+						+ bwhm.length * swhm.length * gwhm.length
+						+ bwhm.length * gwhm.length * wwhm.length
+						+ swhm.length * gwhm.length * wwhm.length;
+					var ww2:Array=wwhm; var qw2:Array=qwhm; var bw2:Array=bwhm; var sw2:Array=swhm; var gw2:Array=gwhm;
+					if(zhushu>0)
+					{
+						if(ww2.length<=0) ww2=["*"]; if(qw2.length<=0) qw2=["*"];
+						if(bw2.length<=0) bw2=["*"]; if(sw2.length<=0) sw2=["*"]; if(gw2.length<=0) gw2=["*"];
+					}
+					bettingInfo.tzcontent=ww2+"|"+qw2+"|"+bw2+"|"+sw2+"|"+gw2;
+				}
+				else if(playType == 3)
+				{
+					var sum0:int= 0 ;
+					for(var i:int=0;i<selectedHZNum_Straight.length;i++){
+						for(var j:int=0;j<10;j++){
+							for(var k:int = 0;k<10;k++){
+								for(var x:int = 0;x<10;x++){
+									if(j+k+x==selectedHZNum_Straight[i]){
+										sum0++;
+									}
+								}
+							}
+						}
+					}
+					zhushu = sum0*MathUtil.getCCombination(checkSelected.length,3);
+					bettingInfo.tzcontent = selectedHZNum_Straight.toString()+"$"+checkSelected.toString().split(",").join("");
+				}
+				else if(playType == 4)
+				{
+					zhushu = zu3Selected.selectedNum.length * (zu3Selected.selectedNum.length - 1)*MathUtil.getCCombination(checkSelected.length,3);;
+					bettingInfo.tzcontent = zu3Selected.selectedNum.toString()+"$"+checkSelected.toString().split(",").join("");
+				}
+				else if(playType == 6)
+				{
+					zhushu =MathUtil.getCCombination(zu6Selected.selectedNum.length,3)*MathUtil.getCCombination(checkSelected.length,3);
+					bettingInfo.tzcontent = zu6Selected.selectedNum.toString()+"$"+checkSelected.toString().split(",").join("");
+				}
+				else if(playType == 9)
+				{
+					var sum1:int= 0 ;
+					for(var i2:int=0;i2<selectedHZNum_Group.length;i2++){
+						var tempArr:Array = new Array;
+						for(var j2:int=0;j2<10;j2++){
+							for(var k2:int = 0;k2<10;k2++){
+								for(var x2:int = 0;x2<10;x2++){
+									if(j2+k2+x2==selectedHZNum_Group[i2]){
+										if(j2 == k2 && j2 == x2)
+											trace("豹子号");
+										else
+										{
+											var newArr:Array = new Array;
+											newArr.push(j2);
+											newArr.push(k2);
+											newArr.push(x2);
+											newArr.sort();
+											newArr.reverse();
+											if(tempArr.length == 0)
+												tempArr.push(newArr);
+											else
+											{
+												var hasBoolean:Boolean = false;
+												for (var i3:int = 0; i3 < tempArr.length; i3++) 
+												{
+													if(tempArr[i3][0] == newArr[0] && tempArr[i3][1] == newArr[1] && tempArr[i3][3] == newArr[3])
+													{
+														hasBoolean = true;
+													}
+												}
+												if(!hasBoolean)
+													tempArr.push(newArr);
+											}
+										}
+									}
+								}
+							}
+						}
+						sum1 = sum1+tempArr.length
+					}
+					zhushu =  sum1*MathUtil.getCCombination(checkSelected.length,3);
+					bettingInfo.tzcontent = selectedHZNum_Group.toString()+"$"+checkSelected.toString().split(",").join("");;
+				}
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			private function clearAll(e:BetsClickEvent = null):void
+			{
+				clearAllSelectedNumbers();
+				clearZu3SelectedNumbers();
+				clearZu6SelectedNumbers();
+				clearCopyHandler();
+				clearCheckBtnSelectedHandler();
+				clearSumSelectedNumber();
+			}
+			
+			private function clearAllSelectedNumbers():void
+			{
+				tenThousand.clearAllSelectedNumHandler();
+				oneThousand.clearAllSelectedNumHandler();
+				hundred.clearAllSelectedNumHandler();
+				ten.clearAllSelectedNumHandler();
+				one.clearAllSelectedNumHandler();
+			}
+			
+			private function clearZu3SelectedNumbers():void
+			{
+				zu3Selected.clearAllSelectedNumHandler();
+			}
+			
+			private function clearZu6SelectedNumbers():void
+			{
+				zu6Selected.clearAllSelectedNumHandler();
+			}
+			
+			private function clearCopyHandler():void
+			{
+				if(textarea)
+					textarea.text = "";
+			}
+			private function clearSumSelectedNumber():void
+			{
+				for (var i:int = 0; i < 28; i++)
+				{
+					var tog:ToggleButton = straightAddBets.getElementAt(i) as ToggleButton
+					tog.selected = false;
+				}
+				selectedHZNum_Straight = [];
+				for (var j:int = 0; j < grouptAddBets.numElements; j++) 
+				{
+					var tog1:ToggleButton = grouptAddBets.getElementAt(j) as ToggleButton
+					tog1.selected = false;
+				}
+				selectedHZNum_Group = [];
+			}
+			private function clearCheckBtnSelectedHandler():void
+			{
+				checkSelected = ["2","3","4"];
+				for(var i:int = 0; i < 5; i++)
+				{
+					if(i<2)
+						(this["id_" + i] as CheckBox).selected = false;
+					else
+						(this["id_" + i] as CheckBox).selected = true;
+				}
+			}
+			
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				target.selected = true;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				switch(targetID)
+				{
+					case "play_38":
+						playType = 1;
+						showPlayContainer(playContainer1);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_45');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_45');
+						sntuo = 0;
+						checkBoxContainer.visible = false
+						checkBoxContainer.includeInLayout = false
+						break;
+					case "play_v_38":
+						playType = 2;
+						sntuo = 3;
+						showPlayContainer(playContainer4);
+						tipLabel.text=resourceManager.getString('LotteryTips','Random_3_Straight_Stick_Tips')
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_46');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_46');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+					case "play_62":
+						playType = 3;
+						sntuo = 0;
+						showPlayContainer(playContainer5);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_47');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_47');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+					case "play_39":
+						playType = 4;
+						sntuo = 0;
+						showPlayContainer(playContainer2);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_48');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_48');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+					case "play_v_39":
+						playType = 5;
+						sntuo = 3;
+						showPlayContainer(playContainer4);
+						tipLabel.text=resourceManager.getString('LotteryTips','Random_3_Group_3_Tips')
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_36');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_36');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+					case "play_40":
+						playType = 6;
+						sntuo = 0;
+						showPlayContainer(playContainer3);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_37');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_37');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+					case "play_v_40":
+						playType = 7;
+						sntuo = 3;
+						showPlayContainer(playContainer4);
+						tipLabel.text=resourceManager.getString('LotteryTips','Random_3_Group_6_Tips')
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_38');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_38');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+					case "play_63":
+						playType = 8;
+						sntuo = 0;
+						showPlayContainer(playContainer4);
+						tipLabel.text=resourceManager.getString('LotteryTips','Random_3_Group_hybrid_Tips')
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_39');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_39');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+					case "play_64":
+						playType = 9;
+						sntuo = 0;
+						showPlayContainer(playContainer6);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_40');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_40');
+						checkBoxContainer.visible = true
+						checkBoxContainer.includeInLayout = true
+						break;
+				}
+			}
+			protected function textarea1_mouseOutHandler(event:MouseEvent):void
+			{
+				var arrs:Array=new Array();
+				error=false; numbersArr=new Array();
+				if(textarea.text!="")
+				{
+					var str:String = textarea.text.split(/\D/).join("\n");
+					var arr:Array = str.split("\n");
+					for(var ia:int=0;ia<arr.length;ia++)
+					{
+						if(arr[ia]!="")
+						{
+							arrs.push(arr[ia]);
+						}
+					}
+					textarea.text="";
+					check_digit(arrs,3);
+					if(!error)
+					{
+						for(var z:int=0;z<arrs.length;z++)
+						{
+							numbersArr.push(arrs[z]);
+						}
+						var haomaStickStr:String = "";
+						for(var i4:int=0;i4<numbersArr.length;i4++){
+							haomaStickStr+=numbersArr[i4].toString().split("").join(",")+" ";					
+						} 
+						checkSelected.sort();
+						bettingInfo.tzcontent = haomaStickStr.substring(0,haomaStickStr.length-1)+"$"+checkSelected.toString().split(",").join("");
+						bettingInfo.tzzs = numbersArr.length*MathUtil.getCCombination(checkSelected.length,3);
+						bettingInfo.sntuo = sntuo;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+					}
+					else
+					{
+						bettingInfo.tzzs = 0;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+				} 
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+			/**
+			 * 检查错误（位数检查）
+			 */
+			public function check_digit(arrs:Array,lengths:int):void{
+				var a:String="";
+				for(var i:int=0; i < arrs.length; i++){
+					if(arrs[i]!="")
+					{
+						if(arrs[i].length!=lengths)
+						{
+							a += arrs[i] + "\       格式不正确\n";
+							error = true;
+						}
+						else if(playType == 5)
+						{
+							if(arrs[i].slice(0,1) == arrs[i].slice(1,2) && arrs[i].slice(0,1) == arrs[i].slice(2,3))
+							{
+								a += arrs[i] + "\       格式不正确(不能有豹子号)\n";
+								error = true;
+							}
+							else if(arrs[i].slice(0,1) == arrs[i].slice(1,2) || arrs[i].slice(0,1) == arrs[i].slice(2,3) || arrs[i].slice(1,2) == arrs[i].slice(2,3))
+							{
+								a += arrs[i]+"\n";
+								error == true ? error : error=false;
+							}
+							else
+							{
+								a += arrs[i] + "\       格式不正确\n";
+								error = true;
+							}
+							
+						}
+						else if(playType == 7)
+						{
+							if(arrs[i].slice(0,1) == arrs[i].slice(1,2) && arrs[i].slice(0,1) == arrs[i].slice(2,3))
+							{
+								a += arrs[i] + "\       格式不正确(不能有豹子号)\n";
+								error = true;
+							}
+							else if(arrs[i].slice(0,1) == arrs[i].slice(1,2) || arrs[i].slice(0,1) == arrs[i].slice(2,3) || arrs[i].slice(1,2) == arrs[i].slice(2,3))
+							{
+								a += arrs[i] + "\       格式不正确\n";
+								error = true;
+							}
+							else
+							{
+								a += arrs[i]+"\n";
+								error == true ? error : error=false;
+							}
+						}
+						else if(playType == 8)
+						{
+							if(arrs[i].slice(0,1) == arrs[i].slice(1,2) && arrs[i].slice(0,1) == arrs[i].slice(2,3))
+							{
+								a += arrs[i] + "\       格式不正确(不能有豹子号)\n";
+								error = true;
+							}
+							else
+							{
+								a += arrs[i]+"\n";
+								error == true ? error : error=false;
+							}
+						}
+						else
+						{
+							a += arrs[i]+"\n";
+							error == true ? error : error=false;
+						}
+					}
+				}
+				textarea.text=a;
+			}
+			
+			protected function checkbox_clickHandler(event:MouseEvent):void
+			{
+				var checkBox:CheckBox = event.target as CheckBox;
+				var check_id:String = checkBox.id.substring(3,4);
+				if(checkBox.selected == true){
+					checkSelected.push(check_id);
+				}else{
+					checkSelected.splice(checkSelected.indexOf(check_id),1);
+				}
+				if(playType != 2 && playType != 5 && playType != 7 && playType != 8)
+					betsNumberClickHandler(null);
+				else
+					textarea1_mouseOutHandler(null);
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:SkinnableContainer  backgroundAlpha="0.0" width="100%" height="46">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="24" paddingLeft="30"/>
+		</s:layout>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','straight_Selected_2')} ： " styleName="mmcLabelStyles1"/>
+			<s:ToggleButton id="play_38" label="{resourceManager.getString('LotteryTips','straight_Selected_1')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_38" label="{resourceManager.getString('LotteryTips','stick_Selected_1')}" styleName="mmcSecondMenuToggleButtonStyle"
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_62" label="{resourceManager.getString('LotteryTips','straight_Selected_Total')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 3}" click="playClickHandler(event)"/>
+		</s:HGroup>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','group_Selected')} ： " styleName="mmcLabelStyles1"/>
+			<s:ToggleButton id="play_39" label="{resourceManager.getString('LotteryTips','group_3_Selected')}{resourceManager.getString('LotteryTips','straight_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 4}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_39" label="{resourceManager.getString('LotteryTips','group_3_Selected')}{resourceManager.getString('LotteryTips','stick_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 5}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_40" label="{resourceManager.getString('LotteryTips','group_6_Selected')}{resourceManager.getString('LotteryTips','straight_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 6}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_40" label="{resourceManager.getString('LotteryTips','group_6_Selected')}{resourceManager.getString('LotteryTips','stick_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 7}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_63" label="{resourceManager.getString('LotteryTips','mix_Group_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 8}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_64" label="{resourceManager.getString('LotteryTips','group_Selected_Total')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 9}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	<s:Group width="100%" height="28">
+		<s:Rect right="22" left="22" width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0x000000" alpha="0.5"/>
+			</s:fill>
+			<s:stroke> 
+				<s:SolidColorStroke color="0xac9759" weight="1" joints="round"/> 
+			</s:stroke> 
+		</s:Rect>
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="30">
+			<s:Label text="玩法说明：" styleName="labelStyles2" color="0xdabd6d"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','ssc_game_tip_45')}" styleName="labelStyles2" color="0xdabd6d"/>
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.MMCTipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','ssc_game_tip_emp_45')}"/>
+		</s:HGroup>
+	</s:Group>
+	<s:VGroup id="playContainer1" width="100%" height="260" paddingLeft="30" verticalAlign="middle" gap="1">
+		<miaomiaocai:MMCNumberSelected id="tenThousand" bettingRowName="{resourceManager.getString('LotteryTips','ten_Thousand')}"/>
+		<miaomiaocai:MMCNumberSelected id="oneThousand" bettingRowName="{resourceManager.getString('LotteryTips','thousand')}"/>
+		<miaomiaocai:MMCNumberSelected id="hundred" bettingRowName="{resourceManager.getString('LotteryTips','hundred')}"/>
+		<miaomiaocai:MMCNumberSelected id="ten" bettingRowName="{resourceManager.getString('LotteryTips','ten')}"/>
+		<miaomiaocai:MMCNumberSelected id="one" bettingRowName="{resourceManager.getString('LotteryTips','single')}"/>
+	</s:VGroup>
+	
+	<s:VGroup id="playContainer2" width="100%" height="260" paddingLeft="30" gap="24" verticalAlign="middle" visible="false" includeInLayout="false">
+		<miaomiaocai:MMCNumberSelected id="zu3Selected" bettingRowName="{resourceManager.getString('LotteryTips','number')}"/>
+	</s:VGroup>
+	
+	<s:VGroup id="playContainer3" width="100%" height="260" paddingLeft="30" gap="24" verticalAlign="middle" visible="false" includeInLayout="false">
+		<miaomiaocai:MMCNumberSelected id="zu6Selected" bettingRowName="{resourceManager.getString('LotteryTips','number')}"/>
+	</s:VGroup>
+	
+	<s:Group id="playContainer4" width="100%" height="260" visible="false" includeInLayout="false">
+		<s:BitmapImage source="@Embed('css/skin1/images/MMC/SingonBG_01.png')" left="24" top="17"/>
+		<s:HGroup height="227" gap="48" verticalCenter="0" paddingLeft="24"  verticalAlign="top" paddingTop="6">
+			<mx:TextArea  id="textarea" width="527" height="190" color="#FFFFFF"
+						  contentBackgroundAlpha="0.0" borderVisible="false" focusAlpha="0.0" 
+						  rollOut="textarea1_mouseOutHandler(event)"/>
+			<s:VGroup gap="18" height="100%" verticalAlign="top">
+				<s:Label text="{resourceManager.getString('LotteryTips','fomal_Description')}" styleName="stickYellowTextStyle"/>
+				<s:Label id="tipLabel" text="{resourceManager.getString('LotteryTips','Random_3_Straight_Stick_Tips')}" styleName="stickWriteTextStyle"/>
+				<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_6')}" styleName="stickWriteTextStyle"/>
+				<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_2')}" styleName="stickWriteTextStyle"/>
+				<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_3')}" styleName="stickWriteTextStyle"/>
+				<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_4')}" styleName="stickWriteTextStyle"/>
+			</s:VGroup>
+		</s:HGroup>
+	</s:Group>
+	<!--和值-->
+	<s:VGroup id="playContainer5" width="100%" height="260" paddingLeft="30" horizontalAlign="center" verticalAlign="middle" visible="false" includeInLayout="false">
+		<s:TileGroup id="straightAddBets" requestedColumnCount="14" verticalGap="24" horizontalGap="8">
+		</s:TileGroup>
+	</s:VGroup>
+	<s:VGroup id="playContainer6" width="100%" height="260" paddingLeft="15" horizontalAlign="center" verticalAlign="middle" visible="false" includeInLayout="false">
+		<s:TileGroup id="grouptAddBets" requestedColumnCount="13" verticalGap="24" horizontalGap="8">
+		</s:TileGroup>
+	</s:VGroup>
+	<s:HGroup id="checkBoxContainer" width="100%" paddingTop="-30" horizontalAlign="center" paddingLeft="15" gap="8" visible="false" includeInLayout="false">
+		<s:CheckBox id="id_0" label="万位" styleName="betBtoCheckBoxStyle" click="checkbox_clickHandler(event)"/>
+		<s:CheckBox id="id_1" label="千位" styleName="betBtoCheckBoxStyle" click="checkbox_clickHandler(event)"/>
+		<s:CheckBox id="id_2" label="百位" styleName="betBtoCheckBoxStyle" click="checkbox_clickHandler(event)"/>
+		<s:CheckBox id="id_3" label="十位" styleName="betBtoCheckBoxStyle" click="checkbox_clickHandler(event)"/>
+		<s:CheckBox id="id_4" label="个位" styleName="betBtoCheckBoxStyle" click="checkbox_clickHandler(event)"/>
+	</s:HGroup>
+	
+</s:VGroup>

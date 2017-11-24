@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 width="500" height="400"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="init()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryPlayNames")]
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.ProvinceCityBase;
+			import com.xazc.comm.vo.UserDetailVo;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CenterEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentCenterInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.DynamicEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			public var markID:String="1010200";
+			public static var markID:String="1010200";
+			[Bindable]
+			public var labelTitleText:String="银行资料";
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			private var actid:String="";//活动ID
+			
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			
+			private var myreg:RegExp=/[\u4e00-\u9fa5]|·|^[a-zA-Z0-9]+$/;//验证持卡人只能是汉字和字母
+			
+			[Bindable]
+			private var bankCodes:ArrayCollection=new ArrayCollection([{label:"请选择"},
+				{label:"中国工商银行",code:"icbc"},
+				{label:"中国农业银行",code:"abc"},
+				{label:"中国建设银行",code:"ccb"},
+				{label:"招商银行",code:"cmb"},
+				
+				{label:"交通银行",code:"comm"},
+				/* {label:"中国民生银行",code:"cmbc"}, */ 
+				{label:"中国银行",code:"boc"},
+				{label:"北京银行",code:"bob"},
+				
+				{label:"上海银行",code:"bos"},
+				{label:"平安银行",code:"sdb"},
+				{label:"兴业银行",code:"cib"},
+				{label:"中国光大银行",code:"ceb"},
+				
+				{label:"广发银行",code:"gdb"},
+				{label:"广州银行",code:"gzb"},
+				{label:"华夏银行",code:"hxb"},
+				{label:"浙商银行",code:"czb"},
+				
+				{label:"杭州银行",code:"hzb"},
+				{label:"东莞银行",code:"bod"},
+				{label:"渤海银行",code:"cbhb"},
+				{label:"浦发银行",code:"spdb"},
+				
+				{label:"中信银行",code:"citic"},
+				{label:"中国邮政银行",code:"psbc"},
+			]);
+			
+			//服务对象
+			private var service:ServerToolImpl;
+			
+			
+			/**
+			 *初始化 
+			 **/
+			private function init():void
+			{
+				//初始化  省份城市
+				set_province_city()
+				//初始化页面属性 
+				initBlockPropertys();
+			}
+			
+			/**
+			 *初始化页面属性 
+			 **/
+			private function initBlockPropertys():void{
+				
+				if(PersonCenterInfo.userInfoDetail.UserRealName=="")
+				{
+					ti_1.visible = false;
+					ti_1.includeInLayout = false;
+					
+					ti_inputName.visible = true;
+					ti_inputName.includeInLayout = true;
+					ti_inputName_mark.visible = true;
+					ti_inputName_mark.includeInLayout = true;
+					
+				}else{
+					ti_1.text = PersonCenterInfo.userInfoDetail.UserRealName.toString().substring(0,1)+"*****";
+				}
+				
+				bankNumber.text="";
+				bankName.textInput.editable=false;
+			}
+			
+			private function checkPropertys():Boolean
+			{
+				if(ti_inputName.visible && ti_inputName.text == "")
+				{
+					alert.show("请填写真是姓名！",	
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(!ti_inputName.visible){
+					ti_inputName.text = PersonCenterInfo.userInfoDetail.UserRealName.toString();
+				}
+				if(bankName.selectedIndex == 0)
+				{
+					alert.show("请选择开户银行！",	
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(cb_province.selectedIndex == 0)
+				{
+					alert.show("请选择开户地址！",	
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+//				if(bankBranchName.text == "")
+//				{
+//					alert.show("请填写支行名称！",	
+//						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//					return false;
+//				}
+				if(bankBranchName.text != "")
+				{
+					if(bankBranchName.text.length<2 || bankBranchName.text.length>50){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bank_info_check7'),	
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				}
+				
+				
+				if(bankNumber.text.length<16 || bankNumber.text.length>19){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bank_info_check4'),	
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				return true;
+			}
+			private var pswTest:RegExp = /^(?=.{6,16})(?=.*[a-zA-Z])(?=.*[0-9])[0-9a-zA-Z]*$/;
+			
+			protected function btn_submit_clickHandler(event:MouseEvent):void
+			{
+				if(!checkPropertys()){
+					return;
+				}
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object = new Object();
+				obj.UserID = PersonCenterInfo.userInfoDetail.MyUserID;
+				obj.RealName = ti_inputName.text;
+				obj.BankCode = bankName.selectedItem.code;
+				obj.CardNumber = bankNumber.text;
+				obj.Province = cb_province.selectedItem.id;
+				obj.City = cb_city.selectedItem.id;
+				obj.BranchName = bankBranchName.text;
+				obj.Isdefault = 0;
+				service.addBankCard(obj,bindBankInfoHandler);
+			}
+			private function bindBankInfoHandler(e:ResultEvent):void{
+				var obj:Object=Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				var alert1:AlertMsgCenter=new AlertMsgCenter();
+				if(obj.SystemState==64)
+				{
+					/*ErrorLocal =1, Message="添加成功";
+					ErrorLocal =-1, Message="此卡已存在";
+					ErrorLocal =-2, Message="用户名不一致";
+					ErrorLocal =0, Message="添加失败";*/
+					if(obj.ErrorLocal == 1){
+						PersonCenterInfo.userInfoDetail.UserRealName = ti_inputName.text,//临时存贮
+						PopUpManager.removePopUp(this);
+//						alert1.show("添加成功！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);	
+//						dispatchEvent(new DynamicEvent("closeEvent"));
+						
+						var alert_1:AlertMsgCenter = new AlertMsgCenter();
+						alert_1.show("添加成功！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						alert_1.okBtnBoolean = true;
+						alert_1.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,comfirmSetHandler);
+					}
+					else{
+						PopUpManager.removePopUp(this);
+						alert1.show(obj.Message,resourceManager.getString('PersonalCenterPrompt','alert_title'),1);	
+					}
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),	
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert1.show("添加失败！",	
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);	
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			private function comfirmSetHandler(e:SystemEvent):void
+			{
+				dispatchEvent(new DynamicEvent("closeEvent"));
+			}
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			[Bindable]
+			private var provinces:ArrayCollection;//省份
+			[Bindable]
+			private var citys:ArrayCollection;
+			private function set_province_city():void
+			{
+				//初始化省市信息
+				var obj:Object=JSON.parse(ProvinceCityBase.provinceCity,null);
+				provinces= new ArrayCollection(obj as Array);
+				cb_province.dataProvider=provinces;
+				cb_province.selectedIndex=0;
+				var objcity:Object=cb_province.selectedItem.city;
+				citys=new ArrayCollection(objcity as Array);
+				cb_city.dataProvider=citys;
+				cb_city.selectedIndex=0;
+			}
+			
+			protected function cb_province_changeHandler(event:IndexChangeEvent):void
+			{
+				var obj:Array=cb_province.selectedItem.city as Array;
+				citys=new ArrayCollection(obj);
+				cb_city.selectedIndex=0;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Rect width="100%" height="100%" >
+		<s:fill>
+			<s:SolidColor color="0x666666" />
+		</s:fill> 
+	</s:Rect>
+	<s:Rect width="100%" height="100%" left="25" right="25" top="25" bottom="25">
+		<s:fill>
+			<s:SolidColor color="0xececec" />
+		</s:fill> 
+	</s:Rect>
+	<s:Image id="imgClose" x="476" y="5" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+			 rollOut="imgClose_rollOutHandler(event)"
+			 rollOver="imgClose_rollOverHandler(event)"/>
+	
+	<s:VGroup width="80%" top="60" horizontalCenter="0">
+			<s:VGroup width="100%" height="100%" gap="20">
+				<s:HGroup width="100%" height="30%" verticalAlign="middle">
+					<mx:Label text="{resourceManager.getString('PersonalCenterPage','keep_Cards_Name')}：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+					<mx:TextInput id="ti_inputName" styleName="personalCenterDetailTextInputStyle" width="220" visible="false" includeInLayout="false"/>
+					<mx:Label id="ti_inputName_mark" text="*" styleName="personalCenterDetailLabelStyle_1" color="0xff0000" visible="false" includeInLayout="false"/>
+					<mx:Label id="ti_1"  styleName="personalCenterDetailTextInputStyle"/>
+				</s:HGroup>
+				<s:HGroup width="100%" height="30%" verticalAlign="middle">
+					<mx:Label text="开户银行：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+					<s:ComboBox id="bankName" styleName="personalCenterDetailComboBoxStyle"  width="220" selectedIndex="0" 
+								dataProvider="{bankCodes}" />
+					<mx:Label text="*" styleName="personalCenterDetailLabelStyle_1" color="0xff0000"/>
+				</s:HGroup>
+				
+				
+				<s:HGroup width="100%" height="30%" verticalAlign="middle">
+					<mx:Label text="开户地址：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+					<s:ComboBox width="120" id="cb_province" initialize="cb_province.textInput.editable = false"  styleName="personalCenterDetailComboBoxStyle"  dataProvider="{provinces}"  labelField="text"  change="cb_province_changeHandler(event)"/>
+					<s:ComboBox width="95" id="cb_city" initialize="cb_city.textInput.editable = false" styleName="personalCenterDetailComboBoxStyle" dataProvider="{citys}"  labelField="text" horizontalScrollPolicy="off"/>
+					<mx:Label text="*" styleName="personalCenterDetailLabelStyle_1" color="0xff0000"/>
+				</s:HGroup>
+				
+				
+				<s:HGroup width="100%" height="30%" verticalAlign="middle">
+					<mx:Label text="支行名称：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+					<mx:TextInput id="bankBranchName" styleName="personalCenterDetailTextInputStyle" width="220" maxChars="50" restrict="0-9\a-zA-Z\u4e00-\u9fa5"/>
+					<!--<mx:Label text="*" styleName="personalCenterDetailLabelStyle_1" color="0xff0000"/>-->
+				</s:HGroup>
+				<s:HGroup width="100%" height="30%" verticalAlign="middle">
+					<mx:Label text="{resourceManager.getString('PersonalCenterPage','bank_Card_Number')}：" width="100" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+					<mx:TextInput id="bankNumber" styleName="personalCenterDetailTextInputStyle" restrict="0-9" width="220" maxChars="19"/>
+					<mx:Label text="*" styleName="personalCenterDetailLabelStyle_1" color="0xff0000"/>
+				</s:HGroup>
+			</s:VGroup>
+	</s:VGroup>
+	
+	
+	<s:Button id="btn_submit" x="158" y="304" label="确 定" buttonMode="true"
+			  click="btn_submit_clickHandler(event)" styleName="personalSubmitButtonStyle"/>
+</s:Group>

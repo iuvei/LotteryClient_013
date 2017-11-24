@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   		   height="31" width="94" 
+				   buttonMode="true" mouseChildren="false" 
+				   mouseOver="mouseOverHandler(event)"
+				   mouseOut="mouseOutHandler(event)" 
+				   creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			private var initFlag:Boolean=false;//初始化组件是否完成标识
+			private var _selected:Boolean = false;
+			private var _labelTitle:String="";
+			//Microsoft YaHei,微软雅黑
+			[Bindable]
+			public function get labelTitle():String
+			{
+				return _labelTitle;
+			}
+
+			public function set labelTitle(value:String):void
+			{
+				_labelTitle = value;
+			}
+
+			protected function mouseOverHandler(event:MouseEvent):void
+			{
+				changeBg(true);	
+			}
+			
+			protected function mouseOutHandler(event:MouseEvent):void
+			{
+				if(!_selected) {
+					changeBg(false);
+				}
+			}
+			
+			public function get selected():Boolean
+			{
+				return _selected ;
+			}
+			public function set selected(val:Boolean):void
+			{
+				_selected = val;
+				changeBg(val);
+			}
+			
+			private function changeBg(flag:Boolean):void
+			{
+				if(flag) {
+					if(initFlag){
+						menulabel_defualt.visible=false;
+						menulabel_selected.visible=true;
+						bg_defualt.visible=false;
+						bg_selected.visible=true;
+					}
+				}else {
+					if(initFlag){
+						menulabel_defualt.visible=true;
+						menulabel_selected.visible=false;
+						bg_defualt.visible=true;
+						bg_selected.visible=false;
+					}
+				}
+			}
+			
+			private function init():void
+			{
+				if(selected){
+					menulabel_defualt.visible=false;
+					menulabel_selected.visible=true;
+					bg_defualt.visible=false;
+					bg_selected.visible=true;
+				}else{
+					menulabel_defualt.visible=true;
+					menulabel_selected.visible=false;
+					bg_defualt.visible=true;
+					bg_selected.visible=false;
+				}
+				initFlag=true;
+				
+//				var square:Shape = new Shape(); 
+//				square.graphics.beginFill(0xbe0000, 1); 
+//				square.graphics.drawRoundRect(0, 0, squareSize, squareSize); 
+//				square.graphics.beginFill(0x00FF00, 0.5); 
+//				square.graphics.endFill(); 
+//				this.addChild(square); 
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<!--<s:Group id="bg_selected" visible="false" >
+		<s:Rect x="2" y="2" width="95" height="30" radiusX="3" radiusY="3" >
+			<s:fill>
+				<s:SolidColor color="#be0000" />
+			</s:fill> 
+			<s:stroke> 
+				<s:SolidColorStroke color="0x000000" weight="1" joints="round"/> 
+			</s:stroke> 
+		</s:Rect>
+	</s:Group>
+	<s:Group id="bg_defualt" visible="false">
+		<s:Rect x="2" y="2" width="95" height="30"  radiusX="3" radiusY="3" >
+			<s:fill>
+				<s:SolidColor color="#e5e5e5" />
+			</s:fill> 
+			<s:stroke> 
+				<s:SolidColorStroke color="0x000000" weight="1"/> 
+			</s:stroke> 
+		</s:Rect>
+	</s:Group>-->
+	
+	<!-- 背景 -->
+	<s:Image id="bg_defualt" visible="false" source="css/skin1/images/personalCenter/PopupTapButtonItem_bg_white.png" />
+	<s:Image id="bg_selected" visible="false"  source="css/skin1/images/personalCenter/PopupTapButtonItem_bg_red.png" />
+	
+	<!-- 菜单语 -->
+	<mx:Label id="menulabel_defualt" text="{labelTitle}" horizontalCenter="0" verticalCenter="0"  styleName="popUpTabButtonItemLabelStyle_default"/>
+	<mx:Label id="menulabel_selected" text="{labelTitle}" horizontalCenter="0" verticalCenter="0" styleName="popUpTabButtonItemLabelStyle_selected" visible="false"/>
+	
+</s:Group>

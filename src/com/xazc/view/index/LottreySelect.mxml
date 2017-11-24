@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="1000" minHeight="200"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.components.Button;
+			
+			private var listLotteryNameHot:Array=[{label:"12"},{label:"57"},{label:"58"},{label:"59"},{label:"71"},{label:"72"},{label:"13"},{label:"14"},{label:"75"},{label:"74"},{label:"76"},{label:"73"},{label:"86"},{label:"43"},{label:"44"},{label:"45"},{label:"46"},{label:"47"},{label:"48"},{label:"49"},{label:"90"}];//时时彩
+			private var listLotteryNameGFssc:Array=[{label:"50"},{label:"41"},{label:"51"},{label:"53"},{label:"55"},{label:"56"},{label:"66"},{label:"42"}];//官方时时彩
+			private var listLotteryNameFc:Array=[{label:"16"},{label:"4"},{label:"5"},{label:"61"},{label:"63"},{label:"77"},{label:"78"},{label:"85"}];//11选5
+			private var listLotteryNameKlc:Array=[{label:"15"},{label:"10"},{label:"9"},{label:"79"},{label:"80"},{label:"26"},{label:"81"},{label:"82"},{label:"83"},{label:"21"},{label:"87"},{label:"88"},{label:"89"}];//快乐彩
+			private var listLotteryNameTc:Array=[{label:"19"},{label:"17"},{label:"18"},{label:"84"}];//低频彩
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var arr:Array=CurrentBusinessInfo.canSalableLotteries.split(",");
+				var lab:spark.components.Button;
+				for(var i:int=0;i<arr.length;i++){
+					
+					//添加龙虎玩法(时时彩添加龙虎时在此处添加编号)
+					/* if('12'==arr[i]||'14'==arr[i]){
+						arr.push(arr[i]+"#");
+						listLotteryNameHot.push({label:arr[i]+"#"});
+					} */
+					trace(arr[i]);
+					for(var k:String in listLotteryNameHot){
+						if(listLotteryNameHot[k].label==arr[i]){
+							lab = new spark.components.Button();
+							lab.label=lotteryNameHelp.getCaizhong(listLotteryNameHot[k].label);
+							if(arr[i] == "12" || arr[i] == "72"|| arr[i] == "56"|| arr[i] == "57"|| arr[i] == "58"|| arr[i] == "90")
+							{
+								lab.styleName = "LottreySelectBtnStyle_hot";
+							}else{
+								lab.styleName = "LottreySelectBtnStyle";
+							}
+							lab.buttonMode = true;
+							lab.id = listLotteryNameHot[k].label;
+							lab.addEventListener(MouseEvent.CLICK,changeLotteryHander);
+							ssc_tileGroup.addElement(lab);
+						}
+					}
+					for(var k:String in listLotteryNameGFssc){
+						if(listLotteryNameGFssc[k].label==arr[i]){
+							lab = new spark.components.Button();
+							lab.label=lotteryNameHelp.getCaizhong(listLotteryNameGFssc[k].label);
+							if(arr[i] == "41"|| arr[i] == "42"|| arr[i] == "66")
+							{
+								lab.styleName = "LottreySelectBtnStyle_hot";
+							}else{
+								lab.styleName = "LottreySelectBtnStyle";
+							}
+							lab.buttonMode = true;
+							lab.id = listLotteryNameGFssc[k].label;
+							lab.addEventListener(MouseEvent.CLICK,changeLotteryHander);
+							GFssc_tileGroup.addElement(lab);
+						}
+					}
+					for(var k:String in listLotteryNameFc){
+						if(listLotteryNameFc[k].label==arr[i]){
+							
+							lab = new spark.components.Button();
+							lab.styleName = "LottreySelectBtnStyle";
+							lab.label=lotteryNameHelp.getCaizhong(listLotteryNameFc[k].label);
+							lab.buttonMode = true;
+							lab.id = listLotteryNameFc[k].label;
+							lab.addEventListener(MouseEvent.CLICK,changeLotteryHander);
+							elvenTo5_tileGroup.addElement(lab);
+						}
+					}
+					for(var k:String in listLotteryNameKlc){
+						if(listLotteryNameKlc[k].label==arr[i]){
+							
+							lab = new spark.components.Button();
+							lab.styleName = "LottreySelectBtnStyle";
+							lab.label=lotteryNameHelp.getCaizhong(listLotteryNameKlc[k].label);
+							lab.buttonMode = true;
+							lab.id = listLotteryNameKlc[k].label;
+							lab.addEventListener(MouseEvent.CLICK,changeLotteryHander);
+							happy_tileGroup.addElement(lab);
+						}
+					}
+					for(var k:String in listLotteryNameTc){
+						if(listLotteryNameTc[k].label==arr[i]){
+							
+							lab = new spark.components.Button();
+							lab.styleName = "LottreySelectBtnStyle";
+							lab.label=lotteryNameHelp.getCaizhong(listLotteryNameTc[k].label);
+							lab.buttonMode = true;
+							lab.id = listLotteryNameTc[k].label;
+							lab.addEventListener(MouseEvent.CLICK,changeLotteryHander);
+							low_tileGroup.addElement(lab);
+						}
+					}
+				}
+			}
+			/**
+			 * 切换彩种 
+			 */
+			private function changeLotteryHander(e:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.lotteryID = (e.target as Button).id;
+				Util.getInstance().dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE, obj));
+			}
+			
+			protected function chess_clickHandler(num:Number):void
+			{
+				//Alert.show("敬请期待");
+				var alert:AlertMsg = new AlertMsg();
+				if(CurrentUserInfo.isTestName){
+					alert.show("测试账号不支持棋牌游戏！","温馨提示",2);
+				}else{
+					if(CurrentBusinessInfo.isOpenChessAndCardModelOpen){
+						this.userNNLogin();
+					}else{
+						alert.show("正在维护中","温馨提示",2);
+					}
+				}
+			}
+			private function userNNLogin():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				serverTool.userNNLogin(obj,userNNLoginReturn);
+			}
+			/**
+			 * 登录棋牌 
+			 */
+			private function userNNLoginReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString());
+				//Alert.show(arr.LoginURl);
+				navigateToURL(new URLRequest(arr.LoginURl+"&nickname="+encodeURI(encodeURI(CurrentUserInfo.userName))),"_blank");
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:BorderContainer id="bc" width="100%" height="100%"  borderColor="0xe4cf8a" backgroundColor="0x2f2f2f">
+		<s:Rect  left="0" right="0" top="0" bottom="0" >
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x505050"  />
+					<s:GradientEntry color="0x383837"  />
+					<s:GradientEntry color="0x232322"  />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:VGroup width="100%" height="100%" horizontalAlign="center">
+			<s:HGroup  gap="0" height="100%" paddingTop="20" paddingBottom="20">
+				<!--时时彩-->
+				<s:HGroup height="100%" width="220" horizontalAlign="center">
+					<s:VGroup  height="100%" gap="10" horizontalAlign="center">
+						<s:Label text="时时彩" styleName="lottreySelectStyle_1"/>
+						<s:TileGroup id="ssc_tileGroup" requestedColumnCount="2" verticalGap="5">
+						</s:TileGroup>
+					</s:VGroup>
+				</s:HGroup>
+				<s:Image  source="css/skin1/images/lottreyIco/lotteryselect_line.png" />
+				<!--官方时时彩-->
+				<s:HGroup height="100%" width="180" horizontalAlign="center">
+					<s:VGroup  height="100%" gap="10" horizontalAlign="left">
+						<s:Label text="官方时时彩" styleName="lottreySelectStyle_1"/>
+						<s:TileGroup id="GFssc_tileGroup" requestedColumnCount="1" verticalGap="5">
+						</s:TileGroup>
+					</s:VGroup>
+				</s:HGroup>
+				<s:Image  source="css/skin1/images/lottreyIco/lotteryselect_line.png" />
+				<!--快乐彩-->
+				<s:HGroup  height="100%" width="220" horizontalAlign="center">
+					<s:VGroup height="100%" gap="10" horizontalAlign="center">
+						<s:Label text="快乐彩" styleName="lottreySelectStyle_1"/>
+						<s:TileGroup id="happy_tileGroup" requestedColumnCount="2" verticalGap="5">
+						</s:TileGroup>
+					</s:VGroup>
+				</s:HGroup>
+				<s:Image  source="css/skin1/images/lottreyIco/lotteryselect_line.png" />
+				<!--低频彩-->
+				<s:HGroup  height="100%" width="180" horizontalAlign="center">
+					<s:VGroup height="100%" gap="10" >
+						<s:Label text="低频彩" styleName="lottreySelectStyle_1"/>
+						<s:TileGroup id="low_tileGroup" requestedColumnCount="1" verticalGap="5">
+						</s:TileGroup>
+					</s:VGroup>
+				</s:HGroup>
+				<s:Image  source="css/skin1/images/lottreyIco/lotteryselect_line.png" />
+				<!--11to5-->
+				<s:HGroup  height="100%" width="180" horizontalAlign="center">
+					<s:VGroup height="100%" gap="10">
+						<s:Label text="11选5" styleName="lottreySelectStyle_1"/>
+						<s:TileGroup id="elvenTo5_tileGroup" requestedColumnCount="1" verticalGap="5">
+						</s:TileGroup>
+					</s:VGroup>
+				</s:HGroup>
+			</s:HGroup>
+			<!--  棋牌显示  -->
+			<s:Group width="100%" height="125" visible="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}" includeInLayout="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}">
+				<s:Rect  left="0" right="0" top="0" bottom="0" >
+					<s:fill>
+						<s:LinearGradient rotation="90">
+							<s:GradientEntry color="0x2d2d2d"  />
+						</s:LinearGradient>
+					</s:fill>
+					<s:stroke>
+						<s:SolidColorStroke color="0x444444" weight="1" caps="square"/>
+					</s:stroke>
+				</s:Rect>
+				<s:HGroup width="100%" height="100%" gap="0" horizontalAlign="center" verticalAlign="middle">
+					<s:Button styleName="chessSelectBtnStyle" click="chess_clickHandler(1)"/>
+					<s:Image  source="css/skin1/assets/chessindex/chess_selectLogo.jpg" />
+					<s:Button styleName="chessSelectBtnStyle2"  click="chess_clickHandler(2)"/>
+				</s:HGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:BorderContainer>
+</s:Group>

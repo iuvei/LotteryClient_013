@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  gap="0" width="100%" height="100%"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  xmlns:proxy="com.xazc.center.proxy.*" 
+		  xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			
+			
+			private var p_1:PopUpDayWageContract;//日工资契约
+			private var p_2:PopUpDayWageRecords;//日工资记录
+			private var p_3:PopUpDividendContract;//分红契约
+			private var p_4:PopUpDividendRecords;//分红记录
+			
+			
+			/**
+			 *  点击按钮的时候
+			 * 
+			 */
+			public function menu_clickHandler(index:int):void
+			{
+				for(var i:int=1;i<5;i++){
+					if(index==i){
+						this["menu_"+i].selected=true;
+						detailSelected(i);
+					}else{
+						this["menu_"+i].selected=false;
+					}
+				}
+			}
+			/**
+			 *显示具体详细页面 
+			 **/
+			private function detailSelected(index:int):void{
+				group.removeAllElements();
+				if(!this["p_"+index]){
+					if(index==1){
+						this["p_"+index]=new PopUpDayWageContract();
+					}
+					if(index==2){
+						this["p_"+index]=new PopUpDayWageRecords();
+					}
+					if(index==3){
+						this["p_"+index]=new PopUpDividendContract();
+					}
+					if(index==4){
+						this["p_"+index]=new PopUpDividendRecords();
+					}
+				}
+				this["p_"+index].horizontalCenter=0;
+				group.addElement(this["p_"+index]);
+				this["p_"+index]=null;//释放资源
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 菜单导航 -->
+	<s:Group width="100%">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient >
+					<s:GradientEntry color="#cfcece" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:HGroup width="100%" height="55" gap="10" left="23" verticalAlign="middle">
+			<common:PopUpTabButtonItem id="menu_1" labelTitle="日工资契约" selected="true" click="menu_clickHandler(1)" visible="{CurrentUserInfo.IsDayWages}" includeInLayout="{CurrentUserInfo.IsDayWages}"/>
+			<common:PopUpTabButtonItem id="menu_2" labelTitle="日工资记录"  click="menu_clickHandler(2)" visible="{CurrentUserInfo.IsDayWages}" includeInLayout="{CurrentUserInfo.IsDayWages}"/>
+			<common:PopUpTabButtonItem id="menu_3" labelTitle="分红契约" click="menu_clickHandler(3)"  visible="{CurrentUserInfo.IsContract}" includeInLayout="{CurrentUserInfo.IsContract}"/>
+			<common:PopUpTabButtonItem id="menu_4" labelTitle="分红记录" click="menu_clickHandler(4)"  visible="{CurrentUserInfo.IsContract}" includeInLayout="{CurrentUserInfo.IsContract}"/>
+			
+			<!--<common:PopUpTabButtonItem id="menu_1" labelTitle="日工资契约" selected="true" click="menu_clickHandler(1)" />
+			<common:PopUpTabButtonItem id="menu_2" labelTitle="日工资记录"  click="menu_clickHandler(2)" />
+			<common:PopUpTabButtonItem id="menu_3" labelTitle="分红契约" click="menu_clickHandler(3)" />
+			<common:PopUpTabButtonItem id="menu_4" labelTitle="分红记录" click="menu_clickHandler(4)" />-->
+			
+		</s:HGroup>
+	</s:Group>
+	<!-- 内容 -->
+	<s:Group id="group" width="100%"/>
+</s:VGroup>

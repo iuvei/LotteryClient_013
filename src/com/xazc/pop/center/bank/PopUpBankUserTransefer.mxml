@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%"
+		 creationComplete="init()"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PopKeyBoardManager;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			private var userNNBalance:String='';
+			
+			[Bindable]
+			private var types:ArrayCollection=new ArrayCollection([
+				{label:"彩票",value:1},
+				{label:"棋牌",value:2}]);
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			/**
+			 * 初始化方法 
+			 */
+			public  function init():void
+			{
+				this.getUserMoney();
+			}
+			
+			/**
+			 * 转账 
+			 */
+			protected function sumbit_clickHandler():void
+			{
+				if(!checkParamters())
+					return;
+				btn_submit.enabled=false;
+				
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.Type = cbtypes.selectedItem.value;
+				obj.Chip = input_rmb.text;
+				obj.PayPassWord = input_psw.text;
+				serverTool.userTransefer(obj,userTranseferReturn);
+			}
+			private function userTranseferReturn(e:ResultEvent):void
+			{
+				btn_submit.enabled=true;
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(64==arr.SystemState){
+					if(1==arr.OrderState){
+						//刷新棋牌余额
+						userNNBalance = arr.UserAllMoney;
+						//刷新彩余额
+						Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+						alert.show("转账成功","温馨提示",1);
+						input_rmb.text = '';
+						input_psw.text = '';
+					}else if(-3==arr.OrderState){
+						alert.show("支付密码错误","温馨提示");
+					}else if(-1==arr.OrderState){
+						alert.show("转账金额不足","温馨提示");
+					}else if(-6==arr.OrderState){
+						alert.show("调用棋牌转账失败","温馨提示");
+					}else if(-7==arr.OrderState){
+						alert.show("正在游戏中，不能转账","温馨提示");
+					}else if(-8==arr.OrderState){
+						alert.show("当前用户已被冻结无法进行转账操作!","温馨提示");
+					}else{
+						alert.show('转账失败',"温馨提示");
+					}
+				}else{
+					alert.show('转账失败',"温馨提示");
+				}
+				
+				//Alert.show(e.result.toString());
+			}
+			/**
+			 * 获取棋余额显示 
+			 * 
+			 */
+			private function getUserMoney():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				serverTool.getUserMoney(obj,getUserMoneyReturn);
+			
+			}
+			private function getUserMoneyReturn(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(200==arr.OrderState){
+					userNNBalance = arr.UserAllMoney;
+				}else if(1==arr.OrderState){
+					userNNBalance = '0';
+				}else{
+					userNNBalance = '0';
+					//alert.show('获取棋牌余额失败',"温馨提示");
+				}
+			}
+			/**
+			 * 切换转账类型 
+			 */
+			protected function cbtypes_changeHandler(event:IndexChangeEvent):void
+			{
+				if(cbtypes.selectedIndex==0){
+					transeferText.text = '棋牌';
+				}else{
+					transeferText.text = '彩票';
+				}
+			}
+			protected function input_money_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var str:String=input_rmb.text.substring(input_rmb.text.indexOf("."),input_rmb.text.length);
+				var value:String=input_rmb.text;
+				var len:int=value.length-str.length+3;
+				if(input_rmb.text.indexOf(".")>0 && str.length>3){
+					input_rmb.text=value.substring(0,len);
+				}
+				if(input_rmb.text.split('.').length>2){
+					input_rmb.text = input_rmb.text.replace('.','');
+				}
+			}
+			protected function img_clickHandler(event:MouseEvent):void
+			{
+				if(!Util.getInstance().backPop)
+					PopKeyBoardManager.show(input_psw);
+				else
+					PopKeyBoardManager.clear();
+				Util.getInstance().backPop = !Util.getInstance().backPop;
+			}
+			
+			/**
+			 *检查 
+			 **/
+			private function checkParamters():Boolean{
+				if(input_rmb.text==""){
+					alert.show('请输入转账金额！',resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(Number(input_rmb.text)<1||Number(input_rmb.text)>50000){
+					alert.show('请输入正确的转账金额！',resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(input_psw.text==""){
+					alert.show('请输入资金密码！',resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				
+				if(cbtypes.selectedIndex==0){
+					if(Number(input_rmb.text)>Number(CurrentUserInfo.userCPBalance)){
+						alert.show('转账余额不足！',resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				
+				}else{
+					if(Number(input_rmb.text)*100>Number(userNNBalance)){
+						alert.show('转账余额不足！',resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				
+				}
+				return true;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<!--<s:VGroup width="100%" height="100%">
+		<s:HGroup>
+			<s:Label text="彩票余额:￥{Number(CurrentUserInfo.userCPBalance)}"/>
+			<s:Label text="棋牌余额:￥{Number(userNNBalance)}"/>
+		</s:HGroup>
+		<s:HGroup>
+			<s:Label text="转出账户:"/>
+			<s:ComboBox initialize="cbtypes.textInput.editable = false" 
+						id="cbtypes" 
+						selectedIndex="0"
+						dataProvider="{types}" 
+						labelField="label"
+						change="cbtypes_changeHandler(event)"/>
+		</s:HGroup>
+		<s:HGroup>
+			<s:Label text="转入账户:"/>
+			<s:Button label="棋牌" id="transeferText"/>
+		</s:HGroup>
+		<s:HGroup>
+			<s:Label text="转账金额:"/>
+			<s:TextInput  id="transeferMoney"/>
+		</s:HGroup>
+		<s:HGroup>
+			<s:Label text="资金密码:"/>
+			<s:TextInput  id="psd"/>
+		</s:HGroup>
+		<s:HGroup>
+			<s:Button id="sumbit" click="sumbit_clickHandler(event)" label="确定"/>
+		</s:HGroup>
+	</s:VGroup>-->
+	
+	
+	<s:VGroup  width="100%" gap="10" verticalAlign="top" top="15"  bottom="0">
+		<s:HGroup width="50%">
+			<s:Spacer width="40"/>
+			<mx:Label text="彩票余额:" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="{Number(CurrentUserInfo.userCPBalance)}" styleName="personalCenterDetailLabelStyle_4"/>
+			<mx:Label text="彩票币" styleName="personalCenterDetailLabelStyle_1"/>
+			<s:Spacer width="30"/>
+			<mx:Label text="棋牌余额:" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="{Number(userNNBalance)}" styleName="personalCenterDetailLabelStyle_4"/>
+			<mx:Label text="棋牌币" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="转出账户:" styleName="personalCenterDetailLabelStyle_1"/>
+			<s:ComboBox initialize="cbtypes.textInput.editable = false" 
+						id="cbtypes" 
+						selectedIndex="0"
+						dataProvider="{types}" 
+						labelField="label"
+						styleName="personalCenterDetailComboBoxStyle"
+						change="cbtypes_changeHandler(event)"/>
+			<mx:Label text="          1彩票币=100棋牌币" styleName="personalCenterDetailLabelStyle_4"/>
+		</s:HGroup>
+		
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="转入账户:" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="棋牌" id="transeferText" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="转账金额:"  styleName="personalCenterDetailLabelStyle_1"/>
+			<s:TextInput  id="input_rmb"  styleName="personalCenterDetailTextInputStyle" restrict="0-9" change="input_money_changeHandler(event)"/>
+			<mx:Label text="彩票币" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="         范围是1-50000彩票币" styleName="personalCenterDetailLabelStyle_4"/>
+		</s:HGroup>
+				
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="资金密码:"  styleName="personalCenterDetailLabelStyle_1"/>
+			<s:Group id="groupBank" click="img_clickHandler(event)" buttonMode="true">
+				<mx:TextInput id="input_psw" restrict="0-9A-Za-z_"  styleName="personalCenterDetailTextInputStyle" displayAsPassword="true" enabled="false"/>
+				<s:HGroup id="HGroupBank" width="{input_psw.width-4}" height="{input_psw.height}" horizontalAlign="right"  verticalAlign="middle">
+					<s:Image id="imgInput_psw" source="css/skin1/assets/keyboard.png"/>
+				</s:HGroup>
+			</s:Group>
+		</s:HGroup>
+				
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="117"/>
+			<s:Button id="btn_submit" styleName="personalSubmitButtonStyle" label="{resourceManager.getString('PersonalCenterPage','ensure')}" click="sumbit_clickHandler()" buttonMode="true"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

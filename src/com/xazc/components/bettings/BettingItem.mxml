@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx" styleName="betBotBCStyle"
+				   width="478" maxWidth="478">
+	<s:layout>
+		<s:VerticalLayout gap="0" horizontalAlign="center"/>
+	</s:layout>
+	<fx:Metadata>
+		[Event(name="deleteCachectic", type="com.xazc.event.CustomEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.controls.Alert;
+			
+			
+			/**
+			 * 移除单签 
+			 */
+			public static const DELETE_CACHECTIC:String = "deleteCachectic";
+			
+			private var _cathectic:Cathectic = new Cathectic();
+			public function get cathectic():Cathectic{return _cathectic;}
+			public function set cathectic(value:Cathectic):void
+			{
+				_cathectic = value;
+				
+				//lotteryTypeDisplay.text = getWanfa(_cathectic.game_id,_cathectic.sntuo+"");
+				lotteryTypeDisplay.text = lotteryNameHelp.getWanfa(CurrentLotteryInfo.lotteryId,_cathectic.game_id,_cathectic.sntuo);
+				lotteryNumbersDisplay.text = Util.getInstance().strFormatConversionForShow(value);
+				lotteryMoneyDisplay.text = "["+_cathectic.tzzs+" 注 "+_cathectic.tzzs*CurrentLotteryInfo.perPrice/CurrentLotteryInfo.yuanjiaoMoshi+" "+CurrentUserInfo.moneyType+"]";
+			}
+			
+			
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new CustomEvent(DELETE_CACHECTIC, _cathectic));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%" height="100%" gap="0" verticalAlign="middle">
+		<mx:Label id="lotteryTypeDisplay" width="10%" text="标签" textAlign="center" />
+		<mx:Label id="lotteryNumbersDisplay" width="200" text="标签" textAlign="center" />
+		<mx:Label id="lotteryMoneyDisplay" width="40%" text="标签" textAlign="center" />
+		<s:Group width="10%" height="100%">
+			<mx:LinkButton label="删除" horizontalCenter="0" verticalCenter="0" click="linkbutton1_clickHandler(event)"/>
+		</s:Group>
+	</s:HGroup>
+	<mx:HRule width="100%" height="1" chromeColor="#777777" alpha=".5"/>
+</s:BorderContainer>

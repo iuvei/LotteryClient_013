@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  xmlns:bank="com.xazc.center.bank.*"
+		  width="100%" height="100%" gap="0"  creationComplete="init()"
+		  xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.Sendnotification;
+			import com.xazc.pop.center.bank.PopUpBankUserTransefer;
+			import com.xazc.pop.center.bank.PopUpBankUserTransferRecords;
+			private var p_1:PopUpBankUserTransefer;//转账
+			private var p_2:PopUpBankUserTransferRecords;//转账记录
+			
+			private function init():void{
+				
+			}
+			
+			
+			/**
+			 *  点击按钮的时候
+			 * 
+			 */
+			public function menu_clickHandler(index:int):void
+			{
+				for(var i:int=1;i<3;i++){
+					if(index==i){
+						this["menu_"+i].selected=true;
+						detailSelected(i);
+					}else{
+						this["menu_"+i].selected=false;
+					}
+				}
+			}
+			/**
+			 *显示具体详细页面 
+			 **/
+			private function detailSelected(index:int):void{
+				group.removeAllElements();
+				if(!this["p_"+index]){
+					
+					if(index==1){
+						this["p_"+index]=new PopUpBankUserTransefer();
+					}else if(index==2){
+						this["p_"+index]=new PopUpBankUserTransferRecords();
+					}
+					this["p_"+index].horizontalCenter=0;
+					group.addElement(this["p_"+index]);
+					this["p_"+index]=null;//释放资源
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 菜单导航 -->
+	<s:Group width="100%">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff"   />
+					<s:GradientEntry color="0xe6eef3"/>
+					<s:GradientEntry color="0xdce5ea"  />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:HGroup width="100%" gap="0">
+			<common:PopUpTabButtonItem id="menu_1" labelTitle="{resourceManager.getString('PersonalCenterPage','transferAccounts')}" click="menu_clickHandler(1)"/>
+			<common:PopUpTabButtonItem id="menu_2" labelTitle="{resourceManager.getString('PersonalCenterPage','transferAccountsRecord')}" click="menu_clickHandler(2)"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<!-- 分隔-->
+	<s:BorderContainer width="100%" height="6" skinClass="css.skin1.universal.PopUpSeparate"/>
+	<!-- 内容 -->
+	<s:Group id="group" width="100%"/>
+</s:VGroup>

@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:models="com.xazc.view.models.*"
+					   xmlns:load="com.xazc.components.load.*"
+					   styleName="windowsApplicationStyle" 
+					   width="1250" height="750"
+					   minWidth="1100" minHeight="600"
+					   xmlns:single="com.xazc.single.*" 
+					   xmlns:loading="com.xazc.components.loading.*"
+					   initialize="windowedapplication1_initializeHandler(event)"
+					   applicationComplete="applicationCompleteHandler(event)"
+					   creationComplete="windowedapplication1_creationCompleteHandler(event)"
+					   preloader="com.xazc.components.load.MyProgressBar" xmlns:components="com.xazc.components.*"
+					   >
+	<!-- 加载样式 -->
+	<fx:Style source="css/css1.css"/>
+	<fx:Style source="css/skin1/universal/popUpPersonal.css"/>
+	<fx:Script>
+		<![CDATA[
+			import air.update.ApplicationUpdaterUI;
+			import air.update.events.UpdateEvent;
+			
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.UserDetailVo;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.components.load.LoadingGroup;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.manager.TimerManager;
+			import com.xazc.manager.XmlManager;
+			import com.xazc.pop.center.bank.PopUpWaitingItem;
+			import com.xazc.pop.center.common.PopUpWindowBase;
+			import com.xazc.single.CommonMethodClass;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			import com.xazc.view.models.Index;
+			import com.xazc.view.models.Login;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.DynamicEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.events.FlexMouseEvent;
+			import mx.managers.PopUpManager;
+			import mx.resources.ResourceManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.core.IViewport;
+			
+			private var loading:LoadingGroup = new LoadingGroup();
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			private var popupIndex:int=0;
+			private var popupTitle:String="";
+			public　var popupFisrtLoginFlag:Boolean=false;
+			private var centerFlag:Boolean=false;
+			
+			//首页
+			private var index:Index = new Index();
+			//登录
+			private var login:Login;
+			
+			protected function applicationCompleteHandler(event:FlexEvent):void
+			{
+				
+				TimerManager.getInstance().start();
+				
+				XmlManager.getInstance().init();
+				
+				this.nativeWindow.x=(Capabilities.screenResolutionX-this.width)/2;
+				
+				if(Capabilities.screenResolutionY>750){
+					this.nativeWindow.y=(Capabilities.screenResolutionY-this.height)/2;
+				}else{
+					this.nativeWindow.y= 5 ;
+					this.nativeWindow.height = 600;
+				}
+				
+				
+				//程序入口
+				this.init();
+			}
+			/**
+			 * 切换显示模块 
+			 * 
+			 */
+			protected function jumpPanelHandler(event:JumpEvent):void
+			{
+				if(event.type==JumpEvent.JUMP_TO_LOGIN){
+					if(ExternalInterface.available)
+					{
+						//用户登录
+						ExternalInterface.call("changeTitle", encodeURI(resourceManager.getString("AlertMessage","message_001")));
+					}
+				}else{
+					if(ExternalInterface.available)
+					{
+						//易乐国际
+						ExternalInterface.call("changeTitle", encodeURI(resourceManager.getString("AlertMessage","message_002")));
+					}
+				}
+				
+				switch(event.type)
+				{
+					case JumpEvent.JUMP_TO_PSESONAL_CENTER://个人中心
+					{
+						popupIndex=event.body.index;
+						popupTitle=event.body.title;
+						if(popupIndex==5 || popupIndex==6){
+							loadPopUp(popupIndex,popupTitle,1);
+							return;
+						}
+						if(!centerFlag){
+							return;
+						}
+						if(popupIndex==4){
+							if(PersonCenterInfo.userInfoDetail.IsAgent==false){
+								//无此功能！
+								alert.show(resourceManager.getString("AlertMessage","message_003"),resourceManager.getString("AlertMessage","message_004"));
+								return;
+							}else{
+								if(PersonCenterInfo.userInfoDetail.BankCode=="" ||PersonCenterInfo.userInfoDetail.CardNumber=="" || PersonCenterInfo.userInfoDetail.UserRealName==""){
+									loadPopUp(3,resourceManager.getString('HomePage','myAccount'),2);
+									//请先完善您的银行资料！
+									alert.show(resourceManager.getString("AlertMessage","message_005"),resourceManager.getString("AlertMessage","message_004"));
+									return;
+								}
+								if(!PersonCenterInfo.IsPayPsw){
+									loadPopUp(3,resourceManager.getString('HomePage','myAccount'),4);
+									//请先完善您的资金密码！
+									alert.show(resourceManager.getString("AlertMessage","message_006"),resourceManager.getString("AlertMessage","message_004"));
+									return;
+								}
+							}
+							loadPopUp(popupIndex,popupTitle,1);
+						}else{
+							if(PersonCenterInfo.userInfoDetail.BankCode=="" ||PersonCenterInfo.userInfoDetail.CardNumber=="" || PersonCenterInfo.userInfoDetail.UserRealName==""){
+								loadPopUp(3,resourceManager.getString('HomePage','myAccount'),2);
+								//请先完善您的银行资料！
+								alert.show(resourceManager.getString("AlertMessage","message_005"),resourceManager.getString("AlertMessage","message_004"));
+								return;
+							}
+							if(!PersonCenterInfo.IsPayPsw){
+								loadPopUp(3,resourceManager.getString('HomePage','myAccount'),4);
+								//请先完善您的资金密码！
+								alert.show(resourceManager.getString("AlertMessage","message_006"),resourceManager.getString("AlertMessage","message_004")); 
+								return;
+							}
+							if(event.body.hasOwnProperty("item")){
+								loadPopUp(popupIndex,popupTitle,event.body.item);
+							}else{
+								loadPopUp(popupIndex,popupTitle);
+							}
+							
+						}
+						break;
+					}
+					case JumpEvent.JUMP_TO_LOGIN://登录
+					{
+						if(popupwin){
+							PopUpManager.removePopUp(popupwin);
+							popupwin=null;
+						}
+						CurrentLotteryInfo.lotteryId = "0";
+						CurrentUserInfo.userName = "";
+						login=null;
+						login=new Login();
+						panel.removeAllElements();
+						panel.addElement(login);
+						login.effectPlay();
+						login.init();
+						break; 
+					}
+					case JumpEvent.JUMP_TO_MAIN://投注首页
+					{
+						if(index)
+						{
+							//index.back2MainScreenHandler(null);
+							index.init();
+						}
+						panel.removeAllElements();
+						panel.addElement(index);
+						
+						
+						/* var obj:Object = new Object();
+						obj.lotteryID = "12";
+						Util.getInstance().dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE, obj));
+						 */
+						//打开公告；
+						if(CurrentBusinessInfo.isNoticeOpen && popupFisrtLoginFlag){
+							index.jumpAnnouncement();
+						}
+						/* if(!popupFisrtLoginFlag){
+							//查询用户信息
+							var server:ServerToolImpl = new ServerToolImpl();
+							server.getUserDetailNew({}, resultHandler, faultHandler);
+						}else{
+							var　service:ServerToolImpl=new ServerToolImpl();
+							service.checkPayOutPwdAndTransferPwd(new Object(),checkPayPswHandler);
+						} */
+						
+						//查询用户信息
+						var server:ServerToolImpl = new ServerToolImpl();
+						server.getUserDetailNew({}, resultHandler, faultHandler);
+						
+						popupFisrtLoginFlag=false;
+						break;
+					}
+					case JumpEvent.JUMP_TO_HELP_CENTER://帮助中心
+					{
+						break;
+					}
+					case JumpEvent.JUMP_TO_PROMOTIONS://优惠活动
+					{
+						break;
+					}
+					case JumpEvent.JUMP_TO_ANNOUNCEMENT://公告
+					{
+						break;
+					}
+				}
+			}
+			
+			
+			/**
+			 *查询用户信息 
+			 **/
+			private function resultHandler(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64)
+				{
+					//保存个人信息；
+					CommonMethodClass.commom_login(obj);
+					
+					var　service:ServerToolImpl=new ServerToolImpl();
+					service.checkPayOutPwdAndTransferPwd(new Object(),checkPayPswHandler);
+				}else if(obj.SystemState==-1){
+					dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsg=new AlertMsg();
+					yd.show(resourceManager.getString("AlertMessage","message_007"),resourceManager.getString("AlertMessage","message_004"));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					
+				}
+			}
+			/**
+			 *检查资金密码是否完整回调函数 
+			 **/
+			private function checkPayPswHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var obj:Object=JSON.parse(e.result.toString(),null);
+				var context:Array=obj.Context as Array;
+				if(context != null && context.length > 0)
+				{
+					if(context[0].PayOutPassWord==1){
+						PersonCenterInfo.IsPayPsw=true;
+					}else{
+						PersonCenterInfo.IsPayPsw=false;
+					}
+				}
+				centerFlag=true;
+			}
+			private function faultHandler(e:FaultEvent):void
+			{
+				trace(e.fault);
+			}
+			
+			/**
+			 *个人中心创建完成 
+			 **/
+			private function centerCreateCompleteHandler(e:FlexEvent):void{
+				removeLoading();
+				var item:Object=e.currentTarget;
+				item.removeEventListener(FlexEvent.CREATION_COMPLETE,centerCreateCompleteHandler);
+				item.effectPlay(); 
+			}
+			
+			/**********************************入口***************************************/
+			/**
+			 * 程序入口
+			 * 
+			 */
+			public function init():void
+			{
+				loading.splicePromptLanguage(0,"");
+				//监听事件分配事件
+				this.addListeners();
+				//监听鼠标单击页面事件
+				this.addEventListener(MouseEvent.MOUSE_DOWN,onMouseEventHandler);
+				//获取可使用且最快域名访问
+//				var linkes:Array = ["192.168.1.13:58001"];
+				var linkes:Array = ["pc.hy998998.com",
+									"pc.hyyulept.com",
+									"pc.hy899899.com",
+									"pc.hy66668.com",
+									"pc.hyylbet.com"];
+				
+//				var linkes:Array = ["211.149.211.85:8081"];
+				
+//				var linkes:Array = ["192.168.1.55"];
+				var linkes:Array = ["192.168.1.63"];
+				
+//				var linkes:Array = ["192.168.1.157"];
+				
+				for (var i:int = 0; i < linkes.length; i++)  
+				{  
+					//第一次拿到地址后执行后续操作
+					this.LoadImages(linkes[i]);
+				}  
+				
+			}
+			/**
+			 * 可拖动标题框
+			 * 
+			 */
+			private function onMouseEventHandler(evt:MouseEvent):void
+			{
+				if(popupwin){
+					this.closePopUpWindowHandler(null);
+				}
+			}
+			private var server:Object = new Object;
+			//检测可用线路显示
+			private function LoadImages(url:String):void
+			{
+				var st:Number=(new Date()).time;
+				var et:Number;
+				var delay:Number=1*1000;
+				var loader:Loader=new Loader();
+				var urlLink:URLRequest=new URLRequest('http://'+'192.168.1.63'+'/LotteryWeb/logoimg_01.png?'+ int(Math.random() * 1000));
+				loader.load(urlLink);
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,function(){
+					et=(new Date()).time;
+					inerdisply(et,st,true,url);
+				});
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,function(){
+					et=(new Date()).time;
+					inerdisply(et,st,false,url);
+				});
+			}
+			private function inerdisply(time1:Number,time2:Number,isRight:Boolean,url:String):void
+			{
+				
+				if(isRight){
+					if(!server.url){
+						trace("*"+Number(10000/(time1-time2)).toFixed(2)+"k/s==="+isRight+"==="+url);
+						server.url = url;
+						//服务端地址
+						CurrentBusinessInfo.serverUrl_net ='http://'+server.url;
+						//更新地址
+						CurrentBusinessInfo.updateUrl = 'http://'+server.url+'/LotteryClient/update.xml';
+						//获取商户信息
+						this.getAllMerchantInfo2();
+						//检查更新
+						this.checkForUpdate();
+					}else{
+						trace("*"+Number(10000/(time1-time2)).toFixed(2)+"k/s==="+isRight+"==="+url);
+					}
+					CurrentBusinessInfo.linkAddrs.push({label:Number(10000/(time1-time2)).toFixed(2),value:url});
+				}
+			}
+			/**
+			 * 添加切换监听事件
+			 * 
+			 */
+			private function addListeners():void
+			{
+				Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_LOGIN,jumpPanelHandler);
+				this.addEventListener(JumpEvent.JUMP_TO_LOGIN,jumpPanelHandler);
+				this.addEventListener(JumpEvent.JUMP_TO_MAIN,jumpPanelHandler);
+				this.addEventListener(JumpEvent.JUMP_TO_PSESONAL_CENTER,jumpPanelHandler);
+				this.addEventListener(JumpEvent.JUMP_TO_ANNOUNCEMENT,jumpPanelHandler);
+				this.addEventListener(JumpEvent.JUMP_TO_HELP_CENTER,jumpPanelHandler);
+				this.addEventListener(JumpEvent.JUMP_TO_PROMOTIONS,jumpPanelHandler);
+				/**添加切换控制中心主事件**/
+				Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_PSESONAL_CENTER,jumpPanelHandler);
+				/**添加优惠活动，公告事件**/
+				Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_PROMOTIONS,jumpPanelHandler);
+				/***/
+				//Sendnotification.instance.addEventListener("currentLoadingStateEvent",currentLoadingStateHandler);
+				
+				/*监听弹出中奖结果事件*/
+				Util.getInstance().addEventListener(CustomEvent.SHOW_LAST_BET_RESULT,showLastBetResult);
+			}
+			/**
+			 * 查询商户配置信息
+			 * 
+			 */
+			private function getAllMerchantInfo2():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				serverTool.getAllMerchantInfo(obj,getAllMerchantInfoReturn2);
+			}
+			private function getAllMerchantInfoReturn2(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				//更新，初始化数据
+				var tempObj:Object;
+				CurrentBusinessInfo.LotteryList = new Array();
+				for(var j:int = 0;j<arr.LotteryList.length;j++){
+					tempObj = new Object();
+					tempObj.SaleState = arr.LotteryList[j].SaleState;
+					tempObj.MaxRebate = arr.LotteryList[j].MaxRebate;
+					tempObj.LotteryCode = arr.LotteryList[j].LotteryCode;
+					CurrentBusinessInfo.LotteryList.push(tempObj);
+				}
+				
+				var tempLotteryArr:Array = CurrentBusinessInfo.canSalableLotteriesTemplate.split(",");
+				
+				var tempLotteryShowArr:Array = new Array();
+				for(var k:int = 0;k<tempLotteryArr.length;k++){
+					for(var o:int= 0;o<CurrentBusinessInfo.LotteryList.length;o++){
+						if(tempLotteryArr[k]==CurrentBusinessInfo.LotteryList[o].LotteryCode){
+							tempLotteryShowArr.push(tempLotteryArr[k]);
+						}
+					}
+				}
+				CurrentBusinessInfo.canSalableLotteries = tempLotteryShowArr.join(",");
+				
+				//判断是否打开优惠活动
+				/* if(arr.CommonFlag==1){
+				CurrentBusinessInfo.isCommonOpen = true;
+				}else{
+				CurrentBusinessInfo.isCommonOpen = false;
+				} */
+				
+				
+				if((arr.CommonFlag&8)==8){//是否允许代理投注
+					CurrentBusinessInfo.isAollowProxyBet = true;
+				}else{
+					CurrentBusinessInfo.isAollowProxyBet = false;
+				}
+				if((arr.CommonFlag&1)==1){//优惠活动
+					CurrentBusinessInfo.isCommonOpen = true;
+				}else{
+					CurrentBusinessInfo.isCommonOpen = false;
+				}
+//				if((arr.CommonFlag&2)==2){//公告
+//					CurrentBusinessInfo.isNoticeOpen = true;
+//				}else{
+//					CurrentBusinessInfo.isNoticeOpen = false;
+//				}
+				
+				CurrentBusinessInfo.Lang = arr.Lang;
+				CurrentBusinessInfo.isRegisterOpen = arr.CanRegistUser;
+				CurrentBusinessInfo.isRebateOpen = arr.CanRebate;
+				CurrentBusinessInfo.skin = arr.Skin;
+				//CurrentBusinessInfo.logo = arr.Logo;
+				CurrentBusinessInfo.Addrs = arr.Addrs;
+				CurrentBusinessInfo.MerchantCode = arr.MerchantCode;
+				CurrentBusinessInfo.minRebate = arr.MinRebate;
+				CurrentBusinessInfo.maxRebate = arr.MaxRebate;
+				CurrentBusinessInfo.cRebate = arr.CRebate;
+				if(arr.CS_Site){
+					CurrentBusinessInfo.timelyhelpLink = arr.CS_Site;
+				}
+				
+				
+				
+				if(((Number(arr.Mode))&4)==4){
+					CurrentBusinessInfo.isYuanModelOpen = true;
+				}else{
+					CurrentBusinessInfo.isYuanModelOpen = false;								
+				}
+				
+				if(((Number(arr.Mode))&2)==2){
+					CurrentBusinessInfo.isJiaoModelOpen = true;
+				}else{
+					CurrentBusinessInfo.isJiaoModelOpen = false;								
+				}
+				
+				if(((Number(arr.Mode))&1)==1){
+					CurrentBusinessInfo.isFenModelOpen = true;
+				}else{
+					CurrentBusinessInfo.isFenModelOpen = false;								
+				}
+				
+				if(((Number(arr.Mode))&8) == 8){
+					CurrentBusinessInfo.isLiModelOpen = true;
+				}else{
+					CurrentBusinessInfo.isLiModelOpen = false;								
+				}
+				
+				//判断是否开启棋牌模式
+				if(((Number(arr.Mode))&32)==32){
+					CurrentBusinessInfo.isOpenChessAndCardModelOpen = true;
+				}else{
+					CurrentBusinessInfo.isOpenChessAndCardModelOpen = false;								
+				}
+				
+				
+				trace(e.result.toString());
+				//初始化彩票首页
+				if(index){
+					this.index.init();
+				}
+				//判断当前页面是否已经登录（查询余额接口）
+				this.getUserAllMoney();
+				
+			}
+			/**
+			 * 判断当前页面是否已经登录（查询余额接口）
+			 * 
+			 */
+			private function getUserAllMoney():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				serverTool.getUserAllMoney(obj,getUserAllMoneyReturn);
+			}
+			private function getUserAllMoneyReturn(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				removeLoading();
+				if(arr.state){
+					//查询余额成功
+					CurrentUserInfo.userName = arr.userName;
+					CurrentUserInfo.userCPBalance = arr.lotteryMoney;
+					CurrentUserInfo.userCPLockedBalance = arr.freezeMoney;
+					dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_MAIN));
+				}else{
+					if(ExternalInterface.available)
+					{
+						//用户登录
+						ExternalInterface.call("changeTitle", encodeURI(resourceManager.getString("AlertMessage","message_001")));
+					}
+					//用户未登录
+					if(arr.SystemState){
+						if(arr.SystemState){
+							login=null;
+							login=new Login();
+							if(arr.SystemState==-1){
+								//用户未登录，需要跳转到登录页面
+								panel.addElement(login);
+							}else if((arr.SystemState==-2)){
+								//用户单点登录
+								panel.addElement(login);
+							}else{
+								panel.addElement(login);
+								
+							}
+							
+						}
+						
+					}
+				}
+				
+				trace(e.result.toString());
+				
+			}
+			/**
+			 *初始化加载状态 
+			 **/
+			protected function windowedapplication1_initializeHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				createLoading();
+				this.canDropGroup.addEventListener(MouseEvent.MOUSE_DOWN,droupWindow);
+			}
+			private function droupWindow(event:MouseEvent):void
+			{
+				this.nativeWindow.startMove();
+			}
+			
+			/**
+			 *创建进度条 
+			 **/
+			private function createLoading(index:int=0,name:String=""):void{
+				loading.resume();
+				loading.width=this.width/2;
+				loading.height=50;
+				loading.splicePromptLanguage(index,name);
+				loading.x=(this.width-loading.width)/2;
+				loading.y=(this.height-50)/2;
+				PopUpManager.addPopUp(loading,this);
+			}
+			/**
+			 *删除进度条
+			 **/
+			private function removeLoading():void{
+				PopUpManager.removePopUp(loading);
+				loading.suspend();
+				
+			}
+			
+			private function currentLoadingStateHandler(e:DynamicEvent):void{
+				var flag:Boolean=e.flag;
+				if(flag){
+					createLoading(e.index,e.name);
+				}else{
+					removeLoading();
+				}
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			/**********************************自动更新*****************************************/
+			private var appUpdater:ApplicationUpdaterUI=new ApplicationUpdaterUI();
+			private function checkForUpdate():void {
+				NativeApplication.nativeApplication.addEventListener(Event.EXITING, function(e:Event):void {
+					var opened:Array=NativeApplication.nativeApplication.openedWindows;
+					for (var i:int=0; i < opened.length; i++) {
+						opened[i].close();
+					}
+				});
+				appUpdater.updateURL=CurrentBusinessInfo.updateUrl;
+				appUpdater.isCheckForUpdateVisible=false;
+				appUpdater.addEventListener(UpdateEvent.INITIALIZED, onUpdate);
+				appUpdater.addEventListener(ErrorEvent.ERROR, onError);
+				appUpdater.initialize();
+			}
+			private function onError(event:ErrorEvent):void {
+				Alert.show(event.toString());
+			}
+			private function onUpdate(event:UpdateEvent):void {
+				appUpdater.checkNow();
+			}
+			/***************************************************************************/
+			
+			
+			/******************弹出开奖提示*****************************************************/
+			private function showLastBetResult(event:CustomEvent):void
+			{
+				//设置前弹出框位置
+				this.showLastResulet.x = this.width-375;
+				
+				var obj:Object = event.body;
+				//显示提示框
+				this.showLastResulet.visible = true;
+				//Alert.show(event.body.toString());
+				showLastResulet.date = obj;
+				showLastResulet.addEventListener("closeShowLastResult",closeShowLastResult);
+				moveTopEffect.addEventListener(EffectEvent.EFFECT_END,startTimeShowLast);
+				moveTopEffect.target = this.showLastResulet;
+				moveTopEffect.yTo = this.height-205;
+				moveTopEffect.duration = 500;
+				moveTopEffect.play();
+			}
+			//隐藏提示框
+			private function closeShowLastResult(e:Event):void
+			{
+				showLastResulet.removeEventListener("closeShowLastResult",closeShowLastResult);
+				moveTopEffect.target = this.showLastResulet;
+				moveTopEffect.addEventListener(EffectEvent.EFFECT_END,startTimeShowLast2);
+				moveTopEffect.yTo = this.height;
+				moveTopEffect.duration = 500;
+				moveTopEffect.play();
+			}
+			private function startTimeShowLast2(event:EffectEvent):void
+			{
+				moveTopEffect.removeEventListener(EffectEvent.EFFECT_END,startTimeShowLast2);
+				//隐藏提示框
+				this.showLastResulet.visible = false;
+			}
+			private function startTimeShowLast(event:EffectEvent):void
+			{
+				moveTopEffect.removeEventListener(EffectEvent.EFFECT_END,startTimeShowLast);
+				//开启计时
+				showLastResulet.closePanleTime();
+			}
+			
+			/*******************************弹出框模式******************************************/
+			[Bindable]
+			private var popupwin:PopUpWindowBase;
+			private function loadPopUp(index:int,title:String,menuIndex:int=1):void
+			{
+				if(popupwin){
+					PopUpManager.removePopUp(popupwin);
+					return;
+					popupwin=null;
+				}
+				if(!popupwin){
+					popupwin=new PopUpWindowBase();
+				}
+				popupwin.addIndex=index;
+				popupwin.winTtile=title;
+				popupwin.menuIndex=menuIndex;
+				if(index == 6)
+				{
+					popupwin.width = this.width-20;
+					popupwin.height = this.height-20;
+				}
+				else
+				{
+					popupwin.width = 995;
+					popupwin.height = 750;
+				}
+				popupwin.x=(this.width-popupwin.width)/2;
+				popupwin.y=(this.height-popupwin.height)/2;
+				popupwin.addEventListener("closePopUpWindow",closePopUpWindowHandler);
+				popupwin.addEventListener(FlexEvent.CREATION_COMPLETE,popupwinCreationCompleteHandler);
+				PopUpManager.addPopUp(popupwin, this,false); 
+			}
+			private function popupwinCreationCompleteHandler(e:FlexEvent):void{
+				popupwin.removeEventListener(FlexEvent.CREATION_COMPLETE,popupwinCreationCompleteHandler);
+				moveEffect.addEventListener(EffectEvent.EFFECT_END,addEffectEndHandler);
+				moveEffect.target=popupwin;
+				moveEffect.yFrom=this.height;
+				moveEffect.yTo=(this.height-popupwin.height)/2 + 30;
+				moveEffect.duration = 250;
+				moveEffect.play();
+			}
+			private function addEffectEndHandler(e:EffectEvent):void{
+				moveEffect.removeEventListener(EffectEvent.EFFECT_END,addEffectEndHandler);
+				popupwin.init();
+			}
+			private function closePopUpWindowHandler(e:Event):void{
+				popupwin.removeEventListener("closePopUpWindow",closePopUpWindowHandler);
+				moveEffect.addEventListener(EffectEvent.EFFECT_END,removeEffectEndHandler);
+				moveEffect.yFrom=popupwin.y;
+				moveEffect.yTo=this.height;
+				moveEffect.duration = 250;
+				moveEffect.play();
+			}
+			private function removeEffectEndHandler(e:EffectEvent):void{
+				moveEffect.removeEventListener(EffectEvent.EFFECT_END,removeEffectEndHandler);
+				PopUpManager.removePopUp(popupwin);
+				popupwin=null;
+			}
+			/*********************************************************************/
+			
+			/*************************登陆后判断是否弹出公告，优惠活动****************************/
+			private function firstLoginPopUp(index:int,title:String,menuIndex:int=1):void
+			{
+				var popupwin:PopUpWindowBase=new PopUpWindowBase();
+				popupwin.addIndex=index;
+				popupwin.winTtile=title;
+				popupwin.menuIndex=menuIndex;
+				if(index == 6)
+				{
+					popupwin.width = this.width-20;
+					popupwin.height = this.height-20;
+				}
+				else
+				{
+					popupwin.width = 850;
+					popupwin.height = 550;
+				}
+				popupwin.x=(this.width-popupwin.width)/2;
+				popupwin.y=(this.height-popupwin.height)/2;
+				popupwin.addEventListener("closePopUpWindow",closePopUpFirstLoginWindowHandler);
+				popupwin.addEventListener(FlexEvent.CREATION_COMPLETE,popupwinFisrtLoginCreationCompleteHandler);
+				PopUpManager.addPopUp(popupwin, this,true); 
+			}
+			private function popupwinFisrtLoginCreationCompleteHandler(e:FlexEvent):void{
+				var win:PopUpWindowBase=e.currentTarget as PopUpWindowBase;
+				win.removeEventListener(FlexEvent.CREATION_COMPLETE,popupwinCreationCompleteHandler);
+				win.init();
+			}
+			private function closePopUpFirstLoginWindowHandler(e:Event):void{
+				var win:PopUpWindowBase=e.currentTarget as PopUpWindowBase;
+				win.removeEventListener("closePopUpWindow",closePopUpFirstLoginWindowHandler);
+				moveEffect.addEventListener(EffectEvent.EFFECT_END,removeFirstLoginEffectEndHandler);
+				moveEffect.target=win;
+				//moveEffect.yFrom=(this.height-win.height)/2;
+				moveEffect.yFrom=win.y;
+				moveEffect.yTo=this.height;
+				moveEffect.duration = 250;
+				moveEffect.play();
+			}
+			private function removeFirstLoginEffectEndHandler(e:EffectEvent):void{
+				var win:PopUpWindowBase=e.currentTarget.target as PopUpWindowBase;
+				moveEffect.removeEventListener(EffectEvent.EFFECT_END,removeFirstLoginEffectEndHandler);
+				PopUpManager.removePopUp(win);
+				win=null;
+			}
+			/*****************************************************/
+			
+			/*****************************************************/
+			private var oldid:String;  //程序用来更新的id
+			private var reg:RegExp=/<id>.*<\/id>/;
+			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				return;
+				//用时间戳来更新旧的的ID标识
+				var df:DateFormatter=new DateFormatter();
+				df.formatString="YYYYMMDDHHNNSS";
+				var time:String=df.format(new Date());
+				var newid:String="<id>LotteryClient013"+time+"</id>";
+				//获取文件路径
+				var f:File=new File(File.applicationDirectory.resolvePath("META-INF/AIR/application.xml").nativePath);
+				//创建读取、写入对象filestream
+				var fs:FileStream=new FileStream();
+				//打开文件读取文件
+				fs.open(f,FileMode.READ);
+				//读取结果
+				var str:String=new String(fs.readUTFBytes(fs.bytesAvailable));
+				//程序第一次打开时读取该air的原始ID
+				oldid=str.match(reg).toString();
+				//保存原始ID后用的新的id覆盖掉原始ID
+				str=str.replace(reg,newid);
+				//打开文件，操作方式写入
+				fs.open(f,FileMode.WRITE);
+				//写入更换完成后的ID的数据
+				fs.writeUTFBytes(str);
+				//关闭filestream
+				fs.close();
+				//有多个在运行的程序时只关闭一个运行程序就无法再打开新程序  
+				//必须监听系统最后一个相同程序关闭时，才能初始化id  
+				//解决办法：  
+				//
+				/**
+				 *  记录运行前id,若为初始ID则在关闭该程序时初始化id,否则不操作
+				 *  原因：有多个在运行的程序时，只关闭一个运行程序就无法再打开新程序
+				 *  必须监听到系统和程序的原始ID相同的程序关闭时，在初始化到原始的ID
+				 *  添加以下监听函数
+				 **/
+				if(oldid=="<id>LotteryClient013</id>"){
+					this.addEventListener(Event.CLOSE,closeHandler);
+				}
+			}
+			private function closeHandler(e:Event):void{
+				var f:File =new File(File.applicationDirectory.resolvePath(  
+					"META-INF/AIR/application.xml").nativePath);  
+				var fs:FileStream = new FileStream();    
+				fs.open(f,FileMode.READ);        
+				var str:String = new String(fs.readUTFBytes(fs.bytesAvailable));  
+				//用原始ID替换
+				str = str.replace(reg,oldid);    
+				fs.open(f,FileMode.WRITE);
+				//写入到文件
+				fs.writeUTFBytes(str);   
+				fs.close();  
+			}
+			
+			/*****************************************************/
+			//关闭客户端
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				//Alert.show("确认关闭客户端","温馨提示");
+				this.nativeWindow.close();
+				//Alert.show("您确认要关闭窗口么？", "温馨提示", Alert.YES|Alert.NO, this, closingClickHandler);
+				
+			}
+			private function closingClickHandler(evt:CloseEvent):void {
+				if (evt.detail == Alert.YES) {
+					this.nativeWindow.close();
+				} else {
+					return;
+				}
+			}
+			//最小化
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				this.nativeWindow.minimize();
+			}
+			
+			
+			/**
+			 * 处理滚动条滑动慢的问题 
+			 * 
+			 */
+			protected function scroller_mouseWheelChangingHandler(event:FlexMouseEvent):void
+			{
+				event.preventDefault();
+				var modifier:int = 30;
+				var delta:Number = Number(event.delta) * modifier;
+				var viewport:IViewport = mainScroller.verticalScrollBar.viewport;
+				var vPos:Number = viewport.verticalScrollPosition;
+				var maximum:Number = mainScroller.verticalScrollBar.maximum;
+				
+				if (delta < 0)
+				{
+					mainScroller.verticalScrollBar.viewport.verticalScrollPosition =  Math.min(vPos - delta, maximum) ;       
+				}
+				else
+				{
+					mainScroller.verticalScrollBar.viewport.verticalScrollPosition = Math.max(vPos - delta, 0);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<single:BusinessAchieveClass/>
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD  JJ:NN:SS"/>
+		<s:Move id="moveEffect" />
+		<s:Move id="moveTopEffect" />
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryPlayNames")]
+		[ResourceBundle("HomePage")]
+		[ResourceBundle("PersonalCenterPrompt")]
+		[ResourceBundle("AlertMessage")]
+	</fx:Metadata>
+	<s:Group width="100%" height="100" id="canDropGroup" />
+	<s:Scroller  width="100%" height="100%" id="mainScroller" mouseWheelChanging="scroller_mouseWheelChangingHandler(event)">
+		<s:Group width="100%" height="100%" id="panel"/>
+	</s:Scroller>
+	<s:HGroup width="60" height="100%" gap="0" right="0" top="0" visible="false" includeInLayout="false" >
+		<s:Button width="30" height="23" styleName="titlesmall"  label="-" fontSize="30" click="button2_clickHandler(event)"/>
+		<s:Button width="30" height="23" styleName="titleclose" label="x" fontSize="20" click="button1_clickHandler(event)"/>
+	</s:HGroup>
+	
+	<components:ShowLastResulet x="{this.width-375}" y="{this.height-10}" id="showLastResulet" visible="false"/>
+	
+</s:WindowedApplication>

@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 styleName="ChangePageComponentStyle">
+	<s:layout>
+		<s:HorizontalLayout gap="0" verticalAlign="middle" horizontalAlign="right"/>
+	</s:layout>
+	<fx:Metadata>
+		[Event(name="ChangePageIndex", type="com.xazc.event.CustomEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			import spark.events.TextOperationEvent;
+			
+			/**
+			 * 用户点击更换页面事件 
+			 */
+			public static const CHANGE_PAGE_INDEX:String = "ChangePageIndex";
+			
+			// 当前页数
+			private var _currentPgae:int = 1
+			public function get currentPgae():int{return _currentPgae;}
+			
+			// 总页数;
+			[Bindable]
+			private var _totalpage:int;
+			//总条数
+			[Bindable]
+			private var _totalRecords:int;
+			public function get totalpage():int{return _totalpage;}
+			
+			/**
+			 * 设置页面
+			 * @param currentPage 当前页数
+			 * @param totalPage 总页数 
+			 */
+			public function setPage(currentPage:int, totalPage:int,totalRecords:int):void
+			{
+				_currentPgae = currentPage;
+				_totalpage = totalPage;
+				_totalRecords=totalRecords;
+				updatePage();
+			}
+			
+			public function updatePage():void
+			{
+				updateButton();
+				updatePageButton();
+			}
+			
+			// 更新按钮
+			private function updateButton():void
+			{
+				nextPage.enabled = _currentPgae < _totalpage;
+				lastPage.enabled = _currentPgae > 1;
+			}
+			
+			// 更新分页按钮
+			private function updatePageButton():void
+			{
+				var pages:Array = analysisPageSelector();
+				creatPageSelector(pages);
+			}
+			
+			/**
+			 * 分析分页设置
+			 * @param 分析后得到的页面设置
+			 */
+			private function analysisPageSelector():Array
+			{
+				var pageArray:Array = [];
+				
+				var tempNumFirst:Number = 0;
+				var tempNumLast:Number = 0;
+				
+				if(_currentPgae<=2){
+					tempNumLast = 3-_currentPgae;
+				}
+				
+				if((_totalpage-_currentPgae)<=2){
+					tempNumFirst = 2-(_totalpage-_currentPgae);
+				}
+				
+				
+				for(var i:int = _currentPgae - 2 - tempNumFirst; i < _currentPgae; i++)
+				{
+					if(i >= 1)
+					{
+						pageArray.push(i);
+					}
+				}
+				for(i = _currentPgae; i <= _currentPgae +2 + tempNumLast; i++)
+				{
+					if(i <= _totalpage)
+					{
+						pageArray.push(i);
+					}
+				}
+				
+				return pageArray;
+			}
+			
+			/**
+			 * 创建页面选项
+			 * @param selector 选项设置 
+			 */
+			private function creatPageSelector(selector:Array):void
+			{
+				pageContainer.removeAllElements();
+				
+//				var temp:ToggleButton;
+				var temp:LinkButton;
+				for(var i:int = 0; i < selector.length; i++)
+				{
+					temp = new LinkButton();
+					temp.width = 28;
+					temp.height = 26;
+					temp.buttonMode = true;
+					temp.label = selector[i];
+					temp.name = selector[i].toString();
+					temp.styleName = "linkButtonStyle";
+					
+					temp.graphics.beginFill(0xfcfcfc);  
+					temp.graphics.drawRoundRect(0, 0, 28, 26,5,5); 
+					temp.graphics.endFill(); 
+					
+					temp.addEventListener(MouseEvent.CLICK, pageClickHandler, false, 0, true);
+					if(_currentPgae == selector[i])
+					{
+						temp.setStyle("color","0xffffff");
+						temp.graphics.beginFill(0x9c833f);  
+						temp.graphics.drawRoundRect(0, 0, 28, 26,5,5);  
+						temp.graphics.endFill(); 
+					}
+					pageContainer.addElement(temp);
+				}
+			}
+			
+			protected function lastPage_clickHandler(event:MouseEvent):void
+			{
+				if(_currentPgae > 1)
+				{
+					_currentPgae--;
+				}
+				
+				sendRequest();
+				updatePage();
+			}
+			
+			protected function nextPage_clickHandler(event:MouseEvent):void
+			{
+				if(_currentPgae < _totalpage)
+				{
+					_currentPgae++;
+				}
+				
+				sendRequest();
+				updatePage();
+			}
+			
+			protected function pageClickHandler(event:MouseEvent):void
+			{
+//				_currentPgae = parseInt((event.currentTarget as ToggleButton).name);
+				_currentPgae = parseInt((event.currentTarget as LinkButton).name);
+				sendRequest();
+				updatePage();
+			}
+			
+			protected function pageSelector_changeHandler(event:Event):void
+			{
+				var value:int = parseInt(pageSelector.text);
+			 if(value > _totalpage){
+					value = _totalpage;
+				}else if(value<1){
+					value=0;
+				}
+				//_currentPgae = value;
+				pageSelector.text = value==0?"":value.toString();
+			}
+			
+			
+			
+			private function sendRequest():void
+			{
+				dispatchEvent(new CustomEvent(CHANGE_PAGE_INDEX, _currentPgae, true));
+				pageSelector.text="";
+			}
+			
+			protected function pageSelector_mouseDownHandler(event:MouseEvent):void
+			{
+				callLater(addStageListener);
+			}
+			
+			protected function addStageListener():void
+			{
+				if(stage)
+				{
+					//stage.addEventListener(MouseEvent.MOUSE_DOWN, stageClickHandler);
+				}
+			}
+			
+			protected function stageClickHandler(event:MouseEvent):void
+			{
+				//stage.removeEventListener(MouseEvent.MOUSE_DOWN, stageClickHandler);
+				this.setFocus();
+			}
+			
+			protected function pageSelector_focusInHandler(event:FocusEvent):void
+			{
+				pageSelector.text = "";
+			}
+			
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				if(pageSelector.text==""){
+					return;
+				}
+				dispatchEvent(new CustomEvent(CHANGE_PAGE_INDEX, pageSelector.text, true));
+				pageSelector.text="";
+				
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				lastPage.graphics.beginFill(0xfcfcfc);  
+				lastPage.graphics.drawRoundRect(0, 0, 63, 26,5,5); 
+				lastPage.graphics.endFill(); 
+				
+				nextPage.graphics.beginFill(0xfcfcfc);  
+				nextPage.graphics.drawRoundRect(0, 0, 63, 26,5,5); 
+				nextPage.graphics.endFill(); 
+				
+				tiaozhuan.graphics.beginFill(0xfcfcfc);  
+				tiaozhuan.graphics.drawRoundRect(0, 0, 45, 26,5,5); 
+				tiaozhuan.graphics.endFill(); 
+				
+				lastPage.label = "<上一页";
+				nextPage.label = "下一页>";
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%" horizontalAlign="left" gap="0">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','total')}" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label text="{_totalpage}" styleName="personalCenterDetailLabelStyle_3"/>
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','page')}," styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label text="{_totalRecords}" styleName="personalCenterDetailLabelStyle_3"/>
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','some_Record')}" styleName="personalCenterDetailLabelStyle_1"/>
+	</s:HGroup>
+	<mx:LinkButton id="lastPage" buttonMode="true" fontSize="13" 
+				   styleName="linkButtonStyle" width="63" height="26" click="lastPage_clickHandler(event)"/>
+	<s:Spacer width="5" />
+	<!-- 页码 -->
+	<s:HGroup id="pageContainer" gap="5"/>
+	<s:Spacer width="5" />
+	<mx:LinkButton id="nextPage" buttonMode="true" fontSize="13"  
+				   styleName="linkButtonStyle" width="63" height="26" click="nextPage_clickHandler(event)"/>
+	<s:Spacer width="5" />
+	<s:TextInput id="pageSelector" textAlign="center" borderVisible="false"   styleName="personalCenterDetailTextInputStyle"  width="36" height="26" 
+				  change="pageSelector_changeHandler(event)" maxChars="4" restrict="0-9" fontSize="13" contentBackgroundColor="0xffffff"/>
+	<s:Spacer width="5" />
+	<mx:LinkButton id="tiaozhuan" label="{resourceManager.getString('PersonalCenterPage','change_page_request')}"  
+				   styleName="linkButtonStyle" width="45" height="26" click="linkbutton1_clickHandler(event)" fontSize="13"/>
+</s:Group>

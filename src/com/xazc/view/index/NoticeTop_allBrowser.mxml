@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" 
+		 creationComplete="init(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.single.CurrentBusinessInfo;
+			
+			import mx.controls.Text;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			//公告列表
+			private var noticeArr:Array;
+			private var timer:Timer;
+			
+			private var totalRow:int;
+			private var nowRow:int = 1;
+			
+			protected function init(event:FlexEvent):void
+			{
+				if(!timer){
+					this.showTime();
+				}
+			}
+			
+			private function showTime():void
+			{
+				this.timer = new Timer(3000);
+				this.timer.addEventListener(TimerEvent.TIMER, this.resetNow);
+				getNews();//获取公告;
+			}
+			
+			
+			private function resetNow(event:TimerEvent):void
+			{
+				if(nowRow > totalRow)
+				{
+					nowRow = 1;
+					txtGroup.y = 22;
+				}
+				
+				nowRow ++;
+				effect_move.target = txtGroup;
+				effect_move.play();
+			}
+			//获取公告列表；
+			private function getNews():void
+			{
+				var servern:ServerToolImpl = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.CurrentPageIndex = 0;
+				obj.CurrentPageSize = 10;
+				servern.getNewsInfoFlex(obj, getNewsInfoFlexHandler);
+			}
+			private function getNewsInfoFlexHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var object:Object=JSON.parse(e.result.toString());
+				if(object.SystemState==64){
+					noticeArr = object.ModelList;
+					
+					if(noticeArr.length < 1){
+						noticeItem.text = "抱歉，暂无公告！";
+						return;
+					}else{
+						getNewsDetail(noticeArr[0].MerchantNews_ID);
+					}
+				}
+			}
+			
+			//获取具体id的公告内容；
+			private function getNewsDetail(newIds:int):void{
+				
+				var serverw:ServerToolImpl = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.newsID = newIds;
+				serverw.getNewsDetail(obj, getNewsDetailHandler);
+			}
+			
+			private var noticeItem_1:TextField;
+			private var nowlineContent:TextField;
+			
+			private function getNewsDetailHandler(e:Event):void
+			{
+				trace(URLLoader(e.target).data);
+				var object:Object=JSON.parse(URLLoader(e.target).data);
+				
+				var format:TextFormat = new TextFormat();
+//				format.font = "Microsoft YaHei,微软雅黑";
+				format.color = 0xffffff;
+				format.size = 12;
+				
+				noticeItem_1 = new TextField();
+				noticeItem_1.defaultTextFormat = format;
+				noticeItem_1.htmlText = object.NewsContent; 
+				noticeItem_1.condenseWhite = true;
+				noticeItem_1.width = 800;
+				noticeItem_1.height = 3000;//默认高度100，如果内容过多的话会显示不全，所以给到可能的最大值！
+				noticeItem_1.wordWrap = true;
+				
+				nowlineContent = new TextField();
+				nowlineContent.defaultTextFormat = format;
+				nowlineContent.htmlText = noticeItem_1.getLineText(0);//返回第一行的内容；
+				nowlineContent.condenseWhite = true;
+				nowlineContent.width = 800;
+				nowlineContent.height = 3000;//默认高度100，如果内容过多的话会显示不全，所以给到可能的最大值！
+				nowlineContent.wordWrap = true;
+				
+				
+//				var tf:TextField = new TextField(); 
+//				tf.htmlText = object.NewsContent; 
+				var textBitmapData:BitmapData = new BitmapData(800, 3000,true,0); 
+				textBitmapData.draw(noticeItem_1);
+				var bmp:Bitmap = new Bitmap(textBitmapData);
+				
+				var sp:UIComponent = new UIComponent();
+				sp.addChild(bmp);
+				txtGroup.addElement(sp);
+				
+				totalRow = noticeItem_1.numLines;
+				nowRow = 1;
+				txtGroup.y = 22;
+				timer.start();
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Move id="effect_move" duration="300" yBy="-15" />
+	</fx:Declarations>
+	<s:HGroup width="100%" horizontalAlign="center">
+		<s:BitmapImage source="css/img/notice_bg.png"/>
+	</s:HGroup>
+	<s:HGroup width="100%" horizontalAlign="center">
+		<s:Group x="102" width="896" height="35" >
+			<s:Image x="0" y="9" smooth="true" source="css/skin1/images/Notice/gonggaoIco.png"/>
+			<mx:Label id="noticeItem" x="85" y="7" styleName="NoticeLabelStyle_1_white"/>
+		</s:Group>
+	</s:HGroup>
+	
+	<s:HGroup y="0" width="100%" height="35" horizontalAlign="center">
+		<s:Group width="1000" height="35" >
+			<s:Group id="mask_rect" width="100%" height="100%" >
+				<s:Rect x="141" y="11" width="810" height="15">
+					<s:fill>
+						<s:LinearGradient >
+							<s:GradientEntry color="0xff0000" alpha="1" />
+						</s:LinearGradient>
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+			
+			<s:Group id="txtGroup" mask="{mask_rect}" x="145" y="9" width="800" height="100%">
+				
+			</s:Group>
+			<!--<mx:Text mask="{mask_rect}" id="noticeItem_1" x="145" y="7" width="800" height="100%" 
+			leading="13" letterSpacing="1"
+			fontSize="12" color="#ffffff"  fontFamily="Microsoft YaHei,微软雅黑"/>-->
+			
+		</s:Group>
+	</s:HGroup>
+	
+</s:Group>

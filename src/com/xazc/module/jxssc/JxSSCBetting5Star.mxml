@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" 
+		  xmlns:ssc="com.xazc.components.ssc.*"
+		  creationComplete="creationCompleteHandler(event)" xmlns:bettings="com.xazc.components.bettings.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			private var game_id:String = "02";
+			
+			public var lotteryID:String = "";
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				selectedPlayContainer = playContainer1;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+			}
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				var tenThSelectedNum:int = tenThousand.selectedNum.length;
+				var oneThSelectedNum:int = oneThousand.selectedNum.length;
+				var hundredSelectedNum:int = hundred.selectedNum.length;
+				var tenSelectedNum:int = ten.selectedNum.length;
+				var oneSelectedNum:int = one.selectedNum.length;
+				zhushu = tenThSelectedNum * oneThSelectedNum * hundredSelectedNum * tenSelectedNum * oneSelectedNum;
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.tzcontent = tenThousand.selectedNum + "|" + oneThousand.selectedNum + "|" + hundred.selectedNum + "|" + ten.selectedNum + "|" + one.selectedNum;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			protected function playClickHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				target.selected = true;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				switch (target.id)
+				{
+					case "play_02":
+						sntuo = 0;
+						playType = 1;
+						showPlayContainer(playContainer1);
+						break;
+					case "play_v_02":
+						sntuo = 3;
+						playType = 2;
+						ctrlVLabel.text = "五星通选粘贴";
+						showPlayContainer(playContainer2);
+						break;
+					case "play_01":
+						sntuo = 0;
+						playType = 3;
+						showPlayContainer(playContainer1);
+						break;
+					case "play_v_01":
+						sntuo = 3;
+						playType = 4;
+						ctrlVLabel.text = "五星直选粘贴";
+						showPlayContainer(playContainer2);
+						break;
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+			protected function textarea1_mouseOutHandler(event:MouseEvent):void
+			{
+				var arrs:Array=new Array();
+				error=false; numbersArr=new Array(); 
+				if(textarea.text != ""){
+					var str:String= textarea.text.split(/\D/).join("\n");
+					var arr:Array = str.split("\n");
+					for(var ia:int = 0; ia < arr.length; ia++){
+						if(arr[ia] != ""){
+							arrs.push(arr[ia]);
+						}
+					}
+					textarea.text = "";
+					check_digit(arrs,5);
+					
+					if(!error)
+					{
+						for(var z:int=0;z<arrs.length;z++)
+						{
+							numbersArr.push(arrs[z]);
+						}
+						var haomaStickStr:String = "";
+						for(var i3:int=0;i3<numbersArr.length;i3++){
+							haomaStickStr+=numbersArr[i3].toString().split("").join("|")+" ";					
+						} 
+						bettingInfo.tzcontent = haomaStickStr.substring(0,haomaStickStr.length-1);
+						bettingInfo.tzzs = numbersArr.length;;
+						bettingInfo.sntuo = sntuo;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+				}
+			}
+			
+			/**
+			 * 检查错误（位数检查）
+			 */
+			public function check_digit(arrs:Array,lengths:int):void{
+				var str:String="";
+				for(var i:int=0; i < arrs.length; i++){
+					if(arrs[i]!="")
+					{
+						if(arrs[i].length!=lengths)
+						{
+							str += arrs[i] + "\       格式不正确\n";
+							error = true;
+						}
+						else
+						{
+							str += arrs[i]+"\n";
+							error == true ? error : error=false;
+						}
+					}
+				}
+				textarea.text = str;
+			}
+			
+			private function clearSelectedNumbers():void
+			{
+				tenThousand.clearAllSelectedNumHandler();
+				oneThousand.clearAllSelectedNumHandler();
+				hundred.clearAllSelectedNumHandler();
+				ten.clearAllSelectedNumHandler();
+				one.clearAllSelectedNumHandler();
+			}
+			
+			private function clearCopyHandler():void
+			{
+				if(textarea)
+					textarea.text = "";
+			}
+			
+			public function clearAll(e:BetsClickEvent = null):void
+			{
+				clearSelectedNumbers();
+				clearCopyHandler();
+			}
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%" verticalAlign="middle" paddingLeft="30" paddingTop="-2">
+		<s:Label text="玩法选择：" styleName="labelStyles1" verticalCenter="0"/>
+		<s:Spacer width="5"/>
+		<s:HGroup verticalAlign="middle" gap="1">
+			<s:ToggleButton id="play_02" label="通选" styleName="standardButtonSkinStyle"
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_02" label="通选粘贴" styleName="standardButtonSkinStyle" 
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_01" label="直选" styleName="standardButtonSkinStyle"
+							selected="{playType == 3}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_01" label="直选粘贴" styleName="standardButtonSkinStyle"
+							selected="{playType == 4}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:VGroup id="playContainer1" width="100%">
+		<s:HGroup width="100%" height="100%" paddingLeft="100" paddingRight="95" horizontalAlign="center" verticalAlign="middle" paddingBottom="10">
+			<bettings:LineLeftRadiusItem width="10%" height="2" left="20" top="3"/>
+			<mx:Label  text="从个十百千万位各选1个号码或多个号码" styleName="labelStyles2" horizontalCenter="0" />
+			<bettings:LineRightRadiusItem width="10%" height="2" right="0" top="3"/>
+			<s:Spacer width="5%"/>
+			<bettings:LineLeftRadiusItem width="20%" height="2" left="20" top="3"/>
+			<mx:Label text="帮助区" styleName="labelStyles2" horizontalCenter="0" />
+			<bettings:LineRightRadiusItem width="20%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<ssc:SSCNumberSelected id="tenThousand" bettingRowName="万位"/>
+		<ssc:SSCNumberSelected id="oneThousand" bettingRowName="千位"/>
+		<ssc:SSCNumberSelected id="hundred" bettingRowName="百位"/>
+		<ssc:SSCNumberSelected id="ten" bettingRowName="十位"/>
+		<ssc:SSCNumberSelected id="one" bettingRowName="个位"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer2" width="100%" visible="false" includeInLayout="false">
+		<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="20" paddingRight="20" paddingTop="-3">
+			<bettings:LineLeftRadiusItem width="50%" height="2" left="20" top="3"/>
+			<mx:Label id="ctrlVLabel" text="五星通选粘贴" fontFamily="Microsoft YaHei,微软雅黑" paddingTop="5" />
+			<bettings:LineRightRadiusItem width="50%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<s:Group width="100%">
+			<s:Label text="五星通选粘贴" fontSize="18" color="0xffffff" fontFamily="Microsoft YaHei,微软雅黑" left="30" top="10"/>
+			<s:Label text="格式说明" fontSize="18" color="0xffffff" fontFamily="Microsoft YaHei,微软雅黑" right="250" top="10"/>
+		</s:Group>
+		
+		<s:HGroup width="100%" paddingTop="10" paddingLeft="30">
+			<s:TextArea id="textarea" width="600" height="120" color="#ffffff" skinClass="css.skin1.CommonTextAreaSkin"
+						rollOut="textarea1_mouseOutHandler(event)"/>
+			<s:VGroup paddingLeft="20" gap="5">
+				<s:Label text="五星通选：12345" styleName="stickWriteTextStyle"/>
+				<s:Label text="1）每注必须是5个号码(每个号码之间无需用符号分" styleName="stickWriteTextStyle"/>
+				<s:Label text="割，号码范围0~9)；" styleName="stickWriteTextStyle"/>
+				<s:Label text="2）每注之间以逗号、字母 、空格等字符分割；" styleName="stickWriteTextStyle"/>
+				<s:Label text="3）只支持单式。" styleName="stickWriteTextStyle"/>
+			</s:VGroup>
+		</s:HGroup>
+	</s:VGroup>
+</s:VGroup>

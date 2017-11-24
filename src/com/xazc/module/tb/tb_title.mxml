@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="200" height="201">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.Util;
+			protected function group1_rollOverHandler(event:MouseEvent):void
+			{
+				if((event.currentTarget as Group).id == "shuoming")
+				{
+					guize.setStyle("color","0xe1af2d");
+				}else if((event.currentTarget as Group).id == "qiehuan")
+				{
+					banben.setStyle("color","0xe1af2d");
+				}
+			}
+			
+			protected function group1_rollOutHandler(event:MouseEvent):void
+			{
+				if((event.currentTarget as Group).id == "shuoming")
+				{
+					guize.setStyle("color","0xffffff");
+				}else if((event.currentTarget as Group).id == "qiehuan")
+				{
+					banben.setStyle("color","0xffffff");
+				}
+			}
+			
+			protected function qiehuan_clickHandler(event:MouseEvent):void
+			{
+				var obj:Object = new Object();
+				obj.lotteryID = "26";
+				Util.getInstance().dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE, obj));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Image source="css/skin1/images/tbImg/tb_title_bg.png"/>
+	<s:Image x="50" y="40" source="css/skin1/images/tbImg/tb_logo.png"/>
+	
+	<s:Group x="40" y="95" id="shuoming" rollOver="group1_rollOverHandler(event)"
+			 rollOut="group1_rollOutHandler(event)">
+		<s:Image  source="css/skin1/images/tbImg/tb_btn_01.png"/>
+		<s:HGroup width="120" height="30" horizontalAlign="center" verticalAlign="middle">
+			<s:Label id="guize" text="游戏规则" fontSize="14" fontFamily="微软雅黑" color="0xffffff"/>
+		</s:HGroup>
+	</s:Group>
+	<s:Group x="40" y="140" id="qiehuan" rollOver="group1_rollOverHandler(event)" click="qiehuan_clickHandler(event)"
+			 rollOut="group1_rollOutHandler(event)">
+		<s:Image  source="css/skin1/images/tbImg/tb_btn_01.png"/>
+		<s:HGroup width="120" height="30" horizontalAlign="center" verticalAlign="middle">
+			<s:Label id="banben" text="切换到普通版" fontSize="14" fontFamily="微软雅黑" color="0xffffff"/>
+		</s:HGroup>
+	</s:Group>
+	
+</s:Group>

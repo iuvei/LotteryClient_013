@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" implements="com.xazc.interfaces.IInit"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:fc3D="com.xazc.module.fc3D.*">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.Util;
+			
+			import mx.events.FlexEvent;
+			//玩法切换变量
+			[Bindable]
+			public var playTypes:int = 0;
+			//gameID
+			public var game_ID:String = "08";
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				this.gameType.text = "至少选择1个号码，选号与开奖号码任意位一致即中奖。";
+				this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_14');
+				playTypes = 0;
+				clean();
+			}
+			/**
+			 * 清除选号
+			 */
+			public function clean():void
+			{
+				baohao.init();
+			}
+			/**
+			 * 切换玩法
+			 */
+			public function changePlay(event:MouseEvent):void
+			{
+				init();
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				target.selected = true;
+				switch(event.currentTarget)
+				{
+					case stander_TogBtn:
+						playTypes = 0;
+						game_ID = "08";
+						this.gameType.text = "至少选择1个号码，选号与开奖号码任意位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_14');
+						baohao.playerTipText = resourceManager.getString('LotteryTips','play_Tips_21');
+						break;
+					case total_TogBtn:
+						playTypes = 1;
+						game_ID = "15";
+						this.gameType.text = "至少选择2个号码，选号与开奖号码任意位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_15');
+						baohao.playerTipText = resourceManager.getString('LotteryTips','play_Tips_16');
+						break;
+					default:
+						break;
+				}
+				dispatchEvent(new CustomEvent(CustomEvent.COUNT_ZERO,game_ID));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,CurrentLotteryInfo.lotteryId+game_ID));
+			}
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				addEventListener(Fc3D_HeZhi_NumberSelector.HZ_NUMBER_CLICK,getNumbersHandler);
+			}
+			/**
+			 * 监听并派发选号
+			 */
+			protected function getNumbersHandler(event:CustomEvent):void
+			{
+				dispatchEvent(new CustomEvent(CustomEvent.GET_NUMBERS,event.body));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle" gap="4" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton id="stander_TogBtn" label="{resourceManager.getString('LotteryTips','one_Star_Unlocation_Selected')}" selected="{playTypes == 0}"
+							styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="total_TogBtn" label="{resourceManager.getString('LotteryTips','two_Stars_Unlocation_Selected')}" selected="{playTypes == 1}"
+							styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="至少选择1个号码，选号与开奖号码任意位一致即中奖。" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_14')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	
+	<fc3D:Fc3D_BaoHao_NumberSelector id="baohao" height="310" paddingLeft="15" verticalAlign="middle" gap="24"
+									 playerTipText="{resourceManager.getString('LotteryTips','play_Tips_21')}"/>
+</s:Group>

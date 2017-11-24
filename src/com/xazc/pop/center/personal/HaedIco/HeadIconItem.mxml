@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="93" height="93">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			private var _soucre_item:String = "css/skin1/images/headIco/show_1.png";
+			
+			private var _IsSelected:Boolean = false;
+			
+			[Bindable]
+			public function get soucre_item():String
+			{
+				return _soucre_item;
+			}
+			
+			public function set soucre_item(value:String):void
+			{
+				_soucre_item = value;
+			}
+			
+			[Bindable]
+			public function get IsSelected():Boolean
+			{
+				return _IsSelected;
+			}
+			
+			public function set IsSelected(value:Boolean):void
+			{
+				_IsSelected = value;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="93" height="93" gap="-93" buttonMode="true">
+		
+		<s:Image source="{soucre_item}" smooth="true" width="93" height="93"/>
+		<s:Image source="css/skin1/images/headIco/selectedIcon.png" visible="{IsSelected}" smooth="true"/>
+	</s:HGroup>
+</s:Group>

@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" gap="0" 
+		 paddingLeft="10" paddingRight="10" paddingTop="0" paddingBottom="10">
+	<fx:Metadata>
+		[Event(name="appendListUpdate", type="com.xazc.event.CustomEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			
+			/**
+			 * 修改旗号
+			 */
+			public static const APPEND_LIST_UAPDATE:String = "appendListUpdate";
+			
+			import flashx.textLayout.elements.BreakElement;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.states.AddItems;
+			import mx.utils.ArrayUtil;
+			
+			import spark.components.Button;
+			import spark.components.CheckBox;
+			[Bindable]
+			private var issNum:Number = 0;//期数
+			
+			[Bindable]
+			private var zhuNum:Number = 0;//注数
+			
+			[Bindable]
+			private var moneyNum:Number = 0;//总金额
+			
+			[Bindable]
+			public var stopBetState:Boolean;//中奖后是否停止追号
+			
+			private var baseDate:ArrayCollection;//投注数据列表
+			
+			private var datePlay:Object;//初始化基础数据
+			
+			[Bindable]
+			private var betListArrayCollection:ArrayCollection;//链表投注数据
+			
+			public function clearAllSelectDate():void
+			{
+				betListArrayCollection = new ArrayCollection();
+				issNum = 0;
+				zhuNum = 0;
+				moneyNum=0;
+				
+			}
+			/**
+			 * betType 类型1，2，3
+			 * beginMultiple 起始倍数
+			 * intervalNum   间隔
+			 * intervalMultiple 倍数
+			 * minRate		最低收益
+			 * addIssusNum	购买期数
+			 */
+			
+			public function createAppendIssusDate(obj:Object):void
+			{
+				this.clearAllSelectDate();
+				//数据添加
+				datePlay = new Object();
+				datePlay = obj;
+				//初始化数据
+				//购买注数
+				this.zhuNum = datePlay.baseZhu;
+				//初始化总金额
+				this.moneyNum = 0;
+				
+				
+				//获取期号数据
+				this.getAppendNumIssuesHandler();
+			}
+			private var server:ServerToolImpl;
+			private function getAppendNumIssuesHandler():void
+			{
+				server = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.LotteryCode = CurrentLotteryInfo.lotteryId;
+				obj.Num = datePlay.addIssusNum;
+				server.getLotteryIssueByNum(obj,getLotteryIssueByNumHandler);
+			}
+			
+			private function getLotteryIssueByNumHandler(e:ResultEvent):void
+			{
+				
+				var data:Object = JSON.parse(e.result.toString());
+				this.showList(data.LottI as Array);
+			}
+			
+			private function showList(issusArr:Array):void
+			{
+				betListArrayCollection = new ArrayCollection();
+				
+				//临时存储每条数据
+				var betListItemObj:Object;
+				//当计算倍数及期数不符合投注限制时弹出提示框（默认不提示）
+				var alertState:Boolean = false;
+				//当计算倍数达不到收益率时显示
+				var alertState2:Boolean = false;
+				
+				var betAll:Number = 0;
+				//循环添加追号每期数据
+				for (var i:int = 0; i < issusArr.length; i++) 
+				{
+					betListItemObj = new Object();
+					//序号
+					betListItemObj.indexNum = (i+1);
+					//期号
+					betListItemObj.issusNum = issusArr[i].IssueNumber;
+					//默认期号选中状态
+					betListItemObj.issusState = true;
+					
+					//倍数（根据不同的追号方式生成不同的追号计划，改变投注的倍数）
+					if(1==datePlay.betType){//同倍追号
+						betListItemObj.multipleNum = datePlay.beginMultiple;
+					}else if(2==datePlay.betType){//翻倍追号
+						var temp:Number= Math.floor(i/Number(datePlay.intervalNum));
+						var bei:Number = datePlay.beginMultiple;
+						for (var j:int = 0; j < temp; j++) 
+						{
+							bei*=Number(datePlay.intervalMultiple);
+						}
+						betListItemObj.multipleNum = bei;
+					}else{//利润率追号（暂时未完善）
+						//betListItemObj.multipleNum = datePlay.beginMultiple;
+						
+						var bei = Number(datePlay.beginMultiple);
+						var base = Number(datePlay.baseMoney);
+						var win = Number(datePlay.winningMoney);
+						var winLv = Number(datePlay.minRate)/100;
+						
+						//1、第n期收益率 = （奖金 * 第n期倍数 — n期累计投注额）/ n期累计投注额
+						//第n期的倍数 = [（盈利率+1）* （n-1期的累投额）] / [奖金  - （盈利率+1）* 单倍金额]
+						var tempBei:Number = 0;
+						var tempShouYi:Number = 0;
+						if(0==i){//第一个单子只需要验证第一个单子符合最低收益就好
+							tempBei = bei;
+							tempShouYi = (win*tempBei-base*tempBei)/base*tempBei;
+							if(winLv>tempShouYi){
+								alertState2 = true;
+								break;
+							}
+							betAll += base*bei;
+						}else{
+							tempBei = ((winLv+1)*(betAll))/(win-((winLv+1)*base));
+							tempBei = Math.ceil(tempBei);
+							if(tempBei>bei){
+								bei = tempBei;
+								if(tempBei>9999){
+									bei = 9999;
+									break;
+								} 
+							}
+							betAll += base*bei;
+						}
+						betListItemObj.multipleNum = bei;
+						
+					}
+					if(Number(betListItemObj.multipleNum)>9999){
+						betListItemObj.multipleNum = 9999;
+						alertState = true;
+					}
+					//基础金额
+					betListItemObj.allMoney = Number(Number(Number(datePlay.baseMoney)*Number(betListItemObj.multipleNum)).toFixed(5));
+					
+					betListItemObj.baseMoney = datePlay.baseMoney;
+					//时间
+					betListItemObj.EndTime = issusArr[i].EndTime;
+					betListArrayCollection.addItem(betListItemObj);
+					
+					this.issNum = betListItemObj.indexNum;//够买的期数
+					//改变父菜单期数
+					this.dispatchEvent(new CustomEvent(APPEND_LIST_UAPDATE, this.issNum));
+					
+					this.moneyNum += Number(Number(betListItemObj.allMoney).toFixed(4));//购买的总钱数 
+				}
+				
+				//提示超出预期警示
+				if(alertState){
+					Alert.show("当前倍数超过了最大倍数限制！\n系统将自动调整为最大可设置倍数");
+				}
+				//提示超出预期警示
+				if(alertState2){
+					Alert.show("您设置的利润率过高，无法达到您的预期\n目标值，请重新修改参数设置");
+				}
+			}
+			
+			protected function submit_clickHandler(event:MouseEvent):void
+			{
+				var alert:AlertMsg= new AlertMsg();
+				if(this.moneyNum > Number(CurrentUserInfo.userCPBalance)){
+					alert.show("账户余额不足！", "温馨提示");
+					return;
+				}
+			
+				if(!betListArrayCollection){
+					alert.show("请先生成追号计划！", "温馨提示");
+					return;
+				}
+				
+				if(zhuNum<1){
+					alert.show("您没有可投注的信息！", "温馨提示");
+				}else{
+					if(this.issNum==0){
+						alert.show("请选择期号！", "温馨提示");
+						return;
+					}
+					//验证追号投注验证提示
+					for each(var item:Object in betListArrayCollection)
+					{
+						if(item.issusState)
+						{
+							if(Number(item.issusNum)<Number(CurrentLotteryInfo.currentIssue)){
+								alert.show("您选择的第一个期号已经截止或即将截止\n请重新生成追号计划后再提交", "温馨提示");
+								//初始化选号列表
+								this.clearAllSelectDate();
+								return;
+							}
+							//trace(item.allMoney+"==="+item.baseMoney+"==="+item.multipleNum);
+							//判断里模式每单至少投注0.02元的判断
+							var tempCathectic:Cathectic;
+							var tempMoney:Number = 0;
+							for(var i:int = 0;i<datePlay.baseData.length;i++){
+								tempCathectic = datePlay.baseData[i];
+								tempMoney = Number(tempCathectic.tzzs*1*CurrentLotteryInfo.perPrice/tempCathectic.tzbmoshi)*Number(item.multipleNum);
+								if(tempMoney<0.02){
+									alert.show("厘模式每单最少投注0.02元！", "温馨提示");
+									return;
+								}
+							}
+						}
+					}
+					alert.show("你确认投注"+issNum+"期？\n总金额:"+Number(moneyNum.toFixed(4))+CurrentUserInfo.moneyType, "温馨提示",2,true);
+					alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,bettingNowZhui);
+				}
+			}
+			
+			
+			//3.0版投注方法实现
+			private function bettingNowZhui(event:SystemEvent):void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				var tempBetObj:Object = new Object();
+				tempBetObj.LotteryCode =CurrentLotteryInfo.lotteryId; 
+				var betArr:Array = new Array();
+				var tempCathectic:Cathectic;
+				var tempBetItem:Object
+				for(var i:int = 0;i<datePlay.baseData.length;i++){
+					tempCathectic = datePlay.baseData[i];
+					tempBetItem = new Object();
+					tempBetItem.PlayCode = tempCathectic.game_id;
+					tempBetItem.BetContent = tempCathectic.tzcontent;
+					tempBetItem.BetCount = tempCathectic.tzzs;
+					tempBetItem.IssueNumber = CurrentLotteryInfo.currentIssue;
+					tempBetItem.BetMultiple = 1;
+					tempBetItem.BetMoney = tempCathectic.tzzs*1*CurrentLotteryInfo.perPrice/tempCathectic.tzbmoshi;
+					tempBetItem.BetRebate = tempCathectic.awreturn;
+					var isAppendNum:int = 0;
+					if(stopBetState)//判断是否中奖停止追号
+						isAppendNum = 2;
+					else 
+						isAppendNum = 4;
+					//胆拖标志位
+					if(tempCathectic.sntuo==1){
+						tempBetItem.BetMode = 1+isAppendNum;
+					}else if(tempCathectic.sntuo==2){
+						tempBetItem.BetMode = 16+isAppendNum;
+					}else if(tempCathectic.sntuo==3){
+						tempBetItem.BetMode = 8+isAppendNum;
+					}else{
+						tempBetItem.BetMode = 0+isAppendNum;
+					}
+					betArr.push(tempBetItem);
+				}
+				tempBetObj.Bet = betArr;
+				tempBetObj.IssueNumber =CurrentLotteryInfo.currentIssue; 
+				obj.UserBetInfo = tempBetObj;			
+				var tempObj:Object;
+				tempObj= new Object();
+				for each(var item1:Object in betListArrayCollection)
+				{
+					if(item1.issusState)
+					{
+						tempObj[item1.issusNum] = item1.multipleNum;
+					}
+				}
+				obj.IssueList = tempObj;
+				
+				serverTool.userBet20160412(obj,bettingNowReturn);
+			}
+			
+			
+			
+			private function bettingNowReturn(e:ResultEvent):void
+			{
+				
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				//var arr:Object = JSON.parse(e.result.toString(),null);
+				if(arr.SystemState==-1){
+					//session失效
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}else if(arr.SystemState==-2){
+					//单点登录
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}
+				trace(e.result.toString());
+				var alert:AlertMsg= new AlertMsg();
+				if(arr.state){
+					alert.show("投注成功！", "温馨提示",1);
+					//初始化数据
+					betListArrayCollection = new ArrayCollection();
+					this.zhuNum = 0;//注数
+					this.issNum = 0;//期数
+					this.moneyNum = 0;//总金额
+					
+					//更新余额
+					Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+					
+					//关闭窗口
+					var evt:DynamicEvent=new DynamicEvent("closeOrderDetailsEvent");
+					evt.parameters=1;
+					evt.parentCurrent=this;
+					dispatchEvent(evt);
+				}else{
+					if(-1==arr.mark){
+						alert.show("您还没有完成与下级的分红契约，无法投注！", "温馨提示",2);
+						return;
+					}
+					if(arr.hasOwnProperty("OrderState")){
+						
+						if(arr.OrderState==-15){
+							// 投注的时候   OrderState = -15,  表示超时 
+							alert.show("交易状态不确定，请在投注记录中查看是否购买成功！", "温馨提示",2);
+						}else if(arr.OrderState == -16){
+							// 投注的时候   OrderState = -15,  表示超时 
+							alert.show(arr.StateMark, "温馨提示",2);
+						}else{
+							alert.show("投注失败！", "温馨提示",2);
+						}
+					}else{
+						alert.show("投注失败！", "温馨提示",2);
+					}
+				}
+			}
+			
+			protected function appendIssusList_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				appendIssusList.addEventListener("appendItemUpdate",appendItemUpdateHandler);
+			}
+			private function appendItemUpdateHandler(e:CustomEvent):void{
+				//选中多少期
+				//追号总金额
+				this.issNum = 0;
+				this.moneyNum = 0;
+				for each (var item:Object in betListArrayCollection) 
+				{
+					if(item.issusState){
+						this.issNum +=1; 
+						this.moneyNum += Number(item.allMoney);
+					
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%" height="100%" borderColor="0xff0000" borderAlpha="0">
+		<s:List id="appendIssusList" dataProvider="{betListArrayCollection}" width="100%" height="100%" 
+				horizontalScrollPolicy="off" color="0x000000"
+				selectionColor="0xffffff" rollOverColor="0xffffff"
+				itemRenderer="com.xazc.components.bettings.AppendBetIssusItem"
+				creationComplete="appendIssusList_creationCompleteHandler(event)"/>
+	</s:BorderContainer>
+	<s:HGroup width="100%" gap="6" verticalAlign="middle" horizontalAlign="right" height="40">
+		<s:Label text="共追号总期数："/>
+		<s:Label text="{issNum}"  styleName="labelStyles4"/>
+		<s:Label text="期， "/>
+		<s:Label text="{zhuNum}"  styleName="labelStyles4"/>
+		<s:Label text="注， 追号总金额："/>
+		<s:Label text="{Number(moneyNum.toFixed(5))}"  styleName="labelStyles4"/>
+		<s:Label text="元"/>
+		<s:Spacer width="20"/>
+		<s:Button label="确认" enabled="{ CurrentLotteryInfo.isBetNow}" click="submit_clickHandler(event)" buttonMode="true" skinClass="css.skin1.PopUpSubmitBtnSkin"/>
+	</s:HGroup>
+</s:VGroup>

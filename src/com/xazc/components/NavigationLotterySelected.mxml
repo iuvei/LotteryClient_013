@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:components="com.xazc.components.*"
+		 width="100%" height="100%"
+		 creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			import com.hurlant.CryptoUtil;
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.QuitReturnPopView;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CenterEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			
+			private var timer:Timer;
+			private var timerRefrence:Timer;
+			
+			//private var listLotteryNameHot:Array=[{label:"12"},{label:"13"},{label:"16"},{label:"4"},{label:"10"},{label:"9"},{label:"15"}];//高频彩
+			private var listLotteryNameHot:Array=[{label:"12"},{label:"13"},{label:"14"},{label:"71"},{label:"53"},{label:"55"},{label:"51"},{label:"15"},{label:"50"},{label:"72"}];//时时彩
+			private var listLotteryNameFc:Array=[{label:"16"},{label:"4"},{label:"5"},{label:"61"},{label:"63"}];//11选5
+			private var listLotteryNameTc:Array=[{label:"19"},{label:"17"},{label:"18"}];//低频彩
+			
+			public  function init():void{
+				var arr:Array=CurrentBusinessInfo.canSalableLotteries.split(",");
+				this.addEventListener(SystemEvent.SHOW_LOTTERY_MAIN_MENU,DealMenuShow);
+				
+				var HotLottList:Array=new Array();
+				var FCLottList:Array=new Array();
+				var TCLottList:Array=new Array();
+				var QPGAMEList:Array=['100'];
+				//var tempLotterySelect:LotterySelect;
+				for(var i:int=0;i<arr.length;i++){
+					//tempLotterySelect = new LotterySelect();
+					//tempLotterySelect.lotteryId =arr[i] ;
+					trace(arr[i]);
+					for(var k:String in listLotteryNameHot){
+						if(listLotteryNameHot[k].label==arr[i]){
+							HotLottList.push(listLotteryNameHot[k].label);
+						}
+					}
+					for(var k:String in listLotteryNameFc){
+						if(listLotteryNameFc[k].label==arr[i]){
+							FCLottList.push(arr[i]);
+						}
+					}
+					for(var k:String in listLotteryNameTc){
+						if(listLotteryNameTc[k].label==arr[i]){
+							TCLottList.push(arr[i]);
+						}
+					}
+				}
+				//设置彩票菜单内容
+				nlottery_1.lotlist=HotLottList;
+				nlottery_2.lotlist=FCLottList;
+				nlottery_3.lotlist=TCLottList;
+				nlottery_4.lotlist= QPGAMEList;
+				//设置默认彩种
+				CurrentLotteryInfo.lotteryId = "12";
+				//设置是否显示彩票菜单
+				nlottery_1.SetShowItem(1);
+				nlottery_2.SetShowItem(2);
+				nlottery_3.SetShowItem(2);
+				nlottery_4.SetShowItem(2);
+				init2();
+			}
+			
+			private function DealMenuShow(eve:SystemEvent):void
+			{
+				var LottTypeID:String=(eve.body as Object).lotteryID;
+				
+				switch(LottTypeID.toUpperCase())
+				{
+					case "HOTLOTT":
+						nlottery_1.SetShowItem(1);
+						nlottery_2.SetShowItem(2);
+						nlottery_3.SetShowItem(2);
+						nlottery_4.SetShowItem(2);
+						break;
+					case "FCLOTT":
+						nlottery_1.SetShowItem(2);
+						nlottery_2.SetShowItem(1);
+						nlottery_3.SetShowItem(2);
+						nlottery_4.SetShowItem(2);
+						break;
+					case "TCLOTT":
+						nlottery_1.SetShowItem(2);
+						nlottery_2.SetShowItem(2);
+						nlottery_3.SetShowItem(1);
+						nlottery_4.SetShowItem(2);
+						break;
+					case "QPGAME":
+						nlottery_1.SetShowItem(2);
+						nlottery_2.SetShowItem(2);
+						nlottery_3.SetShowItem(2);
+						nlottery_4.SetShowItem(1);
+						
+						//打开棋牌
+						userNNLogin();
+						break;
+					default:
+						break;
+				}
+			}
+			
+			/**
+			 *发送消息事件 
+			 **/
+			private function sendEvents(index:int,title:String,item:int = 1):void{
+				
+				//发送切换个人中心菜单事件 (发送的CPClient页面)
+				var evt:JumpEvent=new JumpEvent(JumpEvent.JUMP_TO_PSESONAL_CENTER,{index:index,title:title,item:item});
+				
+				Sendnotification.instance.dispatchEvent(evt);
+				
+				//发送还原主菜单按钮事件(发送到UserMenuItem组件)
+				/* var e:CenterEvent=new CenterEvent(CenterEvent.MAIN_MENU_ITEM_REDUCTION_EVENT);
+				Sendnotification.instance.dispatchEvent(e); */
+			}
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				sendEvents(1,"充值提款",1);
+			}
+			
+			protected function button3_clickHandler(event:MouseEvent):void
+			{
+				sendEvents(1,"充值提款",2);
+			}
+			protected function button4_clickHandler(event:MouseEvent):void
+			{
+				sendEvents(7,"转账",1);
+			}
+			
+			/**
+			 *  退出操作
+			 * 1.先检测退出时活动是否完成
+			 * 2.再确认是否真的确认退出
+			 * 
+			 */
+			protected function quit_clickHandler(event:MouseEvent):void
+			{
+				chickActivity();
+			}
+			/**
+			 * 检测退出情况
+			 */
+			public function chickActivity():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				serverTool.judgeActivityComplete(obj,judgeActivityCompleteReturn);
+				
+			}
+			/**
+			 *  ActivityNum:活动未完成数量（0 表示都为完成，1表示一个未完成，2表示2个活动未完成）
+			 * ActivityType:活动志向
+			 */
+			private function judgeActivityCompleteReturn(e:ResultEvent):void
+			{
+				var quitPop:QuitReturnPopView;
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString());
+				var quitBoolean:Boolean = true;
+				if(arr.hasOwnProperty("ActivityNum") && arr.hasOwnProperty("ActivityType"))
+				{
+					if(int(arr.ActivityNum)>0)
+					{
+						quitPop = new QuitReturnPopView;
+						quitPop.show(arr.ActivityNum,e.result.toString() ,
+							function popQuitReturnFunc(key:int):void
+							{
+								if(key == 1)
+								{
+									quitHandler();
+								}
+								else if(key == 2)
+								{
+									quitBoolean = false;
+									var request:URLRequest = new URLRequest(); 
+									request.method= URLRequestMethod.POST
+									//request.url ="http://192.168.1.111:1010/activity/"; 
+									request.url =CurrentBusinessInfo.serverUrl_net+"/activity/"; 
+									var param:URLVariables=new URLVariables();
+									param["message"] =CryptoUtil.DESEncrypt(CurrentUserInfo.userName+','+CurrentUserInfo.userPassWord,CurrentBusinessInfo.desKey1,CurrentBusinessInfo.desKey2); 
+									param["ActivityType"] =arr.ActivityType; 
+									request.data=param;
+									navigateToURL(request,"_bank");
+								}
+							}
+							,true);
+					}
+					else
+						quitHandler();
+				}
+				else
+					quitHandler();
+
+			}
+			private function  quitHandler():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.LoginType = 1;
+				serverTool.userLogin(obj,userLoginReturn); 
+			}
+			private function userLoginReturn(e:ResultEvent):void
+			{
+				timerRefrence.stop();
+				CurrentUserInfo.userName = "";
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1); 
+				if(arr.SystemState==64){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else{
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					//Alert.show("登出失败！！");
+				}
+			}	
+			private function init2():void{
+				if(!timerRefrence){
+					timerRefrence=new Timer(10000);
+				}
+				timerRefrence.addEventListener(TimerEvent.TIMER,timerRefrenceHandler);
+				timerRefrence.start();
+			}
+			private function timerRefrenceHandler(e:TimerEvent):void{
+				if(CurrentUserInfo.userName!=""){
+					Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+				} 
+			}
+			public function rouse():void{
+				if(timerRefrence){
+					timerRefrence.start();
+				}
+			}
+			
+			
+			private function userNNLogin():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				serverTool.userNNLogin(obj,userNNLoginReturn);
+			}
+			/**
+			 * 登录棋牌 
+			 */
+			private function userNNLoginReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString());
+				//Alert.show(arr.LoginURl);
+				navigateToURL(new URLRequest(arr.LoginURl+"&nickname="+encodeURI(encodeURI(CurrentUserInfo.userName))),"_blank");
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BitmapImage source="css/skin1/assets/leftlinebg.png" right="0" top="0" bottom="0" alpha="1" fillMode="repeat"/>
+	<s:VGroup  width="180" height="100%" 
+			   horizontalAlign="center"
+			   paddingTop="20" gap="15">
+		<s:Image source="logoimg_01.png"  />
+		<s:HGroup width="100%" horizontalAlign="left"  gap="10" height="75">
+			<!--<s:VGroup height="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Image source="userimg.jpg"/>
+			</s:VGroup>-->
+			<s:VGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="left" paddingLeft="15" gap="12">
+				<s:HGroup width="100%" >
+					<s:Label text="用户：" color="0xfafafa"/>
+					<s:Label id="userName" text="{CurrentUserInfo.userName}" color="0xfec500"   fontSize="15"/>
+				</s:HGroup>
+				<s:Label text="余额：￥{Number(CurrentUserInfo.userCPBalance)}" color="0xfafafa"/>
+				<s:HGroup verticalAlign="middle" width="100%" paddingRight="15">
+					<s:Label text="冻结：￥{Number(CurrentUserInfo.userCPLockedBalance)}" color="0xfafafa"/>
+					<s:Spacer width="100%"/>
+					<s:Button label="退出"  skinClass="css.skin1.universal.NavigationBtnSkins4" click="quit_clickHandler(event)"/>
+				</s:HGroup>
+				
+			</s:VGroup>
+		</s:HGroup>
+		<s:HGroup width="100%" horizontalAlign="left" paddingLeft="11" gap="10">
+			<s:Button label="充值" width="43" height="20" skinClass="css.skin1.universal.NavigationBtnSkins2" click="button2_clickHandler(event)"/>
+			<s:Button label="提款" width="43" height="20" skinClass="css.skin1.universal.NavigationBtnSkins2" click="button3_clickHandler(event)"/>
+			<s:Button label="转账" enabled="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}" width="43" height="20" skinClass="css.skin1.universal.NavigationBtnSkins2" click="button4_clickHandler(event)"/>
+		</s:HGroup>
+		<s:VGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="top" paddingLeft="9">
+			<components:NavigationLott id="nlottery_1" LottName="时时彩" LottID="HotLott" width="155"/>
+			<components:NavigationLott id="nlottery_2" LottName="11选5" LottID="FCLott" width="155"/>
+			<components:NavigationLott id="nlottery_3" LottName="低频彩" LottID="TCLott" width="155"/>
+			<components:NavigationLott enabled="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}" id="nlottery_4" LottName="棋牌游戏" LottID="QPGAME" width="155"/>
+		</s:VGroup>
+	</s:VGroup>
+</s:Group>

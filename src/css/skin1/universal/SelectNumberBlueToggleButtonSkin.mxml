@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+ADOBE SYSTEMS INCORPORATED
+Copyright 2008 Adobe Systems Incorporated
+All Rights Reserved.
+
+NOTICE: Adobe permits you to use, modify, and distribute this file
+in accordance with the terms of the license agreement accompanying it.
+
+-->
+
+<!--- 该外观样式用于各个彩种选号(选中状态为蓝色)The default skin class for a Spark ToggleButton component. 
+
+@see spark.components.ToggleButton
+
+@langversion 3.0
+@playerversion Flash 10
+@playerversion AIR 1.5
+@productversion Flex 4
+-->
+<s:SparkButtonSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+				   minWidth="21" minHeight="21" width="{getStyle('w')}" height="{getStyle('h')}"
+				   alpha.disabledStates="0.5">
+	
+	<!-- host component -->
+	<fx:Metadata>
+		<![CDATA[ 
+		/** 
+		* @copy spark.skins.spark.ApplicationSkin#hostComponent
+		*/
+		[HostComponent("spark.components.ToggleButton")]
+		]]>
+	</fx:Metadata>
+	
+	<fx:Script fb:purpose="styling">
+		/* Define the skin elements that should not be colorized. 
+		For toggle button, the graphics are colorized but the label is not. */
+		static private const exclusions:Array = ["labelDisplay"];
+		
+		/**
+		 * @private
+		 */    
+		override public function get colorizeExclusions():Array {return exclusions;}
+		
+		/**
+		 * @private
+		 */
+		override protected function initializationComplete():void
+		{
+			useChromeColor = true;
+			super.initializationComplete();
+		}
+		
+		/**
+		 * @private
+		 */
+		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number) : void
+		{
+			var cr:Number = getStyle("cornerRadius");
+			
+			if (cornerRadius != cr)
+			{
+				cornerRadius = cr;
+				/* shadow.radiusX = cornerRadius;
+				fill.radiusX = cornerRadius;
+				lowlight.radiusX = cornerRadius;
+				highlight.radiusX = cornerRadius; */
+				border.radiusX = cornerRadius;
+			}
+			
+			/*     if (highlightStroke) highlightStroke.radiusX = cornerRadius;
+			if (hldownstroke1) hldownstroke1.radiusX = cornerRadius;
+			if (hldownstroke2) hldownstroke2.radiusX = cornerRadius;
+			*/
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+			this.hostComponent.buttonMode = true;
+		}
+		
+		private var cornerRadius:Number = 2;
+	</fx:Script>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="up" />
+		<s:State name="over" stateGroups="overStates" />
+		<s:State name="down" stateGroups="downStates" />
+		<s:State name="disabled" stateGroups="disabledStates" />
+		<s:State name="upAndSelected" stateGroups="selectedStates, selectedUpStates" />
+		<s:State name="overAndSelected" stateGroups="overStates, selectedStates" />
+		<s:State name="downAndSelected" stateGroups="downStates, selectedStates" />
+		<s:State name="disabledAndSelected" stateGroups="selectedUpStates, disabledStates, selectedStates" />
+	</s:states>
+	
+	
+	<!-- layer 2: fill -->
+	<!--- @private -->
+	<s:Rect id="fill" left="1" right="1" top="1" bottom="1" radiusX="2">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0x8e979c"  color.upAndSelected="0x5a8dce" color.overAndSelected="0x5a8dce" color.over="0x5a8dce" color.downAndSelected="0x5a8dce" />
+				<s:GradientEntry color="0x858e93"  color.upAndSelected="0x5689cb" color.overAndSelected="0x5689cb" color.over="0x5689cb" color.downAndSelected="0x5689cb"/>
+				<s:GradientEntry color="0x768185"  color.upAndSelected="0x4777b7" color.overAndSelected="0x4777b7" color.over="0x4777b7" color.downAndSelected="0x4777b7"/>
+				<s:GradientEntry color="0x45545b"  color.upAndSelected="0x2f5d9b" color.overAndSelected="0x2f5d9b" color.over="0x2f5d9b" color.downAndSelected="0x2f5d9b"/>
+				<s:GradientEntry color="0x273840"  color.upAndSelected="0x28508b" color.overAndSelected="0x28508b" color.over="0x28508b" color.downAndSelected="0x28508b"/>
+				
+				<s:GradientEntry color="0x1a2b32"  color.upAndSelected="0x184586" color.overAndSelected="0x184586" color.over="0x184586" color.downAndSelected="0x184586"/>
+				<s:GradientEntry color="0x152731"  color.upAndSelected="0x1c478b" color.overAndSelected="0x1c478b" color.over="0x1c478b" color.downAndSelected="0x1c478b"/>
+				<s:GradientEntry color="0x27383f"  color.upAndSelected="0x22539f" color.overAndSelected="0x22539f" color.over="0x22539f" color.downAndSelected="0x22539f"/>
+				<s:GradientEntry color="0x4c595f"  color.upAndSelected="0x2d79c5" color.overAndSelected="0x2d79c5" color.over="0x2d79c5" color.downAndSelected="0x2d79c5"/>
+				<s:GradientEntry color="0x707b7f"  color.upAndSelected="0x50afdd" color.overAndSelected="0x50afdd" color.over="0x50afdd" color.downAndSelected="0x50afdd"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	
+	<!-- layer 7: border - put on top of the fill so it doesn't disappear when scale is less than 1 -->
+	<!--- @private -->
+	<s:Rect id="border" left="0" right="0" top="0" bottom="0" width="69" height="20" radiusX="2">
+		<s:stroke>
+			<s:LinearGradientStroke rotation="90" weight="1">
+				<s:GradientEntry color="0xa4abb1" alpha="0"  color.upAndSelected="0x77b6eb" color.over="0x77b6eb" color.downAndSelected="0x77b6eb"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<s:Rect  left="0" right="0" top="0" bottom="0" width="69" height="20" radiusX="2" includeIn="up">
+		<s:stroke>
+			<s:LinearGradientStroke rotation="90" weight="1">
+				<s:GradientEntry color="0xffffff" alpha="0.5" />
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<!-- layer 8: text -->
+	<!--- @copy spark.components.supportClasses.ButtonBase#labelDisplay -->
+	<s:Label id="labelDisplay"
+			 textAlign="center"
+			 verticalAlign="middle"
+			 color.upAndSelected="0xf5f377" color.overAndSelected="0xf5f377"
+			 horizontalCenter="-1" verticalCenter="2">
+	</s:Label>
+	
+</s:SparkButtonSkin>

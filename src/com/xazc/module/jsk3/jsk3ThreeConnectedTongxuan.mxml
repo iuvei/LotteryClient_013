@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  initialize="group1_creationCompleteHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.BetsClickEvent;
+			
+			import mx.events.FlexEvent;
+			private var _selected:Boolean = false
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.buttonMode = true;
+				_selected = false;
+				//				this.addEventListener(MouseEvent.CLICK,onMouse_click);
+				this.currentState = "normalStates";
+			}
+			protected function onMouse_click(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				_selected = !_selected;
+				if(_selected)
+				{
+					this.currentState = "selectedStates";
+				}
+				else
+				{
+					this.currentState = "normalStates";
+				}
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.BETS_NUMBER_CLICK));
+			}
+			
+			public function clearAll():void
+			{
+				_selected = false;
+				this.currentState = "normalStates";
+			}
+			
+			public function get selected():Boolean
+			{
+				return _selected;
+			}
+			
+			public function set selected(value:Boolean):void
+			{
+				_selected = value;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="normalStates" />
+		<s:State name="selectedStates" />
+	</s:states>
+	<s:HGroup height="100%" verticalAlign="middle" gap="16" includeIn="normalStates">
+		<s:Button id="bettingName" styleName="orderButtonSkinStyle_mid" label="{resourceManager.getString('LotteryTips','number')}"/>
+		<s:HGroup gap="2" click="onMouse_click(event)">
+			<s:ToggleButton id="btn1" label="123" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="false"/>
+			<s:ToggleButton id="btn2" label="234" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="false"/>
+			<s:ToggleButton id="btn3" label="345" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="false"/>
+			<s:ToggleButton id="btn4" label="456" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="false"/>
+		</s:HGroup>
+	</s:HGroup>
+	<s:HGroup height="100%" verticalAlign="middle" gap="16" includeIn="selectedStates">
+		<s:Button styleName="orderButtonSkinStyle_mid" label="{resourceManager.getString('LotteryTips','number')}"/>
+		<s:HGroup gap="2" click="onMouse_click(event)">
+			<s:ToggleButton id="btn11" label="123" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="true"/>
+			<s:ToggleButton id="btn22" label="234" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="true"/>
+			<s:ToggleButton id="btn33" label="345" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="true"/>
+			<s:ToggleButton id="btn44" label="456" styleName="mmcNumberSelectSkinStyle_mid" mouseEnabled="false" selected="true"/>
+		</s:HGroup>
+	</s:HGroup>
+</s:Group>

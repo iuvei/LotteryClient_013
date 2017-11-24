@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXTreeItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark"
+					  xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+//			treeListData.open
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />            
+		<s:State name="hovered" />
+		<s:State name="selected" />
+	</s:states>
+	
+	<s:HGroup left="0" right="0" top="0" bottom="0" verticalAlign="middle" width="30" height="40">
+		<s:Rect id="indentationSpacer" width="{treeListData.indent}" percentHeight="100" alpha="0">
+			<s:fill>
+				<s:SolidColor color="0xFFFFFF"/>
+			</s:fill>
+		</s:Rect>
+		<s:Group id="disclosureGroup">
+			<s:BitmapImage source="css/img/tree/openTree.png"
+						   visible="{treeListData.hasChildren &amp;&amp; treeListData.open}" 
+						   includeInLayout="{treeListData.hasChildren &amp;&amp; treeListData.open}" left="5"/>
+		</s:Group>
+		<s:Group>
+			<s:BitmapImage source="css/img/tree/closeTree.png"
+						   visible="{((treeListData.item.isCategory) &amp;&amp; (!treeListData.hasChildren)) || ((treeListData.item.isCategory) &amp;&amp; (!treeListData.open))}" 
+						   includeInLayout="{((treeListData.item.isCategory) &amp;&amp; (!treeListData.hasChildren)) || ((treeListData.item.isCategory) &amp;&amp; (!treeListData.open)) || (!treeListData.item.isCategory)}"/>
+		</s:Group>
+		<mx:Label id="labelField" text="{treeListData.label}" paddingTop="2" fontSize="14" 
+				 color="{treeListData.item.isCategory ? 0x000000 : 0x000000}"/>
+	</s:HGroup>
+</s:MXTreeItemRenderer>

@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="100%" height="100%"
+				   creationComplete="init()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.ProvinceCityBase;
+			import com.xazc.comm.vo.UserDetailVo;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.pop.center.personal.HaedIco.HeadIconComponent;
+			import com.xazc.pop.center.personal.HaedIco.HeadSoucre;
+			import com.xazc.single.CommonMethodClass;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			public var markID:String="1010100";
+			public static var markID:String="1010100";
+			[Bindable]
+			public var labelTitleText:String="基础信息";
+			
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			
+			private var  regexp:RegExp=/\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/;//邮箱正则
+			
+			//身份证正则表达式(15位) 
+			private var isIDCard1:RegExp=/^[1-9]\d{7}((0\d)|(1[0-2]))(([0|1|2]\d)|3[0-1])\d{3}$/; 
+			//身份证正则表达式(18位) 
+			private var isIDCard2:RegExp=/^[1-9]\d{5}[1-9]\d{3}((0\d)|(1[0-2]))(([0|1|2]\d)|3[0-1])\d{3}([0-9]|X)$/; 
+			
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			[Bindable]
+			public var userVo:UserDetailVo;//数据对象
+			/**服务对象*/
+			private var service:ServerToolImpl;//
+			
+			[Bindable]
+			private var provinces:ArrayCollection;//省份
+			[Bindable]
+			private var citys:ArrayCollection;
+			private function init():void
+			{
+				//初始化省市信息
+				var obj:Object=JSON.parse(ProvinceCityBase.provinceCity,null);
+				provinces= new ArrayCollection(obj as Array);
+				cb_province.dataProvider=provinces;
+				cb_province.selectedIndex=0;
+				var objcity:Object=cb_province.selectedItem.city;
+				citys=new ArrayCollection(objcity as Array);
+				cb_city.dataProvider=citys;
+				cb_city.selectedIndex=0;
+				selectUserDetail();
+				
+				//注册修改头像事件
+				Sendnotification.instance.addEventListener(HeadIconComponent.ENSURE,setHeadShowIcon);
+			}
+			/**
+			 *查询用户信息 
+			 **/
+			public function selectUserDetail():void{
+				initBlockPropertys();
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				//调用查询
+				trace("*****个人中心》我的资料》基本信息******");
+				service.getUserDetailNew(new Object(),selectUserDetailHandler);
+			}
+			/**
+			 *查询用户信息回调 
+			 **/
+			private function selectUserDetailHandler(e:ResultEvent):void{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState==64){
+					packInfo(arr);
+					initvlidateViewBusiness();
+					//保存个人信息；
+					CommonMethodClass.commom_login(arr);
+				}else if(arr.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(arr.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					btn_1.visible=false;
+					btn_2.visible=false;
+					btn_3.visible=false;
+					btn_4.visible=false;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_error'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			/**
+			 *封装信息 
+			 **/
+			private function packInfo(obj:Object):void{
+				
+				if(userVo==null){
+					userVo=new UserDetailVo();
+				}
+				userVo.UserName=obj.UserName;
+				userVo.IDCardNumber=obj.IDCardNumber;
+				userVo.UserRealName=obj.UserRealName;
+				userVo.BankCode=obj.BankCode;
+				userVo.CardNumber=obj.CardNumber;
+				userVo.EMail=obj.EMail;
+				userVo.Mobile=obj.Mobile;
+				userVo.Province=obj.Province;
+				userVo.City=obj.City;
+				userVo.QQ=obj.QQ;
+				userVo.HeadPortrait = obj.HeadPortrait != null ? obj.HeadPortrait : "";
+			}
+			/**
+			 *根据查询结果初始化页面逻辑 
+			 **/
+			private function initvlidateViewBusiness():void{
+				userName.text=userVo.UserName;
+				realName.text=userVo.UserRealName.toString().substring(0,1)+"**";
+				fandian.text=CurrentUserInfo.myRebate+"";
+				if(userVo.IDCardNumber!="" && userVo.IDCardNumber){
+					ti_1.text=userVo.IDCardNumber.substring(0,1)+"****************"+userVo.IDCardNumber.substring(userVo.IDCardNumber.length-1,userVo.IDCardNumber.length);
+				}
+				if(userVo.EMail!=""){
+					var n:int=userVo.EMail.indexOf("@");
+					ti_2.text=userVo.EMail.substr(0,n<3?n-1:3)+"*****"+userVo.EMail.substr(n,userVo.EMail.length);
+				}
+				if(userVo.QQ!=""){
+					ti_3.text=userVo.QQ.substring(0,3)+"*****"+userVo.QQ.substring(userVo.QQ.length-2,userVo.QQ.length);
+				}
+				if(userVo.Mobile!=""){
+					ti_4.text=userVo.Mobile.substr(0,3)+"******"+userVo.Mobile.substring(userVo.Mobile.length-2,userVo.Mobile.length);
+				}
+				
+				if(userVo.IDCardNumber!="" && userVo.IDCardNumber!=null){
+//					ti_1.setStyle("contentBackgroundAlpha",0);
+					ti_1.setStyle("borderVisible",false);
+					ti_1.editable=false;
+					btn_1.visible=true;
+				}else{
+					ti_1.setStyle("borderVisible",true);
+					btn_1.visible=false;
+				}
+				if(userVo.EMail!="" && userVo.EMail!=null){
+//					ti_2.setStyle("contentBackgroundAlpha",0);
+					ti_2.setStyle("borderVisible",false);
+					ti_2.editable=false;
+					btn_2.visible=true;
+				}else{
+					btn_2.visible=false;
+					ti_2.setStyle("borderVisible",true);
+				}
+				if(userVo.QQ!="" && userVo.QQ!=null){
+					ti_3.setStyle("contentBackgroundAlpha",0);
+					ti_3.setStyle("borderVisible",false);
+					ti_3.editable=false;
+					btn_3.visible=false;
+				}else{
+					ti_3.setStyle("borderVisible",true);
+					btn_3.visible=false;
+				}
+				if(userVo.Mobile!="" && userVo.Mobile!=null){
+					ti_4.setStyle("contentBackgroundAlpha",0);
+					ti_4.setStyle("borderVisible",false);
+					ti_4.editable=false;
+					btn_4.visible=false;
+				}else{
+					ti_4.setStyle("borderVisible",true);
+					btn_4.visible=false;
+				}
+				if(userVo.Province){
+					for(var i:int=0;i<provinces.length;i++){
+						if(userVo.Province==provinces.getItemAt(i).id){
+							cb_province.selectedIndex=i;
+							citys= new ArrayCollection(provinces.getItemAt(i).city as Array);
+							break;
+						}
+					}
+				}
+				if(userVo.City){
+					for(var j:int=0;j<citys.length;j++){
+						if(userVo.City==citys.getItemAt(j).id){
+							cb_city.selectedIndex=j;
+						}
+					}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+				}
+				
+				if(userVo.Mobile!="" && userVo.Mobile!=null && userVo.QQ!="" && userVo.QQ!=null){
+					saveBtn.visible = false;
+				}
+				
+				//设置头像；
+				headShow.source = userVo.HeadPortrait != "" ? HeadSoucre.get_HeadSoucre(userVo.HeadPortrait) :  HeadSoucre.get_HeadSoucre("1");
+				
+			}
+			
+			/**
+			 *修改 
+			 **/
+			private function selectedUpdateClick(i:int):void{
+//				this["ti_"+i].setStyle("contentBackgroundAlpha",0.5);
+				this["ti_"+i].setStyle("borderVisible",true);
+				this["ti_"+i].editable=true;
+				this["ti_"+i].text="";
+			}
+			
+			protected function cb_province_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				var obj:Array=cb_province.selectedItem.city as Array;
+				citys=new ArrayCollection(obj);
+				cb_city.selectedIndex=0;
+			}
+			/**
+			 *保存提交 
+			 **/
+			protected function submit(event:MouseEvent):void
+			{
+				if(!check()){
+					return;
+				}
+				service.modifyUserInfo({"IDCardNumber":ti_1.text.indexOf("*")>0?userVo.IDCardNumber:ti_1.text,
+					"EMail":ti_2.text.indexOf("*")>=0?userVo.EMail:ti_2.text,
+					"QQ":ti_3.text.indexOf("*")>0?userVo.QQ:ti_3.text,
+					"MobilePhone":ti_4.text.indexOf("*")>0?userVo.Mobile:ti_4.text,
+					"Province":cb_province.selectedItem.id,
+					"City":cb_city.selectedItem.id},updateHandler);
+			}
+			private function updateHandler(e:ResultEvent):void{
+				var obj:Object=Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_state1'),resourceManager.getString('PersonalCenterPrompt','alert_titiel'),1);
+					selectUserDetail();
+				}else if(obj.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_state2'),resourceManager.getString('PersonalCenterPrompt','alert_titiel'));
+				}
+				
+			}
+			/**
+			 *初始化页面属性 
+			 **/
+			private function initBlockPropertys():void{
+				for(var i:int=1;i<5;i++){
+					this["ti_"+i].text="";
+				}
+			}
+			/**
+			 *验证 
+			 **/
+			private function check():Boolean{
+//				if(ti_1.text !=""){
+//					if(ti_1.text.length <15 || ti_1.text.length>18){
+//						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_check1'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//						return false;
+//					}
+//				}else{
+//					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_check2'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//					return false;
+//				}
+//				if(ti_2.text!=""){
+//					if(ti_2.text.indexOf("*")==-1){
+//						if(!regexp.test(ti_2.text)){
+//							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_check3'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//							return false;
+//						}
+//					}
+//				}
+				
+				
+				
+				if(ti_3.text!=""){
+					if(ti_3.text.indexOf("*")==-1){
+						if(ti_3.text.length<5||ti_3.text.length>13){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_check4'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+							return false;
+						}
+					}
+				}
+				if(ti_4.text!=""){
+					if(ti_4.text.indexOf("*")==-1){
+						if(ti_4.text.length!=11){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_check5'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+							return false;
+						}
+					}
+				}
+				return true;
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function hgroup1_clickHandler(event:MouseEvent):void
+			{
+				var headIconComponent:HeadIconComponent = new HeadIconComponent();
+				headIconComponent.x=(FlexGlobals.topLevelApplication.width-headIconComponent.width)/2;
+				headIconComponent.y=(FlexGlobals.topLevelApplication.height-headIconComponent.height)/2;
+				PopUpManager.addPopUp(headIconComponent,this,true);
+			}
+			private function setHeadShowIcon(event:CustomEvent):void
+			{
+				//获取用户信息
+				selectUserDetail();
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryPlayNames")]
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<s:VGroup width="90%"  top="15" horizontalCenter="0" gap="15" >
+		
+		<s:HGroup width="100%" height="121" verticalAlign="middle" gap="10">
+			<s:Spacer y="24" width="10" height="60"/>
+			<s:VGroup horizontalAlign="center">
+				<s:Image width="93" height="93"  id="headShow" smooth="true"/>
+			</s:VGroup>
+			<s:VGroup verticalAlign="middle" gap="5">
+				<s:HGroup verticalAlign="middle" height="30" gap="2">
+					<mx:Label text="您好,"  styleName="personalCenterDetailLabelStyle_1" fontSize="18"  />
+					<mx:Label text="{CurrentUserInfo.userName}{CurrentUserInfo.isTestName==true?'(试玩账号)':''}"  styleName="personalCenterDetailLabelStyle_1" fontSize="18"   color="#ac8205"/>
+				</s:HGroup>
+				<s:HGroup buttonMode="true" click="hgroup1_clickHandler(event)" >
+					<s:Label text="更换头像" styleName="personalCenterDetailLabelStyle_1" color="#999999"/>
+				</s:HGroup>
+			</s:VGroup>
+		</s:HGroup>
+		
+		
+		<s:HGroup width="100%" height="10%"  verticalAlign="middle">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','userName')}：" width="10%" textAlign="right"  styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label id="userName"  styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="100%"  height="10%"  verticalAlign="middle"> 
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','realName')}：" width="10%" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label id="realName" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="100%"  height="10%"  verticalAlign="middle"> 
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','rebates')}：" width="10%" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label id="fandian" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		
+		
+		<s:HGroup width="100%"  height="10%"  verticalAlign="middle">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','mobilePhone')}：" width="10%" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput id="ti_4"   styleName="personalCenterDetailTextInputStyle" width="30%" restrict="0-9"/>
+			<s:Spacer width="20%"/>
+			<s:Button id="btn_4" label="{resourceManager.getString('PersonalCenterPage','revise')}"  styleName="personalSubmitButtonStyle" visible="false" click="selectedUpdateClick(4)" buttonMode="true"/>
+		</s:HGroup>
+		<s:HGroup width="100%"  height="10%"  verticalAlign="middle">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','qq')}：" width="10%" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput id="ti_3" maxChars="50"   styleName="personalCenterDetailTextInputStyle" width="30%" restrict="0-9"/>
+			<s:Spacer width="10%"/>
+			<s:Button id="btn_3" label="{resourceManager.getString('PersonalCenterPage','revise')}"  styleName="personalSubmitButtonStyle" visible="false" click="selectedUpdateClick(3)" buttonMode="true"/>
+		</s:HGroup>
+		
+		
+		
+		<s:HGroup width="100%"  height="10%"  verticalAlign="middle" visible="false" includeInLayout="false">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','identity_Card')}：" width="10%" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput id="ti_1"   styleName="personalCenterDetailTextInputStyle" width="30%" restrict="0-9xX"/>
+			<s:Spacer width="10%"/>
+			<s:Button id="btn_1" label="{resourceManager.getString('PersonalCenterPage','revise')}"  styleName="personalSubmitButtonStyle"  visible="false" click="selectedUpdateClick(1)" buttonMode="true"/>
+		</s:HGroup>
+		<s:HGroup width="100%"  height="10%"  verticalAlign="middle" visible="false" includeInLayout="false">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','mailbox')}：" width="10%" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput id="ti_2" maxChars="50"  styleName="personalCenterDetailTextInputStyle" width="30%"/>
+			<s:Spacer width="10%"/>
+			<s:Button id="btn_2" label="{resourceManager.getString('PersonalCenterPage','revise')}"   styleName="personalSubmitButtonStyle" visible="false" click="selectedUpdateClick(2)" buttonMode="true"/>
+		</s:HGroup>
+		<s:HGroup width="100%"  height="10%"  verticalAlign="middle" visible="false" includeInLayout="false">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','province_City')}：" width="10%" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+			<s:ComboBox width="125" id="cb_province" initialize="cb_province.textInput.editable = false"  styleName="personalCenterDetailComboBoxStyle"  dataProvider="{provinces}"  labelField="text"  change="cb_province_changeHandler(event)"/>
+			<s:ComboBox width="125" id="cb_city" initialize="cb_city.textInput.editable = false" styleName="personalCenterDetailComboBoxStyle" dataProvider="{citys}"  labelField="text"/>
+		</s:HGroup>
+		
+		
+		
+		<s:HGroup width="320" height="30" verticalAlign="middle" gap="0">
+			<s:Spacer y="3" width="93" height="30"/>
+			<s:Button id="saveBtn" label="{resourceManager.getString('PersonalCenterPage','save')}"  styleName="personalSubmitButtonStyle" click="submit(event)" buttonMode="true"/>		
+		</s:HGroup>
+		<s:HGroup  width="100%"  height="10%"  verticalAlign="middle">
+			<mx:Label width="10%" textAlign="right" text="温馨提示：" styleName="personalCenterDetailLabelStyle_4" />	
+			<mx:Label text="手机与QQ非常重要，用于找回登录密码和资金密码，请认真填写！" styleName="personalCenterDetailLabelStyle_4" />
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

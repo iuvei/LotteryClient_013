@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TileGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  requestedColumnCount = "3" horizontalAlign="center" verticalAlign="middle">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			public static const HELP_ALL:String = "helpAll";
+			public static const HELP_BIG:String = "helpBig";
+			public static const HELP_SMALL:String = "helpSmall";
+			public static const HELP_ODD:String = "helpOdd";
+			public static const HELP_EVEN:String = "helpEven";
+			public static const HELP_CLEAR:String = "helpClear";
+			
+			protected function all_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new CustomEvent(HELP_ALL));
+			}
+			protected function big_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new CustomEvent(HELP_BIG));
+			}
+			protected function small_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new CustomEvent(HELP_SMALL));
+			}
+			protected function odd_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new CustomEvent(HELP_ODD));
+			}
+			protected function even_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new CustomEvent(HELP_EVEN));
+			}
+			protected function clear_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new CustomEvent(HELP_CLEAR));
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Button label="{resourceManager.getString('LotteryTips','all')}" id="all" click="all_clickHandler(event)"    	styleName="strSelectSkinStyle_mid"/>
+	<s:Button label="{resourceManager.getString('LotteryTips','large')}" id="big" click="big_clickHandler(event)" 		styleName="strSelectSkinStyle_mid"/>
+	<s:Button label="{resourceManager.getString('LotteryTips','small')}" id="small" click="small_clickHandler(event)" 	styleName="strSelectSkinStyle_mid"/>
+	<s:Button label="{resourceManager.getString('LotteryTips','Odd')}" id="odd" click="odd_clickHandler(event)" 		styleName="strSelectSkinStyle_mid"/>
+	<s:Button label="{resourceManager.getString('LotteryTips','Even')}" id="even" click="even_clickHandler(event)" 		styleName="strSelectSkinStyle_mid"/>
+	<s:Button label="{resourceManager.getString('LotteryTips','clean')}" id="clear" click="clear_clickHandler(event)" 	styleName="strSelectSkinStyle_mid"/>
+</s:TileGroup>

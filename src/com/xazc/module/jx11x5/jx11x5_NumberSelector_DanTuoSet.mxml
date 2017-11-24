@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="com.xazc.interfaces.IInit"
+		 xmlns:gd11x5="com.xazc.module.gd11x5.*"
+		 xmlns:bettings="com.xazc.components.bettings.*"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:jx11x5="com.xazc.module.jx11x5.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.CustomEvent;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			//玩法提示语数量
+			[Bindable]
+			public var num:int = 0;
+			//玩法提示语
+			[Bindable]
+			public var tips:String = "";
+			//胆码数组
+			private var danMaArray:Array = new Array();
+			//拖码数组
+			private var tuoMaArray:Array = new Array();
+			//发送胆码事件的变量
+			public static const GET_DANMA_NUMBERS:String = "get_danma_numbers";
+			//发送拖码事件的变量
+			public static const GET_TUOMA_NUMBERS:String = "get_tuoma_numbers";
+			/**
+			 * 初始化 
+			 */
+			public function init():void
+			{
+				danMa.init();
+				tuoMa.init();
+				danMaArray = new Array();
+				tuoMaArray = new Array();
+			}
+			/**
+			 * 组件初始化完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				danMa.addEventListener(jx11x5_NumberSelector_Dantuo.NUMBER_CLICK,getNumbersHandler);
+				tuoMa.addEventListener(jx11x5_NumberSelector_Dantuo.NUMBER_CLICK,getNumbersHandler);
+			}
+			/**
+			 * 监听选号 
+			 */
+			protected function getNumbersHandler(event:CustomEvent):void
+			{
+				var target:jx11x5_NumberSelector_Dantuo = event.currentTarget as jx11x5_NumberSelector_Dantuo;
+				switch(target)
+				{
+					case danMa:
+						danMaArray = event.body as Array;
+						controlDanMaLength();
+						checkClickSameTuoMa();
+						dispatchEvent(new CustomEvent(GET_DANMA_NUMBERS,danMaArray));
+						break;
+					case tuoMa:
+						tuoMaArray = event.body as Array;
+						checkClickSameDanMa();
+						dispatchEvent(new CustomEvent(GET_TUOMA_NUMBERS,tuoMaArray));
+						break;
+					default:
+						break;
+				}
+			}
+			/**
+			 * 控制胆码长度 
+			 */
+			public function controlDanMaLength():void
+			{
+				if(danMaArray.length > num){
+					var alert:AlertMsg = new AlertMsg();
+					//alert.show("胆码最多选" + num + "个！", "温馨提示");
+					alert.show(resourceManager.getString("LotteryTips","lotteryAlert_017")+num+resourceManager.getString("LotteryTips","lotteryAlert_018"), resourceManager.getString("LotteryTips","message_004"));
+					
+					for(var i:int = 0; i < danMa.numbersHGroup.numElements; i++)
+					{
+						var btn:ToggleButton = danMa.numbersHGroup.getElementAt(i) as ToggleButton;
+						if(btn.label == danMaArray[num])
+						{
+							btn.selected = false;
+						}
+					}
+					danMa.numbersArray.splice(num,1);
+				}
+			}
+			/**
+			 * 检查是否点击了相同的拖码
+			 */
+			public function checkClickSameTuoMa():void
+			{
+				for(var i:int=0; i<danMaArray.length; i++){
+					for(var j:int=0; j<tuoMaArray.length; j++){
+						if(danMaArray[i] == tuoMaArray[j]){
+							var alert:AlertMsg = new AlertMsg();
+							//alert.show("已经选择了相同的拖码！", "温馨提示");
+							alert.show(resourceManager.getString("LotteryTips","lotteryAlert_003"), resourceManager.getString("LotteryTips","message_004"));
+							
+							for(var n:int = 0; n < danMa.numbersHGroup.numElements; n++)
+							{
+								var btn:ToggleButton = danMa.numbersHGroup.getElementAt(n) as ToggleButton;
+								if(btn.label == danMaArray[i])
+								{
+									btn.selected = false;
+								}
+							}
+							danMa.numbersArray.splice(i,1);
+						}
+					}
+				}
+			}
+			/**
+			 * 检查是否点击了相同的胆码
+			 */
+			public function checkClickSameDanMa():void
+			{
+				for(var i:int=0; i<danMaArray.length; i++){
+					for(var j:int=0; j<tuoMaArray.length; j++){
+						if(danMaArray[i] == tuoMaArray[j]){
+							var alert:AlertMsg = new AlertMsg();
+							//alert.show("已经选择了相同的胆码！", "温馨提示");
+							alert.show(resourceManager.getString("LotteryTips","lotteryAlert_004"), resourceManager.getString("LotteryTips","message_004"));
+							
+							for(var m:int = 0; m < tuoMa.numbersHGroup.numElements; m++)
+							{
+								var btn:ToggleButton = tuoMa.numbersHGroup.getElementAt(m) as ToggleButton;
+								if(btn.label == tuoMaArray[j])
+								{
+									btn.selected = false;
+								}
+							}
+							tuoMa.numbersArray.splice(j,1);
+						}
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<jx11x5:jx11x5_NumberSelector_Dantuo id="danMa" width="100%" weiShu="{resourceManager.getString('LotteryTips','danMa')}"/>
+	<jx11x5:jx11x5_NumberSelector_Dantuo id="tuoMa" width="100%" weiShu="{resourceManager.getString('LotteryTips','tuoMa')}"/>
+</s:VGroup>

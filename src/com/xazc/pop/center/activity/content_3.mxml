@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" xmlns:activity="com.xazc.pop.center.activity.*"
+		 creationComplete="creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			//获取当前月的第一天是星期几;
+			private var current_Month_firstDay_Is_weekdays:Number;
+			//获取当前月的总天数;
+			private var totalDay:int;
+			//保存今天是第几天签到，根据这个去显示签到成功后提示奖励多少钱；
+			private var saveTodaySignNum:int = 0;
+			
+			//测试数组
+			//已签到的天数数组;
+			private var AlreadySignArray:ArrayCollection = new ArrayCollection();
+			
+			[Embed(source="css/skin1/images/activityImages/day1_16.png")]
+			[Bindable]
+			private var img_1:Class;
+		
+			
+			
+			private var serverTool:ServerTool;
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				//初始化
+				init();
+				//查询签到信息
+				GetActivitySignInfo();
+			}
+			
+			private function init():void
+			{
+				//初始化日历状态;
+				for(var j:int = 1; j < 38; j++ )
+				{
+					this["day_" + j].txt = "";
+				}
+				//获取当前时间
+				var date:Date = new Date;
+				//获取当前月的第一天是星期几;
+				current_Month_firstDay_Is_weekdays = new Date(date.fullYear,date.month,1).day;
+				//设置当前月份总计多少天;
+				switch(date.month+1)
+				{
+					case 1:
+					case 3:
+					case 5:
+					case 7:
+					case 8:
+					case 10:
+					case 12:
+						totalDay = 31;
+						break;
+					case 4:
+					case 6:
+					case 9:
+					case 11:
+						totalDay = 30;
+						break;
+					case 2:
+						if(date.fullYear%4 == 0)
+						{
+							totalDay = 29 ;
+						}else{
+							totalDay = 28 ;
+						}
+						break;
+				}
+				
+				//显示月份
+				month_num.text = (date.month+1).toString() + "月";
+				year_num.text = (date.fullYear).toString() + "年";
+				//生成日历;
+				Generate_Calendar();
+				//设置已签到的日期的状态;
+				set_AlreadySign_Status(AlreadySignArray);
+			}
+			
+			/**
+			 *   查询签到信息
+			 **/
+			private function GetActivitySignInfo():void
+			{
+				serverTool = new ServerToolImpl(); 
+				var obj:Object = new Object();
+				serverTool.getActivitySign(obj,getActivitySignHandler);
+				1		}
+			/**
+			 * 查询签到信息
+			 * */
+			private function getActivitySignHandler(e:ResultEvent):void
+			{
+				var obj:Object=Util.getInstance().resuleFormatToJSon(e.result.toString(),0);
+				if(obj.SystemState==64){
+					UpdateGetActivitySignView(obj);
+				}else if(obj.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("查询签到信息失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function UpdateGetActivitySignView(obj:Object):void
+			{
+				/**
+				 *  IsSign 	        今天是否已签到；
+				 *	SingCount  今天是第几次签到；
+				 *	BetMoney   今天投注总金额；
+				 *  MonthSignList  本月从1号到今天，签到的日期数组；格式：2016-04-08
+				 */
+				
+				//今天的投注总金额；
+				total_Bet.text = "今天投注总金额：" + obj.BetMoney + "元";
+				
+				//设置当月签到过的日期
+				AlreadySignArray = new ArrayCollection();
+				var newArr:ArrayCollection = new ArrayCollection();
+				for(var i:int = 0; i < obj.MonthSignList.length; i++)
+				{
+					var item:String = ( obj.MonthSignList[i].toString() ).slice(obj.MonthSignList[i].toString().length-2,obj.MonthSignList[i].toString().length);
+					newArr.addItem( item );
+				}
+//								newArr = [3,4,8,9,12,15]; //测试数组；
+				AlreadySignArray = newArr;
+				set_AlreadySign_Status(AlreadySignArray);
+				
+//								obj.SingCount = 3; //测试数组；
+				//今天的标志，设置位置。  42是其实默认位置。131是位置间隔。
+				todayMark.x = 15 + 110*(obj.SingCount - 1);
+				//设置连续签到
+				for(i = 1; i<8; i++)
+				{
+					this["sign_" + i].enabled = false;//先初始化，所有签到不可点击；
+				}
+				for(i = 1; i<obj.SingCount; i++)//设置今天以前的为选中
+				{
+					this["sign_" + i].selected = true;
+				}
+				
+				if(obj.IsSign)
+				{
+					this["sign_" + obj.SingCount].enabled = true;//今天还没签到，可以签到
+					//今天是否可签到，按钮闪动！
+					glow_effect.target = this["sign_" + obj.SingCount];
+					glow_effect.play();
+				}else{
+					this["sign_" + obj.SingCount].selected = true;//今天已经签到；
+				}
+				
+				//保存今天是第几天签到，根据这个去显示签到成功后提示奖励多少钱；
+				saveTodaySignNum = obj.SingCount;
+			}
+			
+			/**
+			 *   生成日历;
+			 **/
+			private function Generate_Calendar():void
+			{
+				var i:int = current_Month_firstDay_Is_weekdays;
+				switch(current_Month_firstDay_Is_weekdays)
+				{
+					case 0://星期日
+						for(i; i < totalDay + 0; i++ )
+						{
+							this["day_" + (i+ 1)].txt = (i + 1).toString();
+						}
+						break;
+					case 1://星期一
+						for(i; i < totalDay + 1; i++ )
+						{
+							this["day_" + (i+ 1)].txt = i.toString();
+						}
+						break;
+					case 2://星期二
+						for(i; i < totalDay + 2; i++ )
+						{
+							this["day_" + (i+ 1)].txt = (i - 1).toString();
+						}
+						break;
+					case 3://星期三
+						for(i; i < totalDay + 3; i++ )
+						{
+							this["day_" + (i+ 1)].txt = (i - 2).toString();
+						}
+						break;
+					case 4://星期四
+						for(i; i < totalDay + 4; i++ )
+						{
+							this["day_" + (i+ 1)].txt = (i - 3).toString();
+						}
+						break;
+					case 5://星期五
+						for(i; i < totalDay + 5; i++ )
+						{
+							this["day_" + (i+ 1)].txt = (i - 4).toString();
+						}
+						break;
+					case 6://星期六
+						for(i; i < totalDay + 6; i++ )
+						{
+							this["day_" + (i+ 1)].txt = (i - 5).toString();
+						}
+						break;
+				}
+			}
+			/**
+			 *   设置已签到的日期的状态;
+			 **/
+			private function set_AlreadySign_Status(obj_arr:ArrayCollection):void
+			{
+				//初始化状态
+				for(var m:int = 1; m < 38; m++ )
+				{
+					this["day_" + m].IsVisible = false;
+				}
+				
+				//设置最新状态
+				for(m = 1; m < 38; m++ )
+				{
+					for(var n:int = 0; n < obj_arr.length; n++ )
+					{
+						if(this["day_" + m].txt == int(obj_arr[n]) )
+						{
+							this["day_" + m].IsVisible = true;
+						}
+					}
+				}
+			}
+			
+			
+			private var nowSignBtn:String;
+			protected function sign_clickHandler(event:MouseEvent):void
+			{
+				nowSignBtn = (event.currentTarget as ToggleButton ).id;
+				this[nowSignBtn].selected = false;
+				
+				serverTool = new ServerToolImpl(); 
+				var obj:Object = new Object();
+				serverTool.activitySign(obj,activitySignHandler);
+			}
+			/**
+			 * 签到
+			 * */
+			private var yd:AlertMsgCenter=new AlertMsgCenter();
+			private function activitySignHandler(e:ResultEvent):void
+			{
+				var obj:Object=Util.getInstance().resuleFormatToJSon(e.result.toString(),0);
+				if(obj.SystemState==64){
+					UpdateView(obj);
+				}else if(obj.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("签到失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void
+			{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			private function UpdateView(obj:Object):void
+			{
+				/**
+				 * ErrorState -2 已经签到 ； 2 投注量不够,尚不能签到 ；-3和-4 签到失败 ； 1 签到成功 ； -1和-5 签到异常。
+				 * */
+				if(obj.ErrorState == 1)
+				{
+					this[nowSignBtn].selected = true;
+					glow_effect.end();
+					
+					var tipsMoney:String;
+					if(saveTodaySignNum == 1) tipsMoney = "奖励 8元！";
+					if(saveTodaySignNum == 2) tipsMoney = "奖励 18元！";
+					if(saveTodaySignNum == 3) tipsMoney = "奖励 28元！";
+					if(saveTodaySignNum == 4) tipsMoney = "奖励 38元！";
+					if(saveTodaySignNum == 5) tipsMoney = "奖励 58元！";
+					if(saveTodaySignNum == 6) tipsMoney = "奖励 88元！";
+					if(saveTodaySignNum == 7) tipsMoney = "奖励 188元！";
+					
+					alert.show("签到成功!" + tipsMoney,resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				if(obj.ErrorState == -2)
+				{
+					alert.show("您已经签到!",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				if(obj.ErrorState == 2)
+				{
+					alert.show("投注量不够,尚不能签到!",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				if(obj.ErrorState == -3 )
+				{
+					alert.show("签到失败!",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				if(obj.ErrorState == -4)
+				{
+					alert.show("您没有充值，不能签到！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				if(obj.ErrorState == -1 || obj.ErrorState == -5)
+				{
+					alert.show("签到异常!",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				
+				//查询签到信息  刷新；
+				GetActivitySignInfo();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:Glow id="glow_effect" duration="500" 
+				 blurXFrom="0" blurXTo="30" blurYFrom="0" blurYTo="30"
+				 color="#FFFFFF"   repeatCount="0"
+				 />
+		
+	</fx:Declarations>
+	
+	<s:Image source="css/skin1/images/activityImages/activity03.png"/>
+	
+	<s:Label id="total_Bet" x="199" y="137" color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑" 
+			 text="今天投注总金额：0元"  />
+	
+	<!--连续签到次数-->
+	
+	<s:HGroup x="162" y="169" gap="3">
+		<s:Label x="162" y="169" color="#2d2d2d" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"
+				 text="累积签到可领取更多奖金 己连续签到" />
+		<s:Label x="162" y="169" color="#c31409" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"
+				 text="{saveTodaySignNum} " />
+		<s:Label x="162" y="169" color="#2d2d2d" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"
+				 text="天" />
+	</s:HGroup>
+	
+	<!--年份-->
+	<s:Label id="year_num" x="368" y="195" color="#2d2d2d" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑" 
+			 text="2014年" />
+	<!--月份-->
+	<s:Label id="month_num" x="413" y="195" color="#2d2d2d" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑" 
+			 text="4月" />
+	
+	<!--签到-->
+	<s:HGroup x="25" y="519" width="746" height="30" verticalAlign="middle" gap="36">
+		<s:ToggleButton styleName="SignButtonStyle" id="sign_1" enabled="false"  width="73" click="sign_clickHandler(event)" />
+		<s:ToggleButton styleName="SignButtonStyle" id="sign_2" enabled="false"  width="73" click="sign_clickHandler(event)" />
+		<s:ToggleButton styleName="SignButtonStyle" id="sign_3" enabled="false"  width="73" click="sign_clickHandler(event)" />
+		<s:ToggleButton styleName="SignButtonStyle" id="sign_4" enabled="false"  width="73" click="sign_clickHandler(event)" />
+		<s:ToggleButton styleName="SignButtonStyle" id="sign_5" enabled="false" selected="true"  width="73" click="sign_clickHandler(event)" />
+		<s:ToggleButton styleName="SignButtonStyle" id="sign_6" enabled="true"  width="73" click="sign_clickHandler(event)" />
+		<s:ToggleButton styleName="SignButtonStyle" id="sign_7" enabled="true"  width="73" click="sign_clickHandler(event)" />
+	</s:HGroup>
+	<!--签到区域  今天的标志-->
+	<s:Image id="todayMark" x="15" y="514"  smooth="true" source="{img_1}"/>
+	
+	<!--日历-->
+	<s:HGroup x="115" y="243" gap="13" >
+		<s:Label color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"  text="星期日" />
+		<s:Label color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"  text="星期一" />
+		<s:Label color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"  text="星期二" />
+		<s:Label color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"  text="星期三" />
+		<s:Label color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"  text="星期四" />
+		<s:Label color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"  text="星期五" />
+		<s:Label color="#ffffff" fontSize="12" fontWeight="normal" fontFamily="Microsoft YaHei,微软雅黑"  text="星期六" />
+	</s:HGroup>
+	<s:HGroup x="115" y="266" gap="14">
+		<activity:calendarDayItem  txt="01" id="day_1"  colNum="2"/>
+		<activity:calendarDayItem  txt="02" id="day_2"  />
+		<activity:calendarDayItem  txt="03" id="day_3"  />
+		<activity:calendarDayItem  txt="04" id="day_4"  />
+		<activity:calendarDayItem  txt="07" id="day_5"  />
+		<activity:calendarDayItem  txt="08" id="day_6"  />
+		<activity:calendarDayItem  txt="09" id="day_7"  colNum="2"/>
+	</s:HGroup>
+	<s:HGroup x="115" y="297" gap="14">
+		<activity:calendarDayItem  txt="10" id="day_8" colNum="2"/>
+		<activity:calendarDayItem  txt="11" id="day_9"/>
+		<activity:calendarDayItem  txt="12" id="day_10"/>
+		<activity:calendarDayItem  txt="13" id="day_11"/>
+		<activity:calendarDayItem  txt="14" id="day_12"/>
+		<activity:calendarDayItem  txt="15" id="day_13"/>
+		<activity:calendarDayItem  txt="16" id="day_14" colNum="2"/>
+	</s:HGroup>
+	<s:HGroup x="115" y="328" gap="14">
+		<activity:calendarDayItem  txt="17" id="day_15" colNum="2"/>
+		<activity:calendarDayItem  txt="18" id="day_16"/>
+		<activity:calendarDayItem  txt="19" id="day_17"/>
+		<activity:calendarDayItem  txt="20" id="day_18"/>
+		<activity:calendarDayItem  txt="21" id="day_19"/>
+		<activity:calendarDayItem  txt="22" id="day_20"/>
+		<activity:calendarDayItem  txt="23" id="day_21" colNum="2"/>
+	</s:HGroup>
+	<s:HGroup x="115" y="359" gap="14">
+		<activity:calendarDayItem  txt="24" id="day_22" colNum="2"/>
+		<activity:calendarDayItem  txt="25" id="day_23"/>
+		<activity:calendarDayItem  txt="26" id="day_24"/>
+		<activity:calendarDayItem  txt="27" id="day_25"/>
+		<activity:calendarDayItem  txt="28" id="day_26"/>
+		<activity:calendarDayItem  txt="29" id="day_27"/>
+		<activity:calendarDayItem  txt="30" id="day_28" colNum="2"/>
+	</s:HGroup>
+	<s:HGroup x="115" y="390" gap="14">
+		<activity:calendarDayItem  txt="31" id="day_29" colNum="2"/>
+		<activity:calendarDayItem  txt="1" id="day_30"/>
+		<activity:calendarDayItem  txt="2" id="day_31"/>
+		<activity:calendarDayItem  txt="3" id="day_32"/>
+		<activity:calendarDayItem  txt="4" id="day_33"/>
+		<activity:calendarDayItem  txt="5" id="day_34"/>
+		<activity:calendarDayItem  txt="6" id="day_35" colNum="2"/>
+	</s:HGroup>
+	<s:HGroup x="115" y="421" gap="14">
+		<activity:calendarDayItem  txt="07" id="day_36" colNum="2"/>
+		<activity:calendarDayItem  txt="08" id="day_37"/>
+	</s:HGroup>
+	
+</s:Group>

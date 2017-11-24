@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+					  xmlns:s="library://ns.adobe.com/flex/spark"
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  xmlns:lastresults="com.xazc.components.lastresults.*"
+					  styleName="lastResultBgStyle1" width="464" height="189"
+					  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.manager.TimerManager;
+			import com.xazc.manager.XmlManager;
+			import com.xazc.music.MusicPlayerFactory;
+			import com.xazc.single.Cookie;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			//彩种名称
+			[Bindable]
+			private var lotteryName:String = "";
+			//彩种ID
+			[Bindable]
+			private var lotteryID:String = "";
+			//彩种类型
+			[Bindable]
+			private var lotteryType:int = 0;
+			//开奖期号
+			[Bindable]
+			private var issueNum:String = "";
+			//开奖号码
+			[Bindable]
+			private var resultNumbers:String = "";
+			
+			[Embed(source="css/skin1/images/voice_01.png")]
+			[Bindable]
+			private var img_1:Class;
+			[Embed(source="css/skin1/images/voice_02.png")]
+			[Bindable]
+			private var img_2:Class;
+			
+			private var tempLottery:String = "0";
+			
+			public static var cookie:Cookie = new Cookie();
+			
+			public function init():void
+			{
+				trace("初始化组件。。。");
+				
+				if(CurrentLotteryInfo.lotteryId!="0"){
+					tempLottery = CurrentLotteryInfo.lotteryId;
+					lotteryName = lotteryNameHelp.getCaizhong(CurrentLotteryInfo.lotteryId);
+					
+					//resultLogo.source = "css/skin1/universal/lotteryresultlogo/result_"+CurrentLotteryInfo.lotteryId+"_logo.png";
+					Util.getInstance().addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selected_lottery_changeHandler);
+					Sendnotification.instance.addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selected_lottery_changeHandler);
+					trace(lotteryName+"*"+CurrentLotteryInfo.lotteryId);
+					this.getTheLastResult();
+					if("51"==CurrentLotteryInfo.lotteryId
+						||"61"==CurrentLotteryInfo.lotteryId){
+						TimerManager.getInstance().addEventListener(CustomEvent.SPACE_8SECONDES, onTime);
+					}else{
+						TimerManager.getInstance().addEventListener(CustomEvent.SPACE_15SECONDES, onTime);
+						
+					}
+				}
+				if("51"==CurrentLotteryInfo.lotteryId
+					||"53"==CurrentLotteryInfo.lotteryId
+					||"55"==CurrentLotteryInfo.lotteryId
+					||"61"==CurrentLotteryInfo.lotteryId){
+					this.bxc.visible = true;
+				}else{
+					this.bxc.visible = false;
+				}
+			}
+			protected function selected_lottery_changeHandler(event:SystemEvent):void{
+				recycle();
+			}
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+				if("51"==lotteryID||"61"==lotteryID){
+					TimerManager.getInstance().removeEventListener(CustomEvent.SPACE_8SECONDES, onTime);
+				}else{
+					TimerManager.getInstance().removeEventListener(CustomEvent.SPACE_15SECONDES, onTime);
+				}
+				Util.getInstance().removeEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selected_lottery_changeHandler);
+				Sendnotification.instance.removeEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selected_lottery_changeHandler);
+			}
+			
+			private function onTime(e:CustomEvent):void
+			{
+				getTheLastResult();
+			}
+			/**
+			 * 查询上期开奖结果
+			 */	
+			public function getTheLastResult():void
+			{
+				if(CurrentLotteryInfo.lotteryId=="0"){return;}
+				if(CurrentLotteryInfo.lotteryId!=tempLottery){return;}
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.reType = 1;
+				if("61"== CurrentLotteryInfo.lotteryId
+					||"63"== CurrentLotteryInfo.lotteryId
+					||"53"== CurrentLotteryInfo.lotteryId
+					||"55"== CurrentLotteryInfo.lotteryId
+					||"51"== CurrentLotteryInfo.lotteryId){
+					obj.CZID = CurrentLotteryInfo.lotteryId+CurrentBusinessInfo.MerchantCode;
+					obj.IsSelf = true;
+					serverTool.getLastResult2(obj,getTheLastResultReturn);
+				}else{
+					obj.CZID = CurrentLotteryInfo.lotteryId;
+					obj.IsSelf = false;
+					serverTool.getLastResult(obj,getTheLastResultReturn);
+				} 
+				
+			}
+			/**
+			 * 返回上期开奖内容 
+			 */
+			public function getTheLastResultReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString());
+				
+				//判断是否弹出上期开奖结果（如果已经拿到该期的开奖结果或自己未购买该彩种时不再请求）
+				var lastIssue:String = cookie.getCookie("lottery_"+CurrentLotteryInfo.lotteryId+"lastissue") as String;
+				if(lastIssue!=arr[0].CzPeriod){
+					this.winBetMoney();
+				}
+				
+				//判断是否以显示当前最新数据
+				if(issueNum==arr[0].CzPeriod){
+					return;
+				}
+				issueNum = arr[0].CzPeriod;
+				
+				resultNumbers = arr[0].CzNum;
+				
+				//判断是否是当前采种数据
+				/* if(lotteryID != arr[0].CzType)
+				return; */
+				lotteryID = arr[0].CzType;
+				trace(e.result.toString());
+				showDrawResultTips();
+				showDrawResultNumbers();
+				
+				//更新开奖结果列表
+				this.dispatchEvent(new CustomEvent(CustomEvent.CHANGE_RESULT_LISTS,e));
+			}
+			/**
+			 * 显示开奖提示语
+			 */
+			public function showDrawResultTips():void
+			{
+			}
+			/**
+			 * 显示开奖号码
+			 */
+			public function showDrawResultNumbers():void
+			{
+				var lotteryID:int = parseInt(this.lotteryID);
+				lotteryType = XmlManager.getInstance().getResultNumberType(lotteryID);
+				createItem();
+			}
+			/**
+			 * 创建号码显示容器
+			 */
+			public function createItem():void
+			{
+				//return;
+				drawResultGroup.removeAllElements();
+				var item:Object;
+				switch(lotteryType)
+				{
+					case 1:
+						//带有位数显示的开奖号码
+						item = new DrawResult_5_1_numbers();
+						item.numbers = resultNumbers;
+						item.lotteryID = lotteryID;
+						break;
+					case 2:
+						//6个号的开奖号码
+						item = new DrawResult_6_1_numbers();
+						item.numbers = resultNumbers;
+						item.lotteryID = this.lotteryID;
+						drawResultGroup.height = 95;
+						break;
+					case 3:
+						//10个号的开奖号码
+						item = new DrawResult_10_1_numbers();
+						item.numbers = resultNumbers;
+						item.lotteryID = lotteryID;
+						break;
+					case 4:
+						//20个号的开奖号码
+						item = new DrawResult_20_1_numbers();
+						item.numbers = resultNumbers;
+						item.lotteryID = lotteryID;
+						break;
+					case 5:
+						//7个号的开奖号码,上下互错
+						item = new DrawResult_7_1_numbers();
+						item.numbers = resultNumbers;
+						break;
+					case 6:
+						//3D开奖号码
+						item = new DrawResult_3D_numbers();
+						item.numbers = resultNumbers;
+						drawResultGroup.height = 95;
+						break;
+					case 7:
+						//5开奖号码,上下错开
+						item = new DrawResult_Special_5_1_numbers();
+						item.numbers = resultNumbers;
+						break;
+					case 8:
+						//8开奖号码,最后一位为红球 
+						item = new DrawResult_8_1_numbers();
+						item.numbers = resultNumbers;
+						break;
+					case 9:
+						//8开奖号码,最后一位为红球 
+						item = new DrawResult_8_2_numbers();
+						item.numbers = resultNumbers;
+						break;
+					default:
+						item = new DrawResult_10_1_numbers();
+						item.numbers = resultNumbers;
+						break;
+				}
+				drawResultGroup.addElement(item as IVisualElement);
+			}
+			/**
+			 * 调用resourcesChanged()函数
+			 */
+			override protected function resourcesChanged():void
+			{
+			}
+			protected function voiceImg_clickHandler(event:MouseEvent):void
+			{
+				CurrentUserInfo.isOpenVoice = !CurrentUserInfo.isOpenVoice;
+				if(CurrentUserInfo.musicVolume == 1)
+					CurrentUserInfo.musicVolume = 0;
+				else if(CurrentUserInfo.musicVolume == 0)
+					CurrentUserInfo.musicVolume = 1;
+				MusicPlayerFactory.changeVolume(CurrentUserInfo.musicVolume);
+			}
+			
+			protected function betRecond_clickHandler(event:MouseEvent):void
+			{
+				var request:URLRequest = new URLRequest(); 
+				request.url=Util.getInstance().getZSTlinkByLotteryId(CurrentLotteryInfo.lotteryId);;
+				navigateToURL(request,"_bank");
+			}
+			
+			public function winBetMoney():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.lotteryCode = CurrentLotteryInfo.lotteryId;
+				serverTool.winBetMoney(obj,winBetMoneyReturn);
+			}
+			
+			public function winBetMoneyReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString(),null);
+				//Alert.show(e.result.toString());
+				/*{"LotteryID":12,
+				"DrawResult":null,
+				"IssueNumber":"20141119023",
+				"BetMoney":0.0,
+				"WinngMoney":0.0,
+				"YkMoney":0.0,
+				"State":-1,
+				"OrderState":0,
+				"PageCount":0,"
+				DataCount":0,
+				"SystemState":64,
+				"StateMark":null}*/
+				
+				var obj:Object;
+				if(arr.State==-1){//该期未中奖
+					//this.winBetMoneyState = false;
+					cookie.writeCookie("lottery_"+arr.LotteryID+"lastissue",arr.IssueNumber);
+					
+				}else if(arr.State==1){
+					//this.winBetMoneyState = false;
+					if(lotteryLastTipIssue(arr.LotteryID,arr.IssueNumber)){
+						//提示
+						obj = new Object();
+						obj.State = arr.State;
+						obj.BetMoney = arr.BetMoney;
+						obj.IssueNumber = arr.IssueNumber;
+						obj.WinngMoney = arr.WinngMoney;
+						obj.YkMoney = arr.YkMoney;
+						obj.LotteryID = arr.LotteryID;
+						Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.SHOW_LAST_BET_RESULT,obj));
+					}
+					
+				}else if(arr.State==2){
+					//this.winBetMoneyState = false;
+					if(lotteryLastTipIssue(arr.LotteryID,arr.IssueNumber)){
+						//提示
+						obj = new Object();
+						obj.State = arr.State;
+						obj.BetMoney = arr.BetMoney;
+						obj.IssueNumber = arr.IssueNumber;
+						obj.WinngMoney = arr.WinngMoney;
+						obj.YkMoney = arr.YkMoney;
+						obj.LotteryID = arr.LotteryID;
+						Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.SHOW_LAST_BET_RESULT,obj));
+					}
+				}else if(arr.State==0){
+					//this.winBetMoneyState = true;
+					//不做逻辑(根据间隔自己继续请求)
+				}else{
+					//Alert.show("返回异常");
+				}
+			}
+			
+			public function lotteryLastTipIssue(id:String,issue:String):Boolean
+			{
+				var openState:Boolean = false;
+				if(cookie.getCookie("lottery_"+id+"lastissue")){
+					var lastIssue:String = cookie.getCookie("lottery_"+id+"lastissue") as String;
+					if(issue==lastIssue){//存储第已提示期号与现在最新期号相同（不再提示）
+						openState = false;
+					}else{//需要提示（要将新的期号放到cook中）
+						openState = true;
+						cookie.writeCookie("lottery_"+id+"lastissue",issue);
+					}
+				}else{
+					openState = true;
+					cookie.writeCookie("lottery_"+id+"lastissue",issue);
+				}
+				return openState;
+			}
+			
+			protected function bxc_clickHandler(event:MouseEvent):void
+			{
+				var request:URLRequest = new URLRequest(); 
+				request.url="http://www.bralottery.com/results.html";
+				navigateToURL(request,"_bank");
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+		[ResourceBundle("LotteryDrawResultTips")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Button label="" id="bxc" styleName="bxcclickBtnStyle" visible="false" click="bxc_clickHandler(event)" top="12" right="25"/>
+	<s:VGroup width="100%" gap="6" horizontalAlign="center" verticalAlign="middle" paddingTop="16">
+		<s:HGroup width="100%" gap="6" horizontalAlign="center" verticalAlign="middle" paddingLeft="-10">
+			<s:Label text="{lotteryName}" styleName="labelStyles4" fontSize="14"/>
+			<s:HGroup gap="6" verticalAlign="middle" horizontalAlign="center">
+				<s:Label text="第" styleName="lastLabelStyles3" fontSize="14"/>
+				<s:Label text="{issueNum}" styleName="labelStyles4" fontSize="14"/>
+				<s:Label text="期" styleName="lastLabelStyles3" fontSize="14"/>
+			</s:HGroup>
+			<s:Label text="开奖结果" styleName="lastLabelStyles3" fontSize="14"/>
+		</s:HGroup>
+	</s:VGroup>
+	<s:HGroup id="drawResultGroup"/>
+	<s:HGroup bottom="10" right="70">
+		<s:Image buttonMode="true" id="voiceImg01" click="voiceImg_clickHandler(event)" source="{img_1}"
+				 visible="{CurrentUserInfo.isOpenVoice?true:false}"
+				 includeInLayout="{CurrentUserInfo.isOpenVoice?true:false}"/>
+		<s:Image buttonMode="true" id="voiceImg02" click="voiceImg_clickHandler(event)" source="{img_2}"
+				 visible="{CurrentUserInfo.isOpenVoice?false:true}"
+				 includeInLayout="{CurrentUserInfo.isOpenVoice?false:true}"/>
+	</s:HGroup>
+	<s:HGroup bottom="10" left="70">
+		<s:Button id="betRecond" label="遗漏分析" styleName="betRecondButtonSkinStyle" click="betRecond_clickHandler(event)"/>
+	</s:HGroup>
+</s:SkinnableContainer>

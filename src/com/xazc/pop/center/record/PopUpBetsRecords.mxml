@@ -1,0 +1,894 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 implements="com.xazc.interfaces.IInit"
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 creationComplete="createGridInitProperties()"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  
+		 xmlns:load="com.xazc.components.load.*" width="900" height="455"
+		 xmlns:common="com.xazc.pop.center.common.*" xmlns:single="com.xazc.single.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD"/>
+		<mx:DateFormatter id="df2" formatString="JJ:NN:SS"/>
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryPlayNames")]
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[ 
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.controls.LinkButton;
+			import mx.core.FlexGlobals;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.events.DynamicEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ObjectUtil;
+			
+			import spark.events.IndexChangeEvent;
+			
+			//总投注金额
+			[Bindable]
+			private var betsSumMoney:Number = 0;
+			
+			private var myPattern1:RegExp=/-|:| /g;
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			public var lotteryId:String = "";
+			public var orderId:String = "";
+			public var lotteryQH:String="";
+			
+			//当前查询是否是历史库
+			private var isHistory:Boolean = false; 
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=10;//当页行数
+			//共几页
+			[Bindable]
+			private var totalPage:int = 0;
+			//共多少条记录
+			[Bindable]
+			private var totalRecords:int = 0;
+			private var service:ServerToolImpl;
+			
+			[Bindable]
+			private var types:ArrayCollection=new ArrayCollection([{label:"当前记录",value:0},{label:"历史记录",value:1}]);
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			//订单状态
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:110},
+				{title:"b",w:110},
+				{title:"m",w:110},
+				{title:"c",w:110},
+				 {title:"j",w:50}, 
+				{title:"d",w:100},
+				{title:"e",w:100},
+				{title:"f",w:50},
+				{title:"g",w:110},
+				{title:"h",w:55}]);
+			private var models:ArrayCollection=new ArrayCollection([
+				{orderMask:"ChaseOrderID",width:110},
+				{orderMask:"BetTb",width:110},
+				{orderMask:"PlayCode",width:110},
+				{orderMask:"IssueNumber",width:110},
+				{orderMask:"BetMultiple",width:50}, 
+				{orderMask:"BetMoney",width:100},
+				{orderMask:"AwardMoney",width:100},
+				{orderMask:"OrderState",width:50},
+				{orderMask:"InsertTime",width:110},
+				{orderMask:"OrderState2",width:55}]);
+			
+			 override protected function resourcesChanged():void
+			{
+				if(codeList.source != null){
+					for(var i:int = 0; i<codeList.length; i++){
+//						if(i == 0){
+//							codeList[i].LotteryName = resourceManager.getString('PersonalCenterPage','all_Lottery');
+//						}else{
+							codeList[i].LotteryName = resourceManager.getString('LotteryPlayNames','lottery_' + codeList[i].LotteryCode);
+//						}
+					}
+				}
+			} 
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+//					gridItem.styleName = "RecordsGridItemStyle_borderBlack";
+					gridItem.horizontalScrollPolicy = "off";
+					gridItem.verticalScrollPolicy = "off";
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = resourceManager.getString('PersonalCenterPage','order_Number');
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = resourceManager.getString('PersonalCenterPage','lottery_Type');
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = resourceManager.getString('PersonalCenterPage','issue');
+					}else if(titles.getItemAt(i).title == "j"){
+						label.text = resourceManager.getString('PersonalCenterPage','personalBetMultiple');
+					}else if(titles.getItemAt(i).title == "m"){
+						label.text = resourceManager.getString('PersonalCenterPage','play_Method');
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = resourceManager.getString('PersonalCenterPage','bets_Money');
+					}else if(titles.getItemAt(i).title == "e"){
+						label.text = resourceManager.getString('PersonalCenterPage','award_Money');
+					}else if(titles.getItemAt(i).title == "f"){
+						label.text = resourceManager.getString('PersonalCenterPage','state');
+					}else if(titles.getItemAt(i).title == "g"){
+						label.text = resourceManager.getString('PersonalCenterPage','bets_Time');
+					}else{
+						label.text = resourceManager.getString('PersonalCenterPage','operate');
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				
+				init();
+//				resourcesChanged();
+			}
+			
+			
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				df_start.text = "";
+				df_end.text = "";
+				createLottery();
+				currentPage=1;
+//				var d:Date=new Date();
+				//df_start.selectedDate=new Date(d.fullYear,d.month,1);
+//				df_start.selectedDate=new Date();
+//				df_end.selectedDate= new Date();
+//				df_start.text=df1.format(df_start.selectedDate);
+//				df_end.text=df1.format(df_end.selectedDate);
+				changePage.pageSelector.text="";
+				getBetDataList();
+				
+			}
+			/**
+			 * 获取彩种列表
+			 */
+			public var codeList:ArrayCollection = new ArrayCollection();
+			public function createLottery():void
+			{
+				lotteryType.dataProvider=null;
+				codeList=new ArrayCollection();
+				var obj:Object = new Object();
+				obj.LotteryName = resourceManager.getString('LotteryPlayNames','all_Lottery');
+				obj.LotteryName = "全部彩种";
+				obj.LotteryCode="all";
+				codeList.addItemAt(obj,0);
+				var lots:Array=CurrentBusinessInfo.canSalableLotteries.split(",");
+				for(var j:int=0;j<lots.length;j++){
+					for(var i:int=0; i<CurrentBusinessInfo.LotteryList.length; i++){
+						var object:Object=mx.utils.ObjectUtil.copy(CurrentBusinessInfo.LotteryList[i]);
+						if(object){
+							if(object.LotteryCode==lots[j]){
+								object.LotteryName=resourceManager.getString('LotteryPlayNames','lottery_' + object.LotteryCode);
+								codeList.addItem(object);
+							}
+						}
+					}
+				}
+				lotteryType.dataProvider=codeList;
+				for(var k:int=0;k<codeList.length;k++){
+					if(CurrentLotteryInfo.lotteryId==codeList.getItemAt(k).LotteryCode){
+						lotteryType.selectedIndex = k;
+						cbtypes.selectedIndex=0;
+						this.cbtypes_changeHandler(null);
+						return;
+					}
+				}
+				lotteryType.selectedIndex = 0;
+				cbtypes.selectedIndex=0;
+				this.cbtypes_changeHandler(null);
+			}
+			/**
+			 * 查询数据
+			 */
+			protected function getBetDataList():void{
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var object:Object = filterSelectCondition();
+				service.getBetDataList(object,returnBetDataList);
+			}
+			
+			private var currentPageSource:Array=[];//记录当前也得数据源
+			/**
+			 * 返回结果
+			 */
+			protected function returnBetDataList(event:ResultEvent):void
+			{
+				loading.suspend();
+				trace(event.result.toString());
+				var object:Object = JSON.parse(event.result.toString());
+				if(object.SystemState== 64)
+				{
+					var array:Array = object.BtInfo as Array;
+					if(array.length==0){
+						createGridOneRow();
+						return;
+					}
+					betsSumMoney=object.BetsSumMoney;
+					totalPage = parseInt(object.PageCount);
+					totalRecords = parseInt(object.DataCount);
+					changePage.setPage(currentPage,totalPage,totalRecords);
+					updateViewPropertysValue(array);
+					g_page.visible=true;
+					g_page.includeInLayout=true;
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					if(object.SystemState==32){
+						createGridOneRow();
+						return;
+					}
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bets_records_error'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+				}
+			}
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				g_page.visible=false;
+				g_page.includeInLayout=false;
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.horizontalScrollPolicy = "off";
+				item.verticalScrollPolicy = "off";
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			 public function updateViewPropertysValue(source:Array):void
+			{
+				if(source == null){
+					return;
+				}
+				var d:Date=new Date();
+				var promptGrid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				promptGrid.removeAllChildren();//清空所有子项
+				for(var j:int=0; j<source.length; j++){
+					var promptRow:GridRow = new GridRow();
+					promptRow.height = 30;
+					promptGrid.addChild(promptRow);
+					var label1:Label;
+					var linkbutton:LinkButton;
+					for(var n:int=0; n<models.length; n++){
+						var promptItem:GridItem = new GridItem();
+						promptItem.width = models.getItemAt(n).width;
+						if(n==models.length-1){
+							linkbutton=new LinkButton();
+							linkbutton.width=models.getItemAt(n).width-5;
+							linkbutton.height=30;
+							promptItem.addChild(linkbutton);
+						}else{
+							label1=new Label();
+							label1.width= models.getItemAt(n).width-5;
+							label1.maxHeight=30;
+							label1.styleName = "personalCenterDetailLabelStyle_1";
+							promptItem.addChild(label1);
+						}
+//						promptItem.horizontalScrollPolicy = "off";
+//						promptItem.verticalScrollPolicy = "off";
+						var str:String = models.getItemAt(n).orderMask;
+						if(str == "ChaseOrderID"){
+							label1.text = source[j].ChaseOrderID;
+							label1.graphics.beginFill(0x555555);  
+							label1.graphics.drawRect(5,20,95,1); 
+							label1.graphics.endFill(); 
+							label1.buttonMode=true;
+							label1.useHandCursor=true;
+							label1.mouseChildren=false;
+							label1.name = source[j].ChaseOrderID + "#" + source[j].BetTb+"#"+source[j].IssueNumber+"#"+source[j].InsertTime+"#"+this.isHistory;
+							label1.addEventListener(MouseEvent.CLICK,label1MouseClickHandler);
+						}else if(str == "BetTb")
+						{
+							label1.text = resourceManager.getString('LotteryPlayNames','lottery_' + source[j].BetTb);
+						}else if(str == "PlayCode"){
+							var mode:int = 0;
+							if(parseInt(source[j].BetMode) == 0){mode = 0;}
+							else if((parseInt(source[j].BetMode) & 1) == 1){mode = 1;}
+							else if((parseInt(source[j].BetMode) & 8) == 8){mode = 3;}
+							else if((parseInt(source[j].BetMode) & 16) == 16){mode = 2;}
+							label1.text = lotteryNameHelp.getWanfa(source[j].BetTb,source[j].PlayCode,mode);
+							label1.toolTip = lotteryNameHelp.getWanfa(source[j].BetTb,source[j].PlayCode,mode);
+//							label1.maxDisplayedLines = 0;
+//							label1.width = 55;
+						}else if(str == "IssueNumber"){
+							var issueNum:String=source[j].IssueNumber.toString().substring(0,4);
+							if(issueNum==d.fullYear.toString()){
+								label1.text = source[j].IssueNumber.toString().substring(2,source[j].IssueNumber.toString().length);
+							}else{
+								label1.text = source[j].IssueNumber;
+							}
+							label1.toolTip=source[j].IssueNumber;
+						}else if(str == "InsertTime"){
+							label1.text = df2.format(source[j].InsertTime);
+							label1.toolTip=df.format(source[j].InsertTime);
+						}else if(str == "BetMoney"){label1.text = source[j].BetMoney;
+						}else if(str == "AwardMoney"){label1.text = source[j].AwardMoney;
+						}else if(str == "BetMultiple"){label1.text = source[j].BetMultiple;
+						}else if(str == "OrderState")
+						{
+							if((Number(source[j].OrderState) & 4) == 4){
+								label1.text = resourceManager.getString('PersonalCenterPage','order_Cancle_1');
+							}else if((Number(source[j].OrderState) & 32768) == 32768){
+								label1.text = resourceManager.getString('PersonalCenterPage','award_Cancle_1');
+							}else if((Number(source[j].OrderState) & 16777216) == 16777216){
+								label1.text = resourceManager.getString('PersonalCenterPage','sent_Award_1');
+							}else if((Number(source[j].OrderState) & 33554432) == 33554432){
+								label1.text = resourceManager.getString('PersonalCenterPage','unAwarding');
+							}else if((Number(source[j].OrderState) & 4096) == 4096){
+								label1.text = resourceManager.getString('PersonalCenterPage','already_Settlement');
+							}else if((Number(source[j].OrderState) & 512) == 512){
+								label1.text = resourceManager.getString('PersonalCenterPage','force_Settlement');
+							}else if((Number(source[j].OrderState) & 64) == 64){
+								label1.text = resourceManager.getString('PersonalCenterPage','put_Ticket_1');
+							}else if((Number(source[j].OrderState) & 1) == 1){
+								label1.text = resourceManager.getString('PersonalCenterPage','purchase_Success');
+							}else{
+								label1.text = "--";
+							}
+						}else if(str == "OrderState2"){
+//							label1.buttonMode = false;
+//							label1.setStyle("lineThrough",true);
+							linkbutton.setStyle("color","#ffffff");
+							linkbutton.enabled=false;
+							if((Number(source[j].OrderState) & 32768) == 32768){
+								linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+							}else if((Number(source[j].OrderState) & 16777216) == 16777216){
+								linkbutton.label= resourceManager.getString('PersonalCenterPage','order_Cancle');
+							}else if((Number(source[j].OrderState) & 33554432) == 33554432){
+								linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+							}else if((Number(source[j].OrderState) & 4096) == 4096){
+								linkbutton.label= resourceManager.getString('PersonalCenterPage','order_Cancle');
+							}else if((Number(source[j].OrderState) & 512) == 512){
+								linkbutton.label= resourceManager.getString('PersonalCenterPage','order_Cancle');
+							}else if((Number(source[j].OrderState) & 64) == 64){
+								linkbutton.label = resourceManager.getString('PersonalCenterPage','order_Cancle');
+							}else if((Number(source[j].OrderState) & 4) == 4){
+								linkbutton.label= resourceManager.getString('PersonalCenterPage','order_Cancle');
+							}else{
+								linkbutton.label= resourceManager.getString('PersonalCenterPage','order_Cancle');
+//								linkbutton.label("color","#FF0000");
+//								label1.setStyle("lineThrough",false);
+//								label1.buttonMode = true;
+//								label1.useHandCursor=true;
+								linkbutton.setStyle("color","#FF0000");
+								linkbutton.enabled=true;
+								linkbutton.name = source[j].OrderID + "#" + source[j].BetTb;
+								linkbutton.addEventListener(MouseEvent.CLICK,operateClickHandler);
+							}
+						}
+//						if(n==0){
+//							label1.styleName="personalCenterDetailLabelStyle_3";	
+//						}else{
+							label1.styleName="personalCenterDetailLabelStyle_1";								
+//						}
+						promptRow.addChild(promptItem);
+					}
+				}
+				vg.addElementAt(promptGrid,1);
+			} 
+			
+			private var parameter:String="";
+			/**
+			 * 请求撤单
+			 */
+			public function operateClickHandler(event:MouseEvent):void
+			{
+				trace("撤单...");
+				var btn:LinkButton=event.currentTarget as LinkButton;
+				parameter=btn.name;
+				alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd'),
+					resourceManager.getString('PersonalCenterPrompt','alert_title'),2,true);
+				alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,deleteCheDanHandler);
+				
+			}
+			private function deleteCheDanHandler(e:SystemEvent):void{
+				cancelOrder(parameter);
+			}
+			private function cancelOrder(str:String):void{
+				var parameters:Array=str.split("#");
+				var obj:Object=new Object();
+				obj.OrderID=parameters[0];
+				obj.Code=parameters[1];
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.cancelOrder(obj,cancelOrderHandler);
+			}
+			/**
+			 *撤单回调函数 
+			 **/
+			private function cancelOrderHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var object:Object=JSON.parse(e.result.toString());
+				if(object.SystemState== 64){
+					if(object.CarryStateResult==false){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd_error'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}else{
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd_suc'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						
+						//更新余额
+						Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+						
+						//如果撤单成功，刷新表格
+						var grid:Grid=vg.getChildAt(1) as Grid;
+						var p:Array=parameter.split("#");
+						for(var i:int=0;i<grid.numChildren;i++){
+							var row:GridRow=grid.getChildAt(i) as GridRow;
+							var item:GridItem=row.getChildAt(row.numChildren-1) as GridItem;
+							var item1:GridItem=row.getChildAt(row.numChildren-3) as GridItem;
+							var label:LinkButton=item.getChildAt(0) as LinkButton;
+							var label1:Label=item1.getChildAt(0) as Label;
+							var orderID:Array=label.name.split("#");
+							if(p[0]==orderID[0]){
+								label1.text=resourceManager.getString('PersonalCenterPage','order_Cancle_1');
+								label.enabled=false;
+								label.setStyle("color","#ffffff");
+							}
+						}
+					}
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_cd_errorIO'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+				}
+			}
+			public function label1MouseClickHandler(event:MouseEvent):void
+			{
+				var label:Label = event.currentTarget as Label;
+				var array:Array = label.name.split("#");
+				var orderDetails:PopUpOrderDetails2 = new PopUpOrderDetails2();
+				orderDetails.x=(FlexGlobals.topLevelApplication.width-orderDetails.width)/2;
+				orderDetails.y=(FlexGlobals.topLevelApplication.height-orderDetails.height)/2;
+				orderDetails.setDataArray(array);
+				orderDetails.addEventListener("closeOrderDetailsEvent",closeOrderDetailsHandler);
+				PopUpManager.addPopUp(orderDetails,this,true);
+				orderDetails=null;
+			}
+			
+			
+			
+			
+			/*************************************点击单条数据编号弹出数据详情*******************************************/
+			/**
+			 * 鼠标点击订单号处理函数
+			 */
+			public function label1MouseClickHandler2(event:MouseEvent):void
+			{
+				var label:Label = event.currentTarget as Label;
+				var object:Object = new Object();
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var array:Array = new Array();
+				array = label.name.split("#");
+				orderId = array[0].toString();
+				lotteryId = array[1].toString();
+				lotteryQH=array[2].toString();
+				object.LotteryCode = lotteryId;
+				object.ChaseOrderID = orderId;
+				object.InsertTime=array[3].toString();
+				if(array[4].toString()=="true"){
+					object.IsHistory = true;
+				}else{
+					object.IsHistory = false;
+				}
+				
+				//object.IsHistory  = Boolean(array[4]);
+				service.getBetOrderDetil(object,resultHandler);
+			}
+			
+			private function resultHandler(e:ResultEvent):void
+			{
+				var detail:Object = JSON.parse(e.result.toString());
+				if(detail.hasOwnProperty("SystemState")){
+					if(detail.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(detail.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+					}
+				}
+				
+				detail.child=false;
+				detail.lotteryQH=lotteryQH;
+//				trace(e.result.toString());
+				
+				var orderDetails:PopUpOrderDetails = new PopUpOrderDetails();
+				orderDetails.x=(FlexGlobals.topLevelApplication.width-orderDetails.width)/2;
+				orderDetails.y=(FlexGlobals.topLevelApplication.height-orderDetails.height)/2;
+				orderDetails.setData(detail);
+				orderDetails.addEventListener("closeOrderDetailsEvent",closeOrderDetailsHandler);
+				PopUpManager.addPopUp(orderDetails,this,true);
+				orderDetails=null;
+			}
+			
+			/********************************************************************************/
+			
+			
+			
+			private function closeOrderDetailsHandler(e:DynamicEvent):void{
+				var detail:PopUpOrderDetails2=e.parentCurrent as PopUpOrderDetails2;
+				if(e.hasOwnProperty("parameters")){
+					cancelOrder(e.parameters.toString());
+					return;
+				}
+				detail.removeEventListener("closeOrderDetailsEvent",closeOrderDetailsHandler);
+				PopUpManager.removePopUp(detail);
+			}
+			
+			protected function changePage_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=int(event.body);
+				getBetDataList();
+			}
+			/**
+			 * 校验查询条件 
+			 */
+			private function checkPropertys():Boolean{
+				if(df_start.text!="" && df_end.text==""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(df_start.text=="" && df_end.text!=""){
+					df_start.text="";
+					df_end.text="";
+					df_start.disabledRanges=[];
+					df_end.disabledRanges=[];
+					df_start.selectedDate=null;
+					df_end.selectedDate=null;
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				var start:String=df.format(df_start.text);
+				start=start.replace(myPattern1,"");
+				var end:String=df.format(df_end.text);
+				end=end.replace(myPattern1,"");
+				if(start>end){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_best_records_check2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				return true;
+			}
+			/**
+			 * 过滤条件 
+			 */
+			private function filterSelectCondition():Object
+			{
+				var object:Object = new Object();
+				object.CurrentPageIndex = currentPage-1;
+				object.CurrentPageSize = currentPageSize;
+				object.SourceCode = 1;
+				object.IsHistory = this.isHistory;
+				if(lotteryType.selectedItem && lotteryType.selectedItem.LotteryCode!="all"){
+					object.LotteryCode = lotteryType.selectedItem.LotteryCode;
+				}
+				if(df_start.text && df_end.text){
+					object.insertTimeMin = df_start.text + " 00:00:00";
+					object.insertTimeMax = df_end.text + " 23:59:59";
+				}
+				return object;
+			}
+			/**
+			 * 点击确定查询数据
+			 */
+			protected function submit(event:MouseEvent):void
+			{
+				if(!checkPropertys())
+					return;
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=1;
+				getBetDataList();
+			}
+			
+			protected function df_start_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(df_start.text==""){
+					return;
+				}
+//				var str:Array=df_start.text.split("-");
+//				df_end.disabledRanges=[{rangeEnd:new Date(int(str[0]),int(str[1])-1,int(str[2])-1)}];
+				var str:String=lotteryType.selectedItem.LotteryCode;
+				var d:Date=df_start.selectedDate;
+				var s:Date=new Date();
+				if(cbtypes.selectedIndex==0){
+					df_end.selectableRange={rangeStart:d,rangeEnd:s};		
+				}else{
+					if(CurrentBusinessInfo.fastLotteries.indexOf(str)!=-1){
+						df_end.selectableRange={rangeStart:d,rangeEnd:new Date(s.fullYear,s.month,s.date-4)};
+					}else{
+						df_end.selectableRange={rangeStart:d,rangeEnd:new Date(s.fullYear,s.month,s.date-4)};
+						//df_end.selectableRange={rangeStart:d,rangeEnd:new Date(s.fullYear,s.month,s.date-8)};
+					}
+				}
+			}
+			protected function df_end_changeHandler(event:CalendarLayoutChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(df_end.text==""){
+					return;
+				}
+//				var str:Array=df_end.text.split("-");
+//				df_start.disabledRanges=[{rangeStart:new Date(int(str[0]),int(str[1])-1,int(str[2])+1)}];
+				var str:String=lotteryType.selectedItem.LotteryCode;
+				var d:Date=df_end.selectedDate;
+				var s:Date=new Date();
+				if(cbtypes.selectedIndex==0){
+					if(CurrentBusinessInfo.fastLotteries.indexOf(str)!=-1){
+						df_start.selectableRange={rangeStart:new Date(s.fullYear,s.month,s.date-3),rangeEnd:d};
+					}else{
+						df_start.selectableRange={rangeStart:new Date(s.fullYear,s.month,s.date-3),rangeEnd:d};
+						//df_start.selectableRange={rangeStart:new Date(s.fullYear,s.month,s.date-7),rangeEnd:d};
+					}
+				}else{
+					df_start.selectableRange={rangeStart:new Date(s.fullYear,s.month,s.date-33),rangeEnd:d};
+				}
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function cbtypes_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				var str:String=lotteryType.selectedItem.LotteryCode;
+				var d:Date=new Date();
+				var selectableObject:Object=new Object();
+				var codes:Array=CurrentBusinessInfo.fastLotteries.split(",");
+				var pflag:Boolean=false;
+				for(var i:int=0;i<codes.length;i++){
+					if(codes[i]==str){
+						pflag=true;
+						break;
+					}
+				}
+				if(cbtypes.selectedIndex==0){
+					this.isHistory = false;
+					// 3 7
+					if(pflag){
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-3);
+						selectableObject.rangeEnd=d;
+						df_start.selectedDate=d;
+						df_start.text=df1.format(df_start.selectedDate);
+						df_start.selectableRange=selectableObject;
+						
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date);
+						df_end.selectedDate=d;
+						df_end.text=df1.format(df_end.selectedDate);
+						df_end.selectableRange=selectableObject;
+					}else{
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-3);
+						selectableObject.rangeEnd=d;
+						df_start.selectedDate=d;
+						df_start.text=df1.format(df_start.selectedDate);
+						df_start.selectableRange=selectableObject;
+						
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date);
+						df_end.selectedDate=d;
+						df_end.text=df1.format(df_end.selectedDate);
+						df_end.selectableRange=selectableObject;
+						
+						/* selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-7);
+						selectableObject.rangeEnd=d;
+						df_start.selectedDate=d;
+						df_start.text=df1.format(df_start.selectedDate);
+						df_start.selectableRange=selectableObject;
+						
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date);
+						df_end.selectedDate=d;
+						df_end.text=df1.format(df_end.selectedDate);
+						df_end.selectableRange=selectableObject; */
+					}
+				}else{
+					this.isHistory = true;
+					//29 25
+					if(pflag){
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-33);
+						selectableObject.rangeEnd=new Date(d.fullYear,d.month,d.date-4);
+						df_start.selectedDate=new Date(d.fullYear,d.month,d.date-4);
+						df_start.text=df1.format(df_start.selectedDate);
+						df_start.selectableRange=selectableObject;
+						
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-4);
+						df_end.selectedDate=new Date(d.fullYear,d.month,d.date-4);
+						df_end.text=df1.format(df_end.selectedDate);
+						df_end.selectableRange=selectableObject;
+					}else{
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-33);
+						selectableObject.rangeEnd=new Date(d.fullYear,d.month,d.date-4);
+						df_start.selectedDate=new Date(d.fullYear,d.month,d.date-4);
+						df_start.text=df1.format(df_start.selectedDate);
+						df_start.selectableRange=selectableObject;
+						
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-4);
+						df_end.selectedDate=new Date(d.fullYear,d.month,d.date-4);
+						df_end.text=df1.format(df_end.selectedDate);
+						df_end.selectableRange=selectableObject;
+						
+						
+						/* selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-32);
+						selectableObject.rangeEnd=new Date(d.fullYear,d.month,d.date-8);
+						df_start.selectedDate=new Date(d.fullYear,d.month,d.date-8);
+						df_start.text=df1.format(df_start.selectedDate);
+						df_start.selectableRange=selectableObject;
+						
+						selectableObject.rangeStart=new Date(d.fullYear,d.month,d.date-8);
+						df_end.selectedDate=new Date(d.fullYear,d.month,d.date-8);
+						df_end.text=df1.format(df_end.selectedDate);
+						df_end.selectableRange=selectableObject; */
+					}
+				}
+			}
+			
+			protected function lotteryType_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				cbtypes_changeHandler(null);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:HGroup  id="h1" top="10" verticalAlign="middle" width="100%" gap="0">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','lottery_Type')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:ComboBox width="120" initialize="lotteryType.textInput.editable = false" id="lotteryType" change="lotteryType_changeHandler(event)" labelField="LotteryName"  styleName="personalCenterDetailComboBoxStyle"/>
+		<s:Spacer width="20" />
+		<mx:Label text="选择：" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:ComboBox width="100" initialize="cbtypes.textInput.editable = false" 
+					id="cbtypes" styleName="personalCenterDetailComboBoxStyle" dataProvider="{types}" labelField="label" change="cbtypes_changeHandler(event)"/>
+		<s:Spacer width="20" />
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','trad_Time2')}：" styleName="personalCenterDetailLabelStyle_1"/>
+		<single:MyDateField id="df_start" formatString="YYYY-MM-DD" change="df_start_changeHandler(event)"   buttonMode="true" styleName="personalCenterDateFieldStyle"/>
+		<mx:Label text="至" styleName="personalCenterDetailLabelStyle_1"/>
+		<single:MyDateField id="df_end" formatString="YYYY-MM-DD" change="df_end_changeHandler(event)"   buttonMode="true" styleName="personalCenterDateFieldStyle"/>
+		<s:Spacer width="20" />
+		<s:Button label="{resourceManager.getString('PersonalCenterPage','checking')}" click="submit(event)" 
+				  styleName="personalLookButtonStyle" buttonMode="true"  verticalCenter="0"/>
+	</s:HGroup>
+	
+	<s:Rect id="fill1" top="{h1.height+21}" width="895" height="34" >
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0x6a6969" alpha="1"/>
+				<s:GradientEntry color="0x595858" alpha="1"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Group top="{h1.height+20}" >
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="#ffffff" alpha="0"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		
+		<!--详细内容-->
+		<s:VGroup gap="-1" height="100%" id="vg">
+			<s:Group height="70"   width="100%" id="g_page" visible="false" includeInLayout="false">
+				<s:Rect x="0" id="border" width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient >
+							<s:GradientEntry color="0xcfcece" alpha="1"/>
+						</s:LinearGradient>
+					</s:fill>
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<s:VGroup left="10" right="10" height="100%" verticalAlign="middle">
+					<s:HGroup horizontalAlign="left" verticalAlign="middle" width="100%" height="30%">
+						<mx:Label text="{resourceManager.getString('PersonalCenterPage','bets_Total_Money')}:" styleName="personalCenterDetailLabelStyle_1"/>
+						<mx:Label text="{betsSumMoney}" styleName="personalCenterDetailLabelStyle_3"/>
+						<mx:Label text="{CurrentUserInfo.moneyType}" styleName="personalCenterDetailLabelStyle_1"/>
+					</s:HGroup>
+					<s:HGroup horizontalAlign="right" verticalAlign="middle" height="30%" width="100%">
+						<common:PopUpChangePageComponent id="changePage" width="100%" height="100%"  ChangePageIndex="changePage_ChangePageIndexHandler(event)"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:Group>
+	
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading"/>
+</s:Group>

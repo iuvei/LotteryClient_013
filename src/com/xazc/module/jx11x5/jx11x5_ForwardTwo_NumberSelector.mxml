@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:syxw="com.xazc.module.syxw.*" width="100%" height="100%"
+		 implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:gd11x5="com.xazc.module.gd11x5.*" xmlns:jx11x5="com.xazc.module.jx11x5.*">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			//标准选号派发事件变量
+			public static const RANDOM_STAND_NUMBERS:String = "qian2__stand_numbers";
+			//胆码选号派发事件变量
+			public static const RANDOM_DANMA_NUMBERS:String = "qian2__danma_numbers";
+			//拖码选号派发事件变量
+			public static const RANDOM_TUOMA_NUMBERS:String = "qian2__twoma_numbers";
+			//派发注数变量
+			public static const COUNT_ZERO:String = "qian2_count_zero";
+			//game_id
+			public var game_id:String = "09";
+			//胆拖编号
+			public var sntuo:int = 0;
+			//是否为胆拖显示变量
+			[Bindable]
+			public var playTypes:int = 1;
+			//是否显示内容变量
+			[Bindable]
+			public var contentTypes:int = 1;
+			//彩种ID
+			[Bindable]
+			public var lotteryID:String = "4";
+			//获取标准选号
+			public var getStandNumbersArray:Array = new Array();
+			//获取胆码选号
+			public var getDanMaNumbersArray:Array = new Array();
+			//获取拖码选号
+			public var getTuoMaNumbersArray:Array = new Array();
+			//获取胆码选号
+			public var getFristNumbersArray:Array = new Array();
+			//获取拖码选号
+			public var getSecondNumbersArray:Array = new Array();
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				playTypes = 1;
+				contentTypes = 1;
+				this.gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_23');
+				gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_23');
+				clean();
+			}
+			/**
+			 * 清除选号
+			 */
+			public function clean():void
+			{
+				straight_Selected.init();
+				gruop_Selected.init();
+				danTuo_Selected.init();
+				stick_Selected.init();
+				getStandNumbersArray = new Array();
+				getDanMaNumbersArray = new Array();
+				getTuoMaNumbersArray = new Array();
+				getFristNumbersArray = new Array();
+				getSecondNumbersArray = new Array();
+			}
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				straight_Selected.addEventListener(jx11x5_NumberSelector_ForwardTwoStraightSelector.GET_FRIST_NUMBERS,getSelectNumbersHandler);
+				straight_Selected.addEventListener(jx11x5_NumberSelector_ForwardTwoStraightSelector.GET_SECOND_NUMBERS,getSelectNumbersHandler);
+				gruop_Selected.addEventListener(jx11x5_NumberSelector_Biaozhun.NUMBERS_CLICK,getSelectNumbersHandler);
+				danTuo_Selected.addEventListener(jx11x5_NumberSelector_DanTuoSet.GET_DANMA_NUMBERS,getSelectNumbersHandler);
+				danTuo_Selected.addEventListener(jx11x5_NumberSelector_DanTuoSet.GET_TUOMA_NUMBERS,getSelectNumbersHandler);
+				stick_Selected.addEventListener(jx11x5_Stick_NumberSelector.GET_STICK_NUMBERS,getSelectNumbersHandler);
+			}
+			/**
+			 * 监听获取选号 
+			 */
+			public function getSelectNumbersHandler(event:CustomEvent):void
+			{
+				switch(event.type)
+				{
+					case jx11x5_NumberSelector_Biaozhun.NUMBERS_CLICK:
+						getStandNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(RANDOM_STAND_NUMBERS,getStandNumbersArray));
+						break;
+					case jx11x5_NumberSelector_DanTuoSet.GET_DANMA_NUMBERS:
+						getDanMaNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(RANDOM_DANMA_NUMBERS,getDanMaNumbersArray));
+						break;
+					case jx11x5_NumberSelector_DanTuoSet.GET_TUOMA_NUMBERS:
+						getTuoMaNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(RANDOM_TUOMA_NUMBERS,getTuoMaNumbersArray));
+						break;
+					case jx11x5_NumberSelector_ForwardTwoStraightSelector.GET_FRIST_NUMBERS:
+						getFristNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(RANDOM_DANMA_NUMBERS,getFristNumbersArray));
+						break;
+					case jx11x5_NumberSelector_ForwardTwoStraightSelector.GET_SECOND_NUMBERS:
+						getSecondNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(RANDOM_TUOMA_NUMBERS,getSecondNumbersArray));
+						break;
+					 case jx11x5_Stick_NumberSelector.GET_STICK_NUMBERS:
+						dispatchEvent(new CustomEvent(CustomEvent.STICK_NUMBERS,event.body));
+						break; 
+					default:
+						break;
+				}
+			}
+			/**
+			 * 切换玩法
+			 */
+			public function changePlay(event:MouseEvent):void
+			{
+				init();
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				target.selected = true;
+				switch(event.currentTarget)
+				{
+					case straight_Selected_TogBtn:
+						playTypes = 1;
+						contentTypes = 1;
+						game_id = "09";
+						sntuo = 0;
+						this.gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_23');
+						gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_23');
+						break;
+					case gruop_Selected_TogBtn:
+						playTypes = 2;
+						contentTypes = 2;
+						game_id = "10";
+						sntuo = 0;
+						this.gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_27');
+						gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_27');
+						break;
+					case straightGroup_Selected_TogBtn:
+						playTypes = 3;
+						contentTypes = 2;
+						game_id = "09";
+						sntuo = 2;
+						this.gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_25');
+						gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_25');
+						break;
+					case straightDanTuo_Selected_TogBtn:
+						playTypes = 4;
+						contentTypes = 3;
+						game_id = "09";
+						sntuo = 1;
+						this.gameType.text =  resourceManager.getString('LotteryTips','jx11x5_game_tip_26');
+						gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_26');
+						break;
+					case gruopDanTuo_Selected_TogBtn:
+						playTypes = 5;
+						contentTypes = 3;
+						game_id = "10";
+						sntuo = 1;
+						this.gameType.text =  resourceManager.getString('LotteryTips','jx11x5_game_tip_29');
+						gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_29');
+						break;
+					 case straight_Stick_TogBtn:
+						playTypes = 6;
+						contentTypes = 4;
+						game_id = "09";
+						sntuo = 3;
+						this.gameType.text =  resourceManager.getString('LotteryTips','jx11x5_game_tip_24');
+						gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_24');
+						stick_Selected.stickPlayersTips = resourceManager.getString('LotteryTips','forword_2_Straight');
+						break;
+					case gruop_Stick_TogBtn:
+						playTypes = 7;
+						contentTypes = 4;
+						game_id = "10";
+						sntuo = 3;
+						this.gameType.text =  resourceManager.getString('LotteryTips','jx11x5_game_tip_28');
+						gameType_emp.toolTip  = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_28');
+						stick_Selected.stickPlayersTips = resourceManager.getString('LotteryTips','forword_2_Group');
+						break; 
+					default:
+						break;
+				}
+				dispatchEvent(new CustomEvent(COUNT_ZERO));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,lotteryID + game_id));
+			}
+			/**
+			 * 回收资源
+			 */
+			public function recycle():void
+			{
+				straight_Selected.removeEventListener(jx11x5_NumberSelector_ForwardTwoStraightSelector.GET_FRIST_NUMBERS,getSelectNumbersHandler);
+				straight_Selected.removeEventListener(jx11x5_NumberSelector_ForwardTwoStraightSelector.GET_SECOND_NUMBERS,getSelectNumbersHandler);
+				gruop_Selected.removeEventListener(jx11x5_NumberSelector_Biaozhun.NUMBERS_CLICK,getSelectNumbersHandler);
+				danTuo_Selected.removeEventListener(jx11x5_NumberSelector_DanTuoSet.GET_DANMA_NUMBERS,getSelectNumbersHandler);
+				danTuo_Selected.removeEventListener(jx11x5_NumberSelector_DanTuoSet.GET_TUOMA_NUMBERS,getSelectNumbersHandler);
+				stick_Selected.removeEventListener(jx11x5_Stick_NumberSelector.GET_STICK_NUMBERS,getSelectNumbersHandler);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="24" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','straight_Selected_2')}" styleName="labelStyles1"/>
+			<s:ToggleButton id="straight_Selected_TogBtn"  label="{resourceManager.getString('LotteryTips','stander_Selected')}" 
+							selected="{playTypes == 1}" styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="straight_Stick_TogBtn" label="{resourceManager.getString('LotteryTips','stick_Selected')}" 
+							selected="{playTypes == 6}" styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="straightGroup_Selected_TogBtn" label="{resourceManager.getString('LotteryTips','straight_Selected_Group')}" 
+							selected="{playTypes == 3}" styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="straightDanTuo_Selected_TogBtn" label="{resourceManager.getString('LotteryTips','danTuo_Selected')}" 
+							selected="{playTypes == 4}" styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+		</s:HGroup>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','group_Selected')}" styleName="labelStyles1"/>
+			<s:ToggleButton id="gruop_Selected_TogBtn" label="{resourceManager.getString('LotteryTips','stander_Selected')}" 
+							selected="{playTypes == 2}" styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="gruop_Stick_TogBtn" label="{resourceManager.getString('LotteryTips','stick_Selected')}" 
+							selected="{playTypes == 7}" styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+			<s:ToggleButton id="gruopDanTuo_Selected_TogBtn" label="{resourceManager.getString('LotteryTips','danTuo_Selected')}" 
+							selected="{playTypes == 5}" styleName="standardButtonSkinStyle" click="changePlay(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','jx11x5_game_tip_23')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_23')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<jx11x5:jx11x5_NumberSelector_ForwardTwoStraightSelector id="straight_Selected" width="100%"  height="280" paddingLeft="15" verticalAlign="middle" gap="24"
+														   visible="{contentTypes == 1 ? true : false}" includeInLayout="{contentTypes == 1 ? true : false}"/>
+	<s:HGroup width="100%" height="280" paddingLeft="15" verticalAlign="middle" visible="{contentTypes == 2 ? true : false}" includeInLayout="{contentTypes == 2 ? true : false}">
+		<jx11x5:jx11x5_NumberSelector_Biaozhun id="gruop_Selected" num="2"/>
+	</s:HGroup>
+	<jx11x5:jx11x5_NumberSelector_DanTuoSet id="danTuo_Selected" height="280" paddingLeft="15" verticalAlign="middle" gap="24"
+										  num="1" tips="{resourceManager.getString('LotteryTips','selecte_1_DanMa')}" visible="{contentTypes == 3 ? true : false}" includeInLayout="{contentTypes == 3 ? true : false}"/>
+	<s:HGroup width="100%" height="280" verticalAlign="middle" visible="{contentTypes == 4 ? true : false}" includeInLayout="{contentTypes == 4 ? true : false}">
+		<jx11x5:jx11x5_Stick_NumberSelector id="stick_Selected" width="100%" height="250" paddingLeft="15" verticalAlign="middle" gap="58"
+										  checkNums="5"  numbersNums="2" stickPlayersTips = "{resourceManager.getString('LotteryTips','forword_2_Straight')}"/>
+	</s:HGroup>
+</s:Group>

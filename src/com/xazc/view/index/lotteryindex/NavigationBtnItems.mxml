@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="creationCompleteHandler(event)"
+		 width="92" height="92" top="-2"
+		 buttonMode="true"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var itemString:String = "";
+			
+			public var temp:Number = 1;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				this.addEventListener(MouseEvent.MOUSE_OVER,mouseOverHandler);
+				this.addEventListener(MouseEvent.MOUSE_OUT,mouseOutHandler);
+				this.addEventListener(MouseEvent.CLICK,mouseClickHandler);
+				if("home"==itemString){
+					isSelected = true;
+					lottery.visible = false;
+					lottery_over.visible = true;
+				}
+			}
+			
+			private function mouseOverHandler(e:MouseEvent):void
+			{
+				if(lottery_over.visible){return;}
+				trace("-------in---------");
+				lottery.visible = false;
+				lottery_over.visible = true;
+			}
+			
+			private function mouseOutHandler(e:MouseEvent):void
+			{
+				if(lottery.visible){return;}
+				trace("-------out---------");
+				if(!isSelected){
+					lottery.visible = true;
+					lottery_over.visible = false;
+				}
+				
+			}
+			private var isSelected:Boolean = false;
+			private function mouseClickHandler(e:MouseEvent):void
+			{
+				if(2==temp){return;}
+				isSelected = true;
+				lottery.visible = false;
+				lottery_over.visible = true;
+			}
+			
+			public function setThisItemState(state:Boolean):void
+			{
+				if(state){
+					mouseClickHandler(null);
+				}else{
+					isSelected = false;
+					
+					lottery.visible = true;
+					lottery_over.visible = false;
+				}
+			
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+		<s:Image source="{'css/skin1/assets/lotteryindex/'+itemString+'.png'}" id='lottery'/>
+	</s:HGroup>
+	<s:Image source="{'css/skin1/assets/lotteryindex/'+itemString+'_active.png'}" id="lottery_over" visible="false"/>
+</s:Group>

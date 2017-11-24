@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  
+		 width="100%" height="100%" gap="0"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  creationComplete="init()"
+		  xmlns:common="com.xazc.pop.center.common.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.rpc.events.ResultEvent;
+			
+			private var p_1:PopUpPersonalBasicInfo;//基本资料
+			private var p_2:PopUpPersonalBankManageView;//银行信息
+			private var p_3:PopUpPersonalLoginPassword;//登录密码
+			private var p_4:PopUpPersonalFundsPassword;//资金密码
+			private var p_5:PopupPersonalSettingRebateNew;//返点设置
+			private var p_6:PopupPersonalSecurityPrompting;//密保设置
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			/**
+			 *  点击按钮的时候
+			 * 
+			 */
+			public function menu_clickHandler(index:int):void
+			{
+				if(index==2){
+					if(PersonCenterInfo.userInfoDetail.BankCode=="" 
+						||PersonCenterInfo.userInfoDetail.CardNumber==""
+						|| PersonCenterInfo.userInfoDetail.UserRealName==""){
+						index=2;
+					}
+//					else{
+//						if(!PersonCenterInfo.IsSecurityState){
+//							alert.show("请先设置密保！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//							index=6;
+//						}
+						else if(!PersonCenterInfo.IsPayPsw){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_fundspsw'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+							index=4;
+						}
+//					}
+				}else if(index==4){
+					if(PersonCenterInfo.userInfoDetail.BankCode=="" 
+						||PersonCenterInfo.userInfoDetail.CardNumber==""
+						|| PersonCenterInfo.userInfoDetail.UserRealName==""){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bankpsw'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						index=2;
+					}
+//					else{
+//						if(!PersonCenterInfo.IsSecurityState){
+//							alert.show("请先设置密保！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//							index=6;
+//						}
+						else if(!PersonCenterInfo.IsPayPsw){
+							index=4;
+						}
+//					}
+				}
+//				else if(index==6){
+//					if(PersonCenterInfo.userInfoDetail.BankCode=="" 
+//						||PersonCenterInfo.userInfoDetail.CardNumber==""
+//						|| PersonCenterInfo.userInfoDetail.UserRealName==""){
+//						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bankpsw'),
+//							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//						index=2;
+//					}else{
+//						if(!PersonCenterInfo.IsSecurityState){
+//							index=6;
+//						}
+//						else if(!PersonCenterInfo.IsPayPsw){
+//							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_fundspsw'),
+//								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//							index=4;
+//						}
+//					}
+//				}
+				else if(index==1){
+					if(PersonCenterInfo.userInfoDetail.BankCode=="" 
+						||PersonCenterInfo.userInfoDetail.CardNumber==""
+						|| PersonCenterInfo.userInfoDetail.UserRealName==""){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bankpsw'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						index=2;
+					}
+//					else{
+//						if(!PersonCenterInfo.IsSecurityState){
+//							alert.show("请先设置密保！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//							index=6;
+//						}
+						else if(!PersonCenterInfo.IsPayPsw){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_fundspsw'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+							index=4;
+						}
+//					}
+				}
+				else{
+					if(PersonCenterInfo.userInfoDetail.BankCode=="" 
+						||PersonCenterInfo.userInfoDetail.CardNumber==""
+						|| PersonCenterInfo.userInfoDetail.UserRealName==""){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bankpsw'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						index=2;
+					}
+//					else{
+//						if(!PersonCenterInfo.IsSecurityState){
+//							alert.show("请先设置密保！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//							index=6;
+//						}
+						else  if(!PersonCenterInfo.IsPayPsw){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_fundspsw'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+							index=4;
+						}
+//					}
+				}
+				for(var i:int=1;i<7;i++){
+					if(index==i){
+						this["menu_"+i].selected=true;
+						detailSelected(i);
+					}else{
+						this["menu_"+i].selected=false;
+					}
+				}
+			}
+			
+			public function menu_click(index:int):void
+			{
+				
+			}
+			
+			/**
+			 *显示具体详细页面 
+			 **/
+			private function detailSelected(index:int):void{
+				group.removeAllElements();
+				if(!this["p_"+index]){
+					if(index==1){
+						this["p_"+index]=new PopUpPersonalBasicInfo();
+					}
+					if(index==2){
+						this["p_"+index]=new PopUpPersonalBankManageView();
+					}
+					if(index==3){
+						this["p_"+index]=new PopUpPersonalLoginPassword();
+					}
+					if(index==4){
+						this["p_"+index]=new PopUpPersonalFundsPassword();
+					}
+					if(index==5){
+						this["p_"+index]=new PopupPersonalSettingRebateNew();
+					}
+					if(index==6){
+						this["p_"+index]=new PopupPersonalSecurityPrompting();
+					}
+					this["p_"+index].horizontalCenter=0;
+					group.addElement(this["p_"+index]);
+					this["p_"+index]=null;//释放资源
+				}
+			}
+			
+			/**
+			 *初始化监听 
+			 **/
+			private function init():void{
+				addEventListener("requestBankPswEvent",requestBankPswHandler);
+				addEventListener("requestSecurityEvent",requestSecurityHandler);
+				addEventListener("requestPhoneNumEvent",requestPhoneNumHandler);
+			}
+			private function requestBankPswHandler(e:Event):void{
+				menu_clickHandler(4);
+			}
+			private function requestPhoneNumHandler(e:Event):void{
+				menu_clickHandler(1);
+			}
+			private function requestSecurityHandler(e:Event):void{
+				menu_clickHandler(6);
+			}
+			
+//			protected function getSecurity_state():void
+//			{
+//				//（查询密保接口）
+//				var serverTool:ServerTool = new ServerToolImpl();
+//				var obj:Object = new Object();
+//				obj.UserID = CurrentUserInfo.myUserID;
+//				obj.FlagType = "1";     //类型（1：密保 2：提示语）
+//				serverTool.getSecurityPromptingState(obj,getSecurityPromptingStateHandler);
+//			}
+//			private function getSecurityPromptingStateHandler(e:ResultEvent):void{
+//				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+//				if(arr.SystemState==64){
+//					
+//					if(arr.Result == 1){
+//						//已设置
+//						PersonCenterInfo.IsSecurityState = true;
+//					}else if(arr.Result == 0){
+//						//未设置
+//						PersonCenterInfo.IsSecurityState = false;
+//					}
+//				}else{
+//					alert.show("获取密保状态失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+//				}
+//			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 菜单导航 -->
+	<s:Group width="100%">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient >
+					<s:GradientEntry color="0xcfcece" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:HGroup width="100%" height="55" gap="10" left="23" verticalAlign="middle">
+			<common:PopUpTabButtonItem id="menu_1" labelTitle="{resourceManager.getString('PersonalCenterPage','personalBasicInfo')}" selected="true" click="menu_clickHandler(1)"/>
+			<common:PopUpTabButtonItem id="menu_2" labelTitle="{resourceManager.getString('PersonalCenterPage','personalBankInfo')}" click="menu_clickHandler(2)"/>
+			<common:PopUpTabButtonItem id="menu_3" labelTitle="{resourceManager.getString('PersonalCenterPage','personalLoginPassword')}" click="menu_clickHandler(3)"/>
+			<common:PopUpTabButtonItem id="menu_4" labelTitle="{resourceManager.getString('PersonalCenterPage','personalFundsPassword')}" click="menu_clickHandler(4)"/>
+			<common:PopUpTabButtonItem id="menu_6" labelTitle="密保设置" click="menu_clickHandler(6)" />
+			<common:PopUpTabButtonItem id="menu_5" labelTitle="{resourceManager.getString('PersonalCenterPage','personalSettingRebate')}" click="menu_clickHandler(5)"/>
+		</s:HGroup>
+	</s:Group>
+	<!-- 内容 -->
+	<s:Group id="group" width="100%"/>
+</s:VGroup>

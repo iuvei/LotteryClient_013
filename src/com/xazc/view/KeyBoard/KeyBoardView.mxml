@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="402" height="96" 
+				   cornerRadius="5" borderVisible="false" creationComplete="bordercontainer1_creationCompleteHandler(event)"
+				   backgroundColor="0x000000" backgroundAlpha="0.5">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.LoginTextInput;
+			import com.xazc.single.Util;
+			
+			import css.skin1.universal.keyBoardButtonSkin;
+			
+			
+			import mx.controls.TextInput;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.skins.spark.ImageSkin;
+			
+			public var input:TextInput;
+			private var smallRead:Boolean = true;
+			private var smallValue:String = "abcdefghijklmnopqrstuvwxyz";
+			private var bigValue:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+			private var numValue:String = "1234567890";
+			public function initView():void
+			{
+				input.setFocus();
+				
+				smallRead = true;
+				if(SecondRow!=null)
+				{
+					SecondRow.visible = true;
+					SecondRow.includeInLayout = true;
+				}
+				if(ThirdRow!=null)
+				{
+					ThirdRow.visible = true;
+					ThirdRow.includeInLayout = true;
+				}
+				if(SecondRowBig!=null)
+				{
+					SecondRowBig.visible = false;
+					SecondRowBig.includeInLayout = false;
+				}
+				if(ThirdRowBig!=null)
+				{
+					ThirdRowBig.visible = false;
+					ThirdRowBig.includeInLayout = false;
+				}
+				
+				PopUpManager.addPopUp(this, input.parent, false);
+				PopUpManager.centerPopUp(this);
+				this.y = this.y+27;
+				this.x = this.x-40;
+				//				this.addEventListener(MouseEvent.ROLL_OUT,MouseOutHandler);
+				stage.addEventListener(MouseEvent.CLICK,onMouseClick);
+			}
+			
+			protected function MouseOutHandler(event:MouseEvent):void
+			{
+				Util.getInstance().firstPop = false;
+				Util.getInstance().secondPop = false;
+				Util.getInstance().thirdPop = false;
+				Util.getInstance().isPop = false;
+				Util.getInstance().backPop = false;
+				clearAll();
+			}
+			
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var btn:Button;
+				for (var i:int = 0; i < numValue.length; i++) 
+				{
+					btn = new Button;
+					btn.setStyle("skinClass",keyBoardButtonSkin);
+					btn.label = numValue.slice(i,i+1);
+					btn.id = btn.label;
+					btn.width = 24;
+					btn.height = 24;
+					firstRow.addElement(btn);
+				}
+				for (var j:int = 0; j < smallValue.length; j++) 
+				{
+					btn = new Button;
+					btn.setStyle("skinClass",keyBoardButtonSkin);
+					btn.label = smallValue.slice(j,j+1);
+					btn.id = btn.label;
+					btn.width = 24;
+					btn.height = 24;
+					if(j>=smallValue.length/2)
+						ThirdRow.addElement(btn);
+					else
+						SecondRow.addElement(btn);
+				}
+				for (var k:int = 0; k < bigValue.length; k++) 
+				{
+					btn = new Button;
+					btn.setStyle("skinClass",keyBoardButtonSkin);
+					btn.label = bigValue.slice(k,k+1);
+					btn.id = btn.label;
+					btn.width = 24;
+					btn.height = 24;
+					if(k>=bigValue.length/2)
+						ThirdRowBig.addElement(btn);
+					else
+						SecondRowBig.addElement(btn);
+				}
+			}
+			private function hitPopArea(event:MouseEvent):Boolean{
+				var reBoo:Boolean = true;
+				if(event.stageX<this.x || (this.x +this.width)<event.stageX)
+				{
+					reBoo = false;
+				}
+				if(event.stageY<this.y || (this.y +this.height)<event.stageY)
+				{
+					reBoo = false;
+				}
+				return reBoo
+			}
+			protected function onMouseClick(event:MouseEvent):void
+			{
+				if(hitPopArea(event))
+				{
+					trace("在此区域触发鼠标点击事件！");
+					var btn:Button = event.target as Button;
+					if(btn == null)
+						return;
+					switch(btn)
+					{
+						case clearbtn:
+						{
+							input.text = "";
+							break;
+						}
+						case backbtn:
+						{
+							input.text = input.text.substr(0,input.text.length-1);
+							break;
+						}
+						case surebtn:
+						{
+							Util.getInstance().firstPop = false;
+							Util.getInstance().secondPop = false;
+							Util.getInstance().thirdPop = false;
+							Util.getInstance().isPop = false;
+							Util.getInstance().backPop = false;
+							clearAll();
+							break;
+						}
+						case changebtn:
+						{
+							smallRead = !smallRead;
+							if(smallRead)
+							{
+								SecondRow.visible = true;
+								SecondRow.includeInLayout = true;
+								ThirdRow.visible = true;
+								ThirdRow.includeInLayout = true;
+								SecondRowBig.visible = false;
+								SecondRowBig.includeInLayout = false;
+								ThirdRowBig.visible = false;
+								ThirdRowBig.includeInLayout = false;
+							}
+							else
+							{
+								SecondRow.visible = false;
+								SecondRow.includeInLayout = false;
+								ThirdRow.visible = false;
+								ThirdRow.includeInLayout = false;
+								SecondRowBig.visible = true;
+								SecondRowBig.includeInLayout = true;
+								ThirdRowBig.visible = true;
+								ThirdRowBig.includeInLayout = true;
+							}
+							break;
+						}
+							
+						default:
+						{
+							input.text = input.text.concat(btn.id);
+							break;
+						}
+					}
+				}
+				else if(event.target.parent!=null)
+				{
+					switch(event.target.parent.parent.id)
+					{
+						case "groupPersonalOne":
+						case "groupPersonalTwo":
+						case "groupPersonalThree":
+						case "groupProxy":
+						case "groupBank":
+						{
+							break;
+						}
+						case "HGroupPersonalOne":
+						case "HGroupPersonalTwo":
+						case "HGroupPersonalThree":
+						case "HGroupProxy":
+						case "HGroupBank":
+						{
+							break;
+						}
+						default:
+						{
+							clearAll();
+							Util.getInstance().firstPop = false;
+							Util.getInstance().secondPop = false;
+							Util.getInstance().thirdPop = false;
+							Util.getInstance().isPop = false;
+							Util.getInstance().backPop = false;
+							break;
+						}
+					}
+				}
+			}
+			public function clearAll():void{
+				//				this.removeEventListener(MouseEvent.ROLL_OUT,MouseOutHandler);
+				if(stage!=null)
+					stage.removeEventListener(MouseEvent.CLICK,onMouseClick);
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup  width="45" height="100%" gap="2" right="10" top="10">
+		<s:Button id="clearbtn" skinClass="css.skin1.universal.keyBoardButtonSkin" label="清空" width="45" height="24"/>
+		<s:Button id="backbtn" skinClass="css.skin1.universal.keyBoardButtonSkin" label="退格" width="45" height="24"/>
+		<s:Button id="surebtn" skinClass="css.skin1.universal.keyBoardButtonSkin" label="确定" width="45" height="24"/>
+	</s:VGroup>
+	<s:Button id="changebtn" skinClass="css.skin1.universal.keyBoardButtonSkin" label="切换大小写" width="76" height="24" right="56" top="10"/>
+	<s:VGroup left="10" top="10" gap="2">
+		<s:HGroup id="firstRow" gap="2"/>
+		<s:HGroup id="SecondRow" gap="2"/>
+		<s:HGroup id="SecondRowBig" gap="2" visible="false" includeInLayout="false"/>
+		<s:HGroup id="ThirdRow" gap="2"/>
+		<s:HGroup id="ThirdRowBig" gap="2"  visible="false" includeInLayout="false"/>
+	</s:VGroup>
+</s:BorderContainer>

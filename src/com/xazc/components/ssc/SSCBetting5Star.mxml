@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" 
+		  xmlns:ssc="com.xazc.components.ssc.*" gap="0"
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  creationComplete="creationCompleteHandler(event)">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.MathUtil;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			[Bindable]
+			private var playType:int = 3;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			private var game_id:String = "01";
+			
+			public var lotteryID:String = "";
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				selectedPlayContainer = playContainer1;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+			}
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				switch(playType)
+				{
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						var tenThSelectedNum:int = tenThousand.selectedNum.length;
+						var oneThSelectedNum:int = oneThousand.selectedNum.length;
+						var hundredSelectedNum:int = hundred.selectedNum.length;
+						var tenSelectedNum:int = ten.selectedNum.length;
+						var oneSelectedNum:int = one.selectedNum.length;
+						zhushu = tenThSelectedNum * oneThSelectedNum * hundredSelectedNum * tenSelectedNum * oneSelectedNum;
+						bettingInfo.tzcontent = tenThousand.selectedNum + "|" + oneThousand.selectedNum + "|" + hundred.selectedNum + "|" + ten.selectedNum + "|" + one.selectedNum;
+						break;
+					case 5:
+						zhushu = MathUtil.getCCombination(currentContainOne.selectedNum.length,5);
+						bettingInfo.tzcontent = currentContainOne.selectedNum.toString();
+						break;
+					case 6:
+						zhushu = MathUtil.getBetSumByType(currentContainOne.selectedNum,currentContainTwo.selectedNum,3);
+						bettingInfo.tzcontent = currentContainOne.selectedNum + "|" + currentContainTwo.selectedNum;
+						break;
+					case 7:
+						zhushu = MathUtil.getBetSumByType(currentContainTwo.selectedNum,currentContainOne.selectedNum,2);
+						bettingInfo.tzcontent = currentContainOne.selectedNum + "|" + currentContainTwo.selectedNum;
+						break;
+					case 8:
+						zhushu = MathUtil.getBetSumByType(currentContainOne.selectedNum,currentContainTwo.selectedNum,2);
+						bettingInfo.tzcontent = currentContainOne.selectedNum + "|" + currentContainTwo.selectedNum;
+						break;
+					case 9:
+						zhushu = MathUtil.getBetSumByType(currentContainOne.selectedNum,currentContainTwo.selectedNum,1);
+						bettingInfo.tzcontent = currentContainOne.selectedNum + "|" + currentContainTwo.selectedNum;
+						break;
+					case 10:
+						zhushu = MathUtil.getBetSumByType(currentContainOne.selectedNum,currentContainTwo.selectedNum,1);
+						bettingInfo.tzcontent = currentContainOne.selectedNum + "|" + currentContainTwo.selectedNum;
+						break;
+					case 11:
+						zhushu = sumDXDS.selectedNum.length;
+						bettingInfo.tzcontent =sumDXDS.selectedNum.toString();
+						break;
+				}
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			protected function playClickHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				target.selected = true;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				switch (target.id)
+				{
+					case "play_02":
+						sntuo = 0;
+						playType = 1;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_1');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_1');
+						showPlayContainer(playContainer1);
+						break;
+					case "play_v_02":
+						sntuo = 3;
+						playType = 2;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_2');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_2');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Common_Tips');
+						showPlayContainer(playContainer2);
+						break;
+					case "play_01":
+						sntuo = 0;
+						playType = 3;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_3');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_3');
+						showPlayContainer(playContainer1);
+						break;
+					case "play_v_01":
+						sntuo = 3;
+						playType = 4;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_4');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_4');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Straight_Tips');
+						showPlayContainer(playContainer2);
+						break;
+					case "play_41":
+						sntuo = 0;
+						playType = 5;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_1');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_1');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Straight_Tips');
+						currentContainOne.bettingRowName = resourceManager.getString('LotteryTips','number');
+						currentContainTwo.visible = false;
+						currentContainTwo.includeInLayout = false;
+						showPlayContainer(playContainer3);
+						break;
+					case "play_42":
+						sntuo = 0;
+						playType = 6;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_2');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_2');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Straight_Tips');
+						currentContainTwo.visible = true;
+						currentContainTwo.includeInLayout = true;
+						currentContainOne.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_TwoDouble');
+						currentContainTwo.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_SignlDouble');
+						showPlayContainer(playContainer3);
+						break;
+					case "play_43":
+						sntuo = 0;
+						playType = 7;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_3');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_3');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Straight_Tips');
+						currentContainTwo.visible = true;
+						currentContainTwo.includeInLayout = true;
+						currentContainOne.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_TwoDouble');
+						currentContainTwo.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_SignlDouble');
+						showPlayContainer(playContainer3);
+						break;
+					case "play_44":
+						sntuo = 0;
+						playType = 8;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_4');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_4');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Straight_Tips');
+						currentContainTwo.visible = true;
+						currentContainTwo.includeInLayout = true;
+						currentContainOne.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_ThreeDouble');
+						currentContainTwo.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_SignlDouble');
+						showPlayContainer(playContainer3);
+						break;
+					case "play_45":
+						sntuo = 0;
+						playType = 9;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_5');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_5');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Straight_Tips');
+						currentContainTwo.visible = true;
+						currentContainTwo.includeInLayout = true;
+						currentContainOne.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_ThreeDouble');
+						currentContainTwo.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_TwoDouble');
+						showPlayContainer(playContainer3);
+						break;
+					case "play_46":
+						sntuo = 0;
+						playType = 10;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_6');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_6');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Straight_Tips');
+						currentContainTwo.visible = true;
+						currentContainTwo.includeInLayout = true;
+						currentContainOne.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_FourDouble');
+						currentContainTwo.bettingRowName = resourceManager.getString('LotteryTips','buton_Name_5_SignlDouble');
+						showPlayContainer(playContainer3);
+						break;
+					case "play_82":
+						sntuo = 0;
+						playType = 11;
+						gameType.text = resourceManager.getString('LotteryTips','ssc_game_new_tip_82');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_new_tip_emp_82');
+						showPlayContainer(playContainer4);
+						break;
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+			protected function textarea1_mouseOutHandler(event:MouseEvent):void
+			{
+				var arrs:Array=new Array();
+				error=false; numbersArr=new Array(); 
+				if(textarea.text != ""){
+					var str:String= textarea.text.split(/\D/).join("\n");
+					var arr:Array = str.split("\n");
+					for(var ia:int = 0; ia < arr.length; ia++){
+						if(arr[ia] != ""){
+							arrs.push(arr[ia]);
+						}
+					}
+					textarea.text = "";
+					
+					check_digit(arrs,5);
+					
+					if(!error)
+					{
+						for(var z:int=0;z<arrs.length;z++)
+						{
+							numbersArr.push(arrs[z]);
+						}
+						var haomaStickStr:String = numbersArr.join(" ")+" ";
+						/* var haomaStickStr:String = "";
+						for(var i3:int=0;i3<numbersArr.length;i3++){
+						haomaStickStr+=numbersArr[i3].toString().split("").join("|")+" ";					
+						} 
+						*/
+						bettingInfo.tzcontent = haomaStickStr.substring(0,haomaStickStr.length-1);
+						bettingInfo.tzzs = numbersArr.length;
+						bettingInfo.sntuo = sntuo;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+					else
+					{
+						bettingInfo.tzzs = 0;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+				}
+			}
+			
+			/**
+			 * 检查错误（位数检查）
+			 */
+			public function check_digit(arrs:Array,lengths:int):void{
+				var a:String="";
+				for(var i:int=0; i < arrs.length; i++){
+					if(arrs[i]!="")
+					{
+						if(arrs[i].length!=lengths)
+						{
+							a += arrs[i] + "\       格式不正确\n";
+							error = true;
+						}
+						else
+						{
+							a += arrs[i]+"\n";
+							error == true ? error : error=false;
+						}
+					}
+				}
+				textarea.text=a;
+			}
+			
+			private function clearSelectedNumbers():void
+			{
+				tenThousand.clearAllSelectedNumHandler();
+				oneThousand.clearAllSelectedNumHandler();
+				hundred.clearAllSelectedNumHandler();
+				ten.clearAllSelectedNumHandler();
+				one.clearAllSelectedNumHandler();
+				currentContainOne.clearAllSelectedNumHandler();
+				currentContainTwo.clearAllSelectedNumHandler();
+				sumDXDS.clearAllSelectedNumHandler();
+			}
+			
+			private function clearCopyHandler():void
+			{
+				if(textarea)
+					textarea.text = "";
+			}
+			
+			public function clearAll(e:BetsClickEvent = null):void
+			{
+				clearSelectedNumbers();
+				clearCopyHandler();
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="24" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','straight_Selected_2')}" styleName="labelStyles1"/>
+			<s:ToggleButton id="play_01" label="{resourceManager.getString('LotteryTips','straight_Selected_2')}{resourceManager.getString('LotteryTips','straight_Selected')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 3}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_01" label="{resourceManager.getString('LotteryTips','straight_Selected_Stick')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 4}" click="playClickHandler(event)"/>
+		</s:HGroup>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="{resourceManager.getString('LotteryTips','group_Selected')}" styleName="labelStyles1"/>
+			<s:ToggleButton id="play_41" label="{resourceManager.getString('LotteryTips','buton_Name_5_120')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 5}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_42" label="{resourceManager.getString('LotteryTips','buton_Name_5_60')}" styleName="standardButtonSkinStyle" 
+							selected="{playType == 6}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_43" label="{resourceManager.getString('LotteryTips','buton_Name_5_30')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 7}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_44" label="{resourceManager.getString('LotteryTips','buton_Name_5_20')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 8}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_45" label="{resourceManager.getString('LotteryTips','buton_Name_5_10')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 9}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_46" label="{resourceManager.getString('LotteryTips','buton_Name_5_5')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 10}" click="playClickHandler(event)"/>
+		</s:HGroup>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:Label text="其他" styleName="labelStyles1"/>
+			<s:ToggleButton id="play_82" label="总和大小单双" styleName="standardButtonSkinStyle"
+							selected="{playType == 11}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','ssc_game_tip_3')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','ssc_game_tip_emp_3')}"/>
+		</s:HGroup>
+	</s:Group>
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<s:VGroup id="playContainer1" width="100%" height="280" paddingLeft="15" verticalAlign="middle" gap="16">
+		<ssc:SSCNumberSelected id="tenThousand" bettingRowName="{resourceManager.getString('LotteryTips','ten_Thousand')}"/>
+		<ssc:SSCNumberSelected id="oneThousand" bettingRowName="{resourceManager.getString('LotteryTips','thousand')}"/>
+		<ssc:SSCNumberSelected id="hundred" bettingRowName="{resourceManager.getString('LotteryTips','hundred')}"/>
+		<ssc:SSCNumberSelected id="ten" bettingRowName="{resourceManager.getString('LotteryTips','ten')}"/>
+		<ssc:SSCNumberSelected id="one" bettingRowName="{resourceManager.getString('LotteryTips','single')}"/>
+	</s:VGroup>
+	<s:HGroup id="playContainer2" width="100%" height="280" paddingLeft="15" verticalAlign="middle" gap="58" visible="false"  includeInLayout="false">
+		<mx:TextArea  id="textarea" width="620" height="250" color="#000000" 
+					  contentBackgroundColor="0xffffff" borderColor="0xffffff" 
+					  rollOut="textarea1_mouseOutHandler(event)"/>
+		<s:VGroup gap="18" height="250" verticalAlign="top">
+			<s:Label text="{resourceManager.getString('LotteryTips','fomal_Description')}" styleName="stickYellowTextStyle"/>
+			<s:Label id="start5Tip" text="{resourceManager.getString('LotteryTips','lottery_12_5Starts_Stick_Common_Tips')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_1')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_2')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_3')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_4')}" styleName="stickWriteTextStyle"/>
+		</s:VGroup>
+	</s:HGroup>
+	<s:VGroup id="playContainer3" width="100%"  height="280" paddingLeft="15" gap="24" verticalAlign="middle" visible="false" includeInLayout="false">
+		<ssc:SSCNumberSelected id="currentContainOne" selectedNumStyle="numberSelectSkinStyle_large" bettingRowName="{resourceManager.getString('LotteryTips','buton_Name_5_TwoDouble')}"/>
+		<ssc:SSCNumberSelected id="currentContainTwo" selectedNumStyle="numberSelectSkinStyle_large" bettingRowName="{resourceManager.getString('LotteryTips','buton_Name_5_SignlDouble')}"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer4" width="100%" height="310" gap="24" verticalAlign="middle" horizontalAlign="center" visible="false" includeInLayout="false">
+		<ssc:SSCDXDSSelected id="sumDXDS" selectedNumStyle="numberSelectSkinStyle_large" bettingRowName="总和"/>
+	</s:VGroup>
+</s:VGroup>

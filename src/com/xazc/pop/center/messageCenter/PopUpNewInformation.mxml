@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="900" height="455" xmlns:common="com.xazc.pop.center.common.*"
+		 creationComplete="init(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.components.Image;
+			import spark.components.RadioButton;
+			import spark.components.TileGroup;
+			
+			
+			[Embed(source="css/skin1/images/del_ico.png")]
+			[Bindable]
+			private var del_ico:Class;
+			
+			protected function init(event:FlexEvent):void
+			{
+				Util.getInstance().addEventListener(CustomEvent.ADDUSERNAME_MSSAGE,addUserNameMssageHandler);
+			}
+			
+			//联系人弹窗；
+			protected function addPerson_clickHandler(event:MouseEvent):void
+			{
+				var popUpPersonList:PopUpPersonList = new PopUpPersonList();
+				popUpPersonList.x=(FlexGlobals.topLevelApplication.width-popUpPersonList.width)/2;
+				popUpPersonList.y=(FlexGlobals.topLevelApplication.height-popUpPersonList.height)/2;
+				popUpPersonList.init();
+				PopUpManager.addPopUp(popUpPersonList,this,true);
+			}
+			
+			private var arr:ArrayCollection = new ArrayCollection();;
+			public function addUserNameMssageHandler(event:CustomEvent):void
+			{
+				var obj_arr:ArrayCollection = new ArrayCollection();
+				obj_arr.addItem( event.body );
+				 
+				 arr = new ArrayCollection();
+				 arr = obj_arr[0];
+				 
+				 //用户id name
+				 refrushAddUserName(arr);
+			}
+			
+			//用户id name
+			public function refrushAddUserName(obj_arr:ArrayCollection):void
+			{
+				arr = obj_arr;
+				name_group.removeAllElements();
+				
+				if(obj_arr.length < 1)
+				{
+					return;
+				}
+				
+				if(obj_arr[0].repTitle != null){
+					send_title.text = obj_arr[0].repTitle; //带过来的回复主题；
+				}
+				
+				var hgroup:HGroup;
+				for(var i:int = 0; i< obj_arr.length; i++)
+				{
+					hgroup = new HGroup();
+					hgroup.height = 20;
+					hgroup.verticalAlign = "middle";
+					
+					var img:Image = new Image()
+					img.source = del_ico;
+					img.buttonMode = true;
+					img.id = "img_" + obj_arr[i].id;
+					img.addEventListener(MouseEvent.CLICK,delEventHandler);
+					hgroup.addElement(img);
+					var lab:Label = new Label();
+					lab.text = obj_arr[i].name;
+					hgroup.addElement(lab);
+					
+					hgroup.id = obj_arr[i].id;
+					name_group.addElementAt(hgroup,i);
+				}
+			}
+			private function delEventHandler(event:MouseEvent):void
+			{
+				var target_id:String = (event.currentTarget as Image).id;
+				for(var i:int = 0; i< arr.length; i++)
+				{
+					if(target_id.split("_")[1] == arr[i].id)
+					{
+						arr.removeItemAt(i);
+					}
+				}
+				
+				//用户id name
+				refrushAddUserName(arr);
+			}
+			
+			
+			protected function send_btn_clickHandler(event:MouseEvent):void
+			{
+				if(!checkInfo()){
+					return;
+				}
+				var str:String = new String();
+				for(var i:int = 0; i< name_group.numChildren; i++)
+				{str += (name_group.getElementAt(i) as HGroup).id + ",";}
+				str = str.substring(0,str.length-1);
+				var object:Object = new Object();
+				object.SendPserson = CurrentUserInfo.userName;
+				object.Title = send_title.text;
+				object.Content = send_content.text;
+				object.SendRange = 10;
+				object.ReceivePerson = str;
+				var service:ServerToolImpl = new ServerToolImpl();
+				service.sendStationEmail(object,sendStationEmailHandler);
+			}
+			/**
+			 * 返回结果
+			 */
+			protected function sendStationEmailHandler(event:ResultEvent):void
+			{
+				trace(event.result.toString());
+				var object:Object = Util.getInstance().resuleFormatToJSon(event.result.toString(),1);
+				if(object.Result > 0){
+					var alert_1:AlertMsgCenter=new AlertMsgCenter();
+					alert_1.show("发送成功！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					alert_1.okBtnBoolean=true;
+					alert_1.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,comfirmDeleteHandler);
+				}
+				else if(object.Result == 0){
+					alert.show("发送失败！",resourceManager.getString('PersonalCenterPrompt','alert_title'),2);}
+				else if(object.Result == -1){
+					alert.show("用户不存在！",resourceManager.getString('PersonalCenterPrompt','alert_title'),2);}
+				else if(object.Result == -2){
+					alert.show("代理级别不存在",resourceManager.getString('PersonalCenterPrompt','alert_title'),2);}
+				else if(object.Result == -3){
+					alert.show("代理级别返点不存在",resourceManager.getString('PersonalCenterPrompt','alert_title'),2);}
+				else if(object.Result == -4){
+					alert.show("返点不存在",resourceManager.getString('PersonalCenterPrompt','alert_title'),2);}
+			}
+			private function comfirmDeleteHandler(e:SystemEvent):void
+			{
+				name_group.removeAllElements();
+				send_title.text = "";
+				send_content.text = "";
+				Util.getInstance().dispatchEvent(new CustomEvent("gotoOutboxView"));
+			}
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			private function checkInfo():Boolean
+			{
+				if(name_group.numChildren < 1)
+				{
+					alert.show("收件人不能为空，请添加收件人！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(send_title.text == "")
+				{
+					alert.show("主题不能为空，请填写主题！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(send_content.text == "")
+				{
+					alert.show("内容不能为空，请编辑内容！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				return true;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:VGroup x="0" y="13" width="795" height="432">
+		<s:VGroup width="100%" gap="0">
+			<s:HGroup width="100%"  verticalAlign="top">
+				<s:Spacer width="37" />
+				<s:HGroup height="20" verticalAlign="middle">
+					<s:Label text="收件人：" styleName="personalCenterDetailLabelStyle_1"/>
+				</s:HGroup>
+				<s:Scroller width="600" maxHeight="130" styleName="personalCenterScrollerStyle_1"  horizontalScrollPolicy="off">
+					<s:TileGroup id="name_group" width="554" />
+				</s:Scroller>
+				<common:PopUpTabButtonItem labelTitle="+添加联系人" id="addPerson" click="addPerson_clickHandler(event)"/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="40" verticalAlign="middle">
+				<s:Spacer width="50" />
+				<s:Label text="主题：" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:TextInput width="382" styleName="personalCenterDetailTextInputStyle" id="send_title" maxChars="50"
+							  contentBackgroundColor="0xececec"/>
+				<s:Label text="主题最多50个字符。" styleName="personalCenterDetailLabelStyle_1" color="0x999999"/>
+			</s:HGroup>
+			<s:Spacer width="32" height="10"/>
+			<s:HGroup width="100%" height="228" >
+				<s:Spacer width="50" />
+				<s:Label text="内容：" styleName="personalCenterDetailLabelStyle_1"/>
+				<s:TextArea width="600" height="220" focusAlpha="0" id="send_content" contentBackgroundColor="0xececec" maxChars="400"
+							color="#4c5d67" fontFamily="Microsoft YaHei,微软雅黑"  fontSize="14"/>
+				<s:VGroup width="121" height="221" verticalAlign="bottom">
+					<s:Label color="0x999999" styleName="personalCenterDetailLabelStyle_1" text="内容最多400个字符。"/>
+				</s:VGroup>
+			</s:HGroup>
+		</s:VGroup>
+		<s:HGroup width="100%" height="38" verticalAlign="middle">
+			<s:Spacer y="20" width="95" height="6"/>
+			<common:PopUpTabButtonItem id="send_btn" labelTitle="发   送" click="send_btn_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

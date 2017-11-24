@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" 
+		  xmlns:countdowns="com.xazc.components.countdowns.*" 
+		  xmlns:lastresults="com.xazc.components.lastresults.*" 
+		  xmlns:resultlists="com.xazc.components.resultlists.*" 
+		  xmlns:ssc="com.xazc.components.ssc.*" 
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  creationComplete="module1_creationCompleteHandler(event)" xmlns:components="com.xazc.components.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Style source="css/skin1/universal/universal.css"/>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.CustomEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			
+			protected function module1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.currentState='default';
+				init();
+			}
+			public function init():void
+			{
+				if(this.countdowns_Module){ this.countdowns_Module.init(); }
+				if(this.lastresults_Module){ this.lastresults_Module.init(); }
+				if(this.resultlists_Module){ this.resultlists_Module.init(); }
+				if(this.betingContent_Module){	this.betingContent_Module.bettings_Module.init(); }
+				
+				//添加对子组件时间的监听
+				this.addEventListener(BetEvent.YUANJIAOMOSHI_CLICK,betEventHandler);
+			}
+			
+			/**
+			 * 对投注模块事件进行处理
+			 *
+			 */
+			protected function betEventHandler(event:CustomEvent):void
+			{
+				
+				switch(event.type)
+				{
+					case BetEvent.YUANJIAOMOSHI_CLICK://切换圆角模式
+					{
+						betingContent_Module.changeConfirmLabelHandler();
+						break;
+					}
+						
+					default:
+					{
+						break;
+					}
+				}
+				
+			}
+			
+			public function recycle():void
+			{
+				if(this.countdowns_Module){ this.countdowns_Module.recycle(); }
+				if(this.lastresults_Module){ this.lastresults_Module.recycle(); }
+				if(this.resultlists_Module){ this.resultlists_Module.recycle(); }
+				if(this.betingContent_Module){	this.betingContent_Module.bettings_Module.recycle(); }
+				
+				this.removeEventListener(BetEvent.YUANJIAOMOSHI_CLICK,betEventHandler);
+			}
+			
+			protected function countdowns_Module_selectedLotterysTabButtonEventHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(this.currentState=="default" || this.currentState=="flipped1"){
+					this.currentState='flipped';
+				}else{
+					this.currentState='default';
+				}
+			}
+			
+			protected function nsv_rollOutHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.currentState='default';
+			}
+			
+			protected function resultlists_Module_addResultObjectEventHandler(event:DynamicEvent):void
+			{
+				// TODO Auto-generated method stub
+				lrd.objItem=event.arr as Array;
+			}
+			
+			protected function resultlists_Module_lookResultDetailEventHandler(event:DynamicEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(this.currentState=="default"  || this.currentState=="flipped"){
+					this.currentState='flipped1';
+				}else{
+					this.currentState='default';
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="default"/>
+		<s:State name="flipped"/>
+		<s:State name="flipped1"/>
+	</s:states>
+	
+	<s:transitions>
+		<s:Transition id="t1" fromState="*" toState="flipped">
+			<s:Wipe id="wipe"
+					direction="down"
+					target="{nsv}"
+					duration="500" />
+		</s:Transition>
+		<s:Transition id="t2" fromState="flipped" toState="default">
+			<s:Wipe id="wipe1"
+					direction="up"
+					target="{nsv}"
+					duration="500" />
+		</s:Transition>
+		
+		<s:Transition id="t3" fromState="*" toState="flipped1">
+			<s:Wipe id="wipe3"
+					direction="down"
+					target="{lrd}"
+					duration="500" />
+		</s:Transition>
+		<s:Transition id="t4" fromState="flipped1" toState="default">
+			<s:Wipe id="wipe4"
+					direction="up"
+					target="{lrd}"
+					duration="500" />
+		</s:Transition>
+	</s:transitions>
+	
+	<s:VGroup horizontalAlign="center" verticalAlign="middle" width="100%" height="100%" paddingTop="10">
+		<s:HGroup width="100%"  horizontalAlign="center" verticalAlign="middle" gap="10" >
+			<countdowns:CountDown  id="countdowns_Module" selectedLotterysTabButtonEvent="countdowns_Module_selectedLotterysTabButtonEventHandler(event)"/>
+			<lastresults:LastResult id="lastresults_Module"/>
+			<resultlists:ResultList id="resultlists_Module" addResultObjectEvent="resultlists_Module_addResultObjectEventHandler(event)"
+									lookResultDetailEvent="resultlists_Module_lookResultDetailEventHandler(event)"/>
+		</s:HGroup>
+		<s:BorderContainer width="976" height="100%" styleName="smallBgSkinStyle">
+			<ssc:SSCBetingContent width="100%" height="100%" id="betingContent_Module" lotteryID="14">
+			</ssc:SSCBetingContent>
+		</s:BorderContainer>
+	</s:VGroup>
+	<components:NavSwitchView id="nsv" x="47" y="47"  visible="false"  visible.flipped="true" rollOut="nsv_rollOutHandler(event)"/>	
+	<components:LookResultDetailView id="lrd" y="155" x="660" visible="false"  visible.flipped1="true" rollOut="nsv_rollOutHandler(event)"/>
+</s:Module>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<fx:Script>
+		<![CDATA[
+			private var _iusee:String;
+			private var _result:String;
+			private var _daxiao:String;
+			private var _danshuang:String;
+
+
+			[Bindable]
+			public function get danshuang():String
+			{
+				return _danshuang;
+			}
+
+			public function set danshuang(value:String):void
+			{
+				_danshuang = value;
+			}
+
+			[Bindable]
+			public function get daxiao():String
+			{
+				return _daxiao;
+			}
+
+			public function set daxiao(value:String):void
+			{
+				_daxiao = value;
+			}
+
+			[Bindable]
+			public function get result():String
+			{
+				return _result;
+			}
+
+			public function set result(value:String):void
+			{
+				_result = value;
+			}
+
+			[Bindable]
+			public function get iusee():String
+			{
+				return _iusee;
+			}
+
+			public function set iusee(value:String):void
+			{
+				_iusee = value;
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="270" height="33" verticalAlign="middle"  gap="0">
+		<s:Label text="{iusee}" width="100" styleName="tb_14Style" color="0x8188bc" textAlign="center"/>
+		<s:Label text="{result}" width="70" styleName="tb_14Style" color="0xe1af2d" textAlign="center"/>
+		<s:Label text="{daxiao}" width="50" styleName="tb_14Style" color="0x8188bc" textAlign="center"/>
+		<s:Label text="{danshuang}" width="50" styleName="tb_14Style" color="0x8188bc" textAlign="center"/>
+	</s:HGroup>
+</s:Group>

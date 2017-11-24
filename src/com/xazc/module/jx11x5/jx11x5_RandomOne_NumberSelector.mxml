@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:gd11x5="com.xazc.module.gd11x5.*" xmlns:jx11x5="com.xazc.module.jx11x5.*">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.events.FlexEvent;
+			//派发事件变量
+			public static const RANDOM_STAND_NUMBERS:String = "random_stand_numbers";
+			[Bindable]
+			public var tips:String = "至少选择1个号码投注，选号与开奖号码任意1位一致即中奖。";
+			private var _TipText:String;
+			
+			public function clearAll(e:BetsClickEvent = null):void
+			{
+				stander.init();
+			}
+			/**
+			 * 组件初始化完毕 
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				stander.addEventListener(jx11x5_NumberSelector_Biaozhun.NUMBERS_CLICK,getSelectNumbersHandler);
+			}
+			/**
+			 * 监听获取选号 
+			 */
+			public function getSelectNumbersHandler(event:CustomEvent):void
+			{
+				var getNumbersArray:Array = new Array();
+				getNumbersArray = event.body as Array;
+				dispatchEvent(new CustomEvent(RANDOM_STAND_NUMBERS,getNumbersArray));
+			}
+			
+			protected function togglebutton1_clickHandler(event:MouseEvent):void
+			{
+				(event.target as ToggleButton).selected = true;
+			}
+
+			[Bindable]
+			public function get TipText():String
+			{
+				return _TipText;
+			}
+
+			public function set TipText(value:String):void
+			{
+				_TipText = value;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle" gap="4" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton label="{resourceManager.getString('LotteryTips','stander_Selected')}" selected="true" styleName="standardButtonSkinStyle" click="togglebutton1_clickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','jx11x5_game_tip_37')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_37')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<s:HGroup width="100%" height="310" paddingLeft="15" verticalAlign="middle">
+		<jx11x5:jx11x5_NumberSelector_Biaozhun id="stander" num="1"/>
+	</s:HGroup>
+</s:Group>

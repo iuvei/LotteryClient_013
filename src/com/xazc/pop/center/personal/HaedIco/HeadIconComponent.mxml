@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="800" height="470" xmlns:skin1="css.skin1.*"
+		 creationComplete="creationCompleteHandler(event)" xmlns:common="com.xazc.pop.center.common.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.events.DynamicEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			private var selected_showIcon_index:String = new String();
+			
+			public static const ENSURE:String = "ensure";//个人信息页面的头像修改事件；
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			/**服务对象*/
+			private var service:ServerToolImpl;//
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				//初始化头像页面
+				for(var i:int = 1;i<22;i++)
+				{
+					var item:HeadIconItem = new HeadIconItem();
+					item.id = i.toString();
+					item.soucre_item = HeadSoucre.get_HeadSoucre(item.id);
+					item.addEventListener(MouseEvent.CLICK,show_clickHandler);
+					titleGroup.addElement(item);
+				}
+			}
+			
+			protected function show_clickHandler(event:MouseEvent):void
+			{
+				for(var i:int = 1;i<22;i++)
+				{
+					if((event.currentTarget as HeadIconItem).id == i.toString())
+					{
+						setShowStatus();
+						(event.currentTarget as HeadIconItem).IsSelected = true;
+						//保存所选择的头像的ID						
+						selected_showIcon_index = (event.currentTarget as HeadIconItem).id;
+					}
+				}
+			}
+			
+			/**
+			 * 初始化头像状态
+			 */
+			private function setShowStatus():void
+			{
+				for(var i:int = 1;i<22;i++)
+				{
+					(titleGroup.getChildAt(i-1) as HeadIconItem).IsSelected = false;
+				}
+			}
+			/**
+			 * 关闭
+			 */
+			protected function close_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			/**
+			 * 确定按钮
+			 */
+			protected function confirmBtn_clickHandler(event:MouseEvent):void
+			{
+				if(selected_showIcon_index == "")
+				{
+					PopUpManager.removePopUp(this);
+					return;
+				}
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				//发送 修改头像请求；
+				service.setHeadPortrait({"HeadPortrait":selected_showIcon_index },setHeadPortraitHandler);
+			}
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			private function setHeadPortraitHandler(e:ResultEvent):void{
+				var obj:Object=Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64){
+					alert.show("恭喜你，修改成功！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					upDateUserDetail();
+				}else if(obj.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_basic_info_head2'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			private function upDateUserDetail():void
+			{
+				Sendnotification.instance.dispatchEvent(new CustomEvent(ENSURE,selected_showIcon_index));
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<!--<s:Rect width="800" height="470" radiusX="10" radiusY="10">
+		<s:fill>
+			<s:SolidColor color="#3f547e" />
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect y="405" width="800" height="65" bottomLeftRadiusX="10" bottomRightRadiusX="10">
+		<s:fill>
+			<s:SolidColor color="#4b669b" />
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:BitmapImage id="img" x="-34" y="-35" width="869" height="532"
+				   source="@Embed('css/skin1/universal/images/alert_bg.png', scaleGridLeft='100', scaleGridRight='110', scaleGridTop='100', scaleGridBottom='110')"/>
+	
+	<s:Label x="32" y="14" width="738" height="19" text="头像选择" textAlign="center" color="0xffffff" fontSize="14"/>
+	<s:Image id="imgClose" x="775" y="10" source="{closeImage}" buttonMode="true" click="close_clickHandler(event)"/>
+	
+	<s:TileGroup width="763" height="346" left="20" top="60"  id="titleGroup"
+				 horizontalGap="18" requestedColumnCount="7" verticalGap="18" >
+	</s:TileGroup>
+	
+	<s:HGroup width="800" horizontalAlign="center" verticalAlign="middle" y="400" height="47">
+		<common:PopUpTabButtonItem id="confirmBtn" labelTitle="确    认" click="confirmBtn_clickHandler(event)"/>
+		
+	</s:HGroup>
+	
+	
+</s:Group>

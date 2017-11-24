@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx"
+					width="100%" height="100%" 
+					xmlns:pl3="com.xazc.module.pl3.*"
+					xmlns:bettings="com.xazc.components.bettings.*"
+					implements="com.xazc.interfaces.IInit"
+					creationComplete="navigatorcontent1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			//选号器数组
+			private var numbersArray:Array;
+			//玩法提示说明字体
+			[Bindable]
+			public var playerTipText:String;
+			/**
+			 * 初始化
+			 */
+			public function init():void
+			{
+				if(numbersArray){
+					for(var i:int=0; i<numbersArray.length; i++){
+						var temp:Pl3_NumberSelector = numbersArray[i] as Pl3_NumberSelector;
+						if(temp){
+							temp.init();
+						}
+					}
+				}
+				/* numbers_1.headerText = resourceManager.getString('LotteryTips','hundred');
+				numbers_2.headerText = resourceManager.getString('LotteryTips','ten'); */
+			}
+			/**
+			 * 监听选号，获取数组
+			 */
+			public function getSelectNumbersHandler(event:CustomEvent):void
+			{
+				if(numbersArray){
+					var index:Pl3_NumberSelector = event.currentTarget as Pl3_NumberSelector;
+					switch(index)
+					{
+						case numbers_1:
+							var baiWeiArray:Array = new Array();
+							baiWeiArray = event.body as Array; 
+							dispatchEvent(new CustomEvent(CustomEvent.BAIWEI_NUMBERS,baiWeiArray));
+							break;
+						case numbers_2:
+							var shiWeiArray:Array=new Array();
+							shiWeiArray = event.body as Array; 
+							dispatchEvent(new CustomEvent(CustomEvent.SHIWEI_NUMBERS,shiWeiArray));
+							break;
+						default:
+							break;
+					}
+				}
+			}
+			/**
+			 * 初始化组件
+			 */
+			protected function navigatorcontent1_creationCompleteHandler(event:FlexEvent):void
+			{
+				numbersArray = [numbers_1,numbers_2];
+				if(numbersArray){
+					for(var i:int=0; i<numbersArray.length; i++){
+						var temp:Pl3_NumberSelector = numbersArray[i] as Pl3_NumberSelector;
+						if(temp){
+							temp.addEventListener(Pl3_NumberSelector.NUMBER_CLICK,getSelectNumbersHandler);
+						}
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<pl3:Pl3_NumberSelector id="numbers_1" headerText="百位"/>
+	<pl3:Pl3_NumberSelector id="numbers_2" headerText="十位"/>
+</s:VGroup>

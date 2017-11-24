@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/result_ico/1.png")]
+			private var img_1:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/result_ico/2.png")]
+			private var img_2:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/result_ico/3.png")]
+			private var img_3:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/result_ico/4.png")]
+			private var img_4:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/result_ico/5.png")]
+			private var img_5:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/result_ico/6.png")]
+			private var img_6:Class;
+			
+			private var arr:Array = ["",img_1,img_2,img_3,img_4,img_5,img_6];
+			
+			private var _result_value:int;
+			
+			[Bindable]
+			public function get result_value():int
+			{
+				return _result_value;
+			}
+
+			public function set result_value(value:int):void
+			{
+				_result_value = value;
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Image source="{arr[result_value]}"/>
+	
+	
+</s:Group>

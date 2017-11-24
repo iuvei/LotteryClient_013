@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<fx:Script>
+		<![CDATA[
+			private var _iusee:String;
+			private var _resultArr:Array = [1,2,3,4,5];
+			private var _state:String;
+			
+			private var _red_index:String="43";
+			
+			
+		
+
+			[Bindable]
+			public function get red_index():String
+			{
+				return _red_index;
+			}
+
+			public function set red_index(value:String):void
+			{
+				_red_index = value;
+			}
+
+			[Bindable]
+			public function get resultArr():Array
+			{
+				return _resultArr;
+			}
+
+			public function set resultArr(value:Array):void
+			{
+				_resultArr = value;
+			}
+
+			[Bindable]
+			public function get state():String
+			{
+				return _state;
+			}
+
+			public function set state(value:String):void
+			{
+				_state = value;
+			}
+			
+			[Bindable]
+			public function get iusee():String
+			{
+				return _iusee;
+			}
+			
+			public function set iusee(value:String):void
+			{
+				_iusee = value;
+			}
+			
+			
+			public function init():void
+			{
+				for(var i:int=0;i<5;i++)
+				{
+					this["result_" + i].setStyle("color","#000000");
+				}
+				
+				this["result_" + red_index.split("")[0]].setStyle("color","#ff0000");
+				this["result_" + red_index.split("")[1]].setStyle("color","#ff0000");
+				
+				var str_0:String = this["result_" + red_index.split("")[0]].text;
+				var str_1:String = this["result_" + red_index.split("")[1]].text;
+				
+				if(int(str_0) > int(str_1))
+				{
+					//龙； 红底  白字
+					state_bg.source = "css/skin1/images/lhImg/lh_resultlist_circleRed.png";
+					state_info.text = "龙";
+					state_info.setStyle("color","#FFFFFF");
+				}else{
+					if(int(str_0) < int(str_1))
+					{
+						//虎； 黄底  黑字
+						state_bg.source = "css/skin1/images/lhImg/lh_resultlist_circle.png";
+						state_info.text = "虎";
+						state_info.setStyle("color","#000000");
+					}else{
+						//和  黄底  黑字
+						state_bg.source = "css/skin1/images/lhImg/lh_resultlist_circle.png";
+						state_info.text = "和";
+						state_info.setStyle("color","#000000");
+					}
+				}
+				
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="260" height="30" verticalAlign="middle"  gap="0">
+		<s:HGroup width="100" height="30" verticalAlign="middle" horizontalAlign="center">
+			<s:Label text="{iusee}" styleName="tb_14Style" color="0xfdfc00"/>
+		</s:HGroup>
+		
+		<s:HGroup width="120" height="30" verticalAlign="middle" horizontalAlign="center" gap="4">
+			<s:Group>
+				<s:Image source="css/skin1/images/lhImg/lh_resultlist_circle.png"/>
+				<s:Label x="6" y="4" color="0x000000" styleName="tb_14Style" text="{resultArr[0]}" id="result_4"/>
+			</s:Group>
+			<s:Group>
+				<s:Image source="css/skin1/images/lhImg/lh_resultlist_circle.png"/>
+				<s:Label x="6" y="4" color="0x000000" styleName="tb_14Style" text="{resultArr[1]}" id="result_3"/>
+			</s:Group>
+			<s:Group>
+				<s:Image source="css/skin1/images/lhImg/lh_resultlist_circle.png"/>
+				<s:Label x="6" y="4" color="0x000000" styleName="tb_14Style" text="{resultArr[2]}" id="result_2"/>
+			</s:Group>
+			<s:Group>
+				<s:Image source="css/skin1/images/lhImg/lh_resultlist_circle.png"/>
+				<s:Label x="6" y="4" color="0x000000" styleName="tb_14Style" text="{resultArr[3]}" id="result_1"/>
+			</s:Group>
+			<s:Group>
+				<s:Image source="css/skin1/images/lhImg/lh_resultlist_circle.png"/>
+				<s:Label x="6" y="4" color="0x000000" styleName="tb_14Style" text="{resultArr[4]}" id="result_0"/>
+			</s:Group>
+		</s:HGroup>
+		
+		<s:HGroup width="40" height="30" verticalAlign="middle" horizontalAlign="center">
+			<s:Group>
+				<s:Image source="css/skin1/images/lhImg/lh_resultlist_circleRed.png" id="state_bg"/>
+				<s:Label x="3" y="3" text="虎" styleName="tb_14Style" color="0xffffff" id="state_info"/>
+			</s:Group>
+		</s:HGroup>
+	</s:HGroup>
+</s:Group>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" implements="com.xazc.interfaces.IInit"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:gd11x5="com.xazc.module.gd11x5.*" xmlns:jx11x5="com.xazc.module.jx11x5.*">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.events.FlexEvent;
+			[Bindable]
+			private var playType:int = 2;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			public var game_id:String = "15";
+			//类型
+			public var sntuo:int = 0;
+			
+			public var lotteryID:String = "";
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//第一位数组
+			private var fristNumbersArray:Array = new Array();
+			//第二位数组
+			private var secondNumbersArray:Array = new Array();
+			//第三位数组
+			private var thirdNumbersArray:Array = new Array();
+			//发送第一位事件的变量
+			public static const GET_FRIST_NUMBERS:String = "get__Location_frist_numbers";
+			//发送第二位事件的变量
+			public static const GET_SECOND_NUMBERS:String = "get_Location_second_numbers";
+			//发送第三位事件的变量
+			public static const GET_THREE_NUMBERS:String = "get_Location_third_numbers";
+			
+			//派发注数变量
+			public static const COUNT_ZERO:String = "Syxw_LocationSelected_zero";
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				clearAll();
+				playType = 2;
+				game_id = "15";
+				gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_39');
+				gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_39');
+			}
+			/**
+			 * 监听选号 
+			 */
+			protected function getNumbersHandler(event:CustomEvent):void
+			{
+				var target:jx11x5_NumberSelector_Dantuo_New = event.currentTarget as jx11x5_NumberSelector_Dantuo_New;
+				switch(target)
+				{
+					case numberOne:
+						fristNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(GET_FRIST_NUMBERS,fristNumbersArray));
+						break;
+					case numberTwo:
+						secondNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(GET_SECOND_NUMBERS,secondNumbersArray));
+						break;
+					case numberThree:
+						thirdNumbersArray = event.body as Array;
+						dispatchEvent(new CustomEvent(GET_THREE_NUMBERS,thirdNumbersArray));
+						break;
+					default:
+						break;
+				}
+			}
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				bettingInfo.game_id = game_id;
+				numberOne.addEventListener(jx11x5_NumberSelector_Dantuo_New.NUMBER_CLICK,getNumbersHandler);
+				numberTwo.addEventListener(jx11x5_NumberSelector_Dantuo_New.NUMBER_CLICK,getNumbersHandler);
+				numberThree.addEventListener(jx11x5_NumberSelector_Dantuo_New.NUMBER_CLICK,getNumbersHandler);
+			}
+			public function clearAll(e:BetsClickEvent = null):void
+			{
+				numbersArr = new Array;
+				numberOne.init();
+				numberTwo.init();
+				numberThree.init();
+			}
+			protected function playClickHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				var targetID:String = target.id;
+				game_id =(targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				target.selected = true;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				switch (target.id)
+				{
+					case "play_15":
+						playType = 2;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_39');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_39');
+						break;
+				}
+				dispatchEvent(new CustomEvent(COUNT_ZERO));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,lotteryID + game_id));
+			}
+		]]>
+	</fx:Script>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle" gap="4" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton id="play_15" label="定位胆" styleName="standardButtonSkinStyle" 
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','jx11x5_game_tip_39')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_39')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<s:VGroup width="100%" height="280" paddingLeft="15" verticalAlign="middle" gap="24">
+		<jx11x5:jx11x5_NumberSelector_Dantuo_New id="numberOne" weiShu="{resourceManager.getString('LotteryTips','number_One')}"/>
+		<jx11x5:jx11x5_NumberSelector_Dantuo_New id="numberTwo" weiShu="{resourceManager.getString('LotteryTips','number_Two')}"/>
+		<jx11x5:jx11x5_NumberSelector_Dantuo_New id="numberThree" weiShu="{resourceManager.getString('LotteryTips','number_Three')}"/>
+	</s:VGroup>
+</s:Group>

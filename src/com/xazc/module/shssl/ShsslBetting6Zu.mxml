@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="creationCompleteHandler(event)" 
+		  xmlns:ssc="com.xazc.components.ssc.*" 
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  gap="0">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.MathUtil;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			private var game_id:String = "06";
+			
+			public var lotteryID:String = "";
+			
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			//类型
+			private var sntuo:int = 0;
+			
+			private var selectedHZNum:Array = [];
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlayContainer = playContainer1;
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				
+				for (var i:int = 3; i < 25; i++)
+				{
+					var tog:ToggleButton = new ToggleButton();
+					tog.label = "" + i;
+					tog.styleName = "numberSelectSkinStyle_large";
+					addBets.addElement(tog);
+					tog.addEventListener(MouseEvent.CLICK, addBetsClickHandler);
+				}
+				
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+			}
+			
+			private function addBetsClickHandler(e:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = e.target as ToggleButton;
+				if(TogBtn.selected == true){
+					selectedHZNum.push(TogBtn.label);
+				}else{
+					selectedHZNum.splice(selectedHZNum.indexOf(TogBtn.label),1);
+				}
+				betsNumberClickHandler(null);
+			}
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				if(playType == 1)
+				{
+					var zuSelectedNum:int = zuSelected.selectedNum.length;
+					zhushu = zuSelectedNum * (zuSelectedNum - 1) * (zuSelectedNum - 2) / 6;
+					bettingInfo.tzcontent = zuSelected.selectedNum.toString();
+				}
+				else if(playType == 2)
+				{
+					var sumvalue_s:int = 0;
+					var many:int;
+					if(selectedHZNum.length>=0){
+						var zhus:int=0;
+						for(var i1:int=0;i1<selectedHZNum.length;i1++){
+							for(var n1:int=0; n1<10; n1++) {
+								for(var n2:int=0; n2<10; n2++) {
+									if(n1!=n2) {
+										for(var n3:int=0; n3<10; n3++) {
+											if(n1!=n3 && n2!=n3) {
+												if((n1+n2+n3)==selectedHZNum[i1]) {
+													zhus=zhus+1;
+												}
+											}
+										}	
+									}
+								}
+							}
+						}
+						sumvalue_s=zhus/6;
+					}
+					zhushu = sumvalue_s;
+					bettingInfo.tzcontent = selectedHZNum.toString();
+				}
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			public function clearAll(e:BetsClickEvent = null):void
+			{
+				clearSelectedNumbers();
+				cleanAddBets();
+			}
+			
+			private function clearSelectedNumbers():void
+			{
+				zuSelected.clearAllSelectedNumHandler();
+			}
+			
+			private function cleanAddBets():void
+			{
+				for (var i:int = 0; i < 22; i++)
+				{
+					var tog:ToggleButton = addBets.getElementAt(i) as ToggleButton;
+					tog.selected = false;
+				}
+				selectedHZNum = [];
+			}
+			
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				switch(targetID)
+				{
+					case "play_06":
+						playType = 1;
+						play_06.selected = true;
+						showPlayContainer(playContainer1);
+						this.gameType.text = "至少选择3个号码，开奖号为组六且包含在投注号码中，即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','shssl_game_tip_emp_7')
+						break;
+					case "play_07":
+						playType = 2;
+						play_07.selected = true;
+						showPlayContainer(playContainer2);
+						this.gameType.text = "所选和值与开奖号码和值一致，且开奖号码为组六即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','shssl_game_tip_emp_8')
+						break;
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle" gap="4" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton id="play_06" label="{resourceManager.getString('LotteryTips','round_Number_Selected')}" styleName="standardButtonSkinStyle" 
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_07" label="{resourceManager.getString('LotteryTips','sum_Selected')}" styleName="standardButtonSkinStyle" 
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="至少选择3个号码，开奖号为组六且包含在投注号码中，即中奖。" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','shssl_game_tip_emp_7')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<s:VGroup id="playContainer1" width="100%" height="310" paddingLeft="15" verticalAlign="middle">
+		<ssc:SSCNumberSelected id="zuSelected" selectedNumStyle="numberSelectSkinStyle_large" bettingRowName="{resourceManager.getString('LotteryTips','number')}"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer2"  width="100%" height="310" paddingLeft="15" horizontalAlign="center" verticalAlign="middle" visible="false" includeInLayout="false">
+		<s:TileGroup id="addBets" requestedColumnCount="15" verticalGap="24" horizontalGap="8">
+		</s:TileGroup>
+	</s:VGroup>
+</s:VGroup>

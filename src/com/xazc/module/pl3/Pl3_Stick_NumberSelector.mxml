@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="com.xazc.interfaces.IInit"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			//检查的位数
+			[Bindable]
+			public var checkNums:int = 3;
+			[Bindable]
+			public var styleTips:String = "";
+			//提示的号码位数示例
+			[Bindable]
+			public var numberStyle:int = 123;
+			//检查是否有相同的号码
+			[Bindable]
+			public var checkSameBoolean:Boolean = true;
+			//获取号码
+			public var numbersArray:Array = new Array();
+			public var error:Boolean = false;
+			[Bindable]
+			public var textTip_1:String = "";
+			[Bindable]
+			public var textTip_2:String = "";
+			//派发事件变量
+			public static const GET_STICK_NUMBERS:String = "get_stick_numbers";
+			/**
+			 * 初始化
+			 */
+			public function init():void
+			{
+				numbersArray = new Array();
+				if(textArea){textArea.text = "";}
+			}
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			/**
+			 * 处理鼠标滑出文本框事件
+			 */
+			protected function textArea_rollOutHandler(event:MouseEvent):void
+			{
+				error = false;
+				numbersArray = new Array();
+				var arrs:Array = new Array();
+				if(textArea.text != ""){
+					var str:String = textArea.text.split(/\D/).join("\n");
+					var arr:Array = str.split("\n");
+					for(var ia:int=0; ia<arr.length; ia++){
+						if(arr[ia] != ""){
+							arrs.push(arr[ia]);
+						}
+					}
+					textArea.text = "";
+					check_digit(arrs,checkNums);
+					if(!error){
+						for(var z:int=0; z<arrs.length; z++){
+							numbersArray.push(arrs[z]);
+						}
+						dispatchEvent(new CustomEvent(GET_STICK_NUMBERS,numbersArray));
+					}else{
+						numbersArray = [];
+						dispatchEvent(new CustomEvent(GET_STICK_NUMBERS,numbersArray));
+					}
+				}else{
+					arrs = [];
+					numbersArray = [];
+					dispatchEvent(new CustomEvent(GET_STICK_NUMBERS,numbersArray));
+				}
+			}
+			/**
+			 * 检查错误（位数检查）
+			 */
+			public function check_digit(arrs:Array,lengths:int):void{
+				var str:String = "";
+				for(var i:int=0; i<arrs.length; i++){
+					if(arrs[i] != ""){
+						if(arrs[i].length != lengths){
+							str += arrs[i] + "\       格式不正确\n";
+							error=true;
+						}else{
+							if(checkSameBoolean){
+								str += ckeck_sameNumbers(arrs[i]);
+							}else{
+								str += arrs[i] + "\n";
+								error==true ? error : error = false;
+							}
+						}
+					}
+				}
+				textArea.text = str;
+			}
+			/**
+			 * 检查三个号码是否相同
+			 */
+			public function ckeck_sameNumbers(str:String):String
+			{
+				var result:String = "";
+				var str0:String = str.substring(0,1);
+				var str1:String = str.substring(1,2);
+				var str2:String = str.substring(2,str.length);
+				if(str0 != str1 && str0 != str2 && str1 != str2){
+					result = str + "\n";
+					error==true ? error : error = false;
+				}else{
+					result = str + "\       格式不正确\n";
+					error=true;
+				}
+				return result;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<mx:TextArea  id="textArea"  width="620" height="100%" color="#000000" 
+				  contentBackgroundColor="0xffffff" borderColor="0xffffff"  
+				  rollOut="textArea_rollOutHandler(event)"/>
+	
+	<s:VGroup gap="18" height="100%" verticalAlign="top">
+		<s:Label text="{resourceManager.getString('LotteryTips','fomal_Description')}" styleName="stickYellowTextStyle"/>
+		<s:Label text="{styleTips}：{numberStyle}" styleName="stickWriteTextStyle"/>
+		<s:Label text="{textTip_1}" styleName="stickWriteTextStyle"/>
+		<s:Label text="{textTip_2}" styleName="stickWriteTextStyle"/>
+		<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_3')}" styleName="stickWriteTextStyle"/>
+		<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_4')}" styleName="stickWriteTextStyle"/>
+	</s:VGroup>
+</s:HGroup>

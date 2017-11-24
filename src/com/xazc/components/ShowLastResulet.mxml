@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="350" height="195" xmlns:local="*"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.events.FlexEvent;
+			[Bindable]
+			private var _date:Object;
+			
+			private var _timer:Timer;
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			[Embed(source="css/skin1/universal/images/win.png")]
+			[Bindable]
+			private var winImage:Class;
+			
+			[Embed(source="css/skin1/universal/images/lose.png")]
+			[Bindable]
+			private var loseImage:Class;
+			
+			[Bindable]
+			public function get date():Object
+			{
+				return _date;
+			}
+			
+			public function set date(value:Object):void
+			{
+				_date = value;
+			}
+			
+			public function closePanleTime():void
+			{
+				_timer = new Timer(20000, 1);
+				_timer.addEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+				_timer.start();
+			}
+			public function closePanleTime2():void
+			{
+				if(_timer){
+					_timer.stop();
+					_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+					_timer = null;
+				}
+				
+				//倒计时停止后关闭窗口
+				dispatchEvent(new Event("closeShowLastResult"));
+			}
+			public function timerCompleteHandler(e:TimerEvent):void
+			{
+				_timer.stop();
+				_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+				_timer = null;
+				
+				//倒计时停止后关闭窗口
+				dispatchEvent(new Event("closeShowLastResult"));
+			}
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				if(_timer){
+					_timer.stop();
+					_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+					_timer = null;
+				}
+				//关闭提示框
+				dispatchEvent(new Event("closeShowLastResult"));
+				//打开投注记录页面
+				/* var evt:JumpEvent=new JumpEvent(JumpEvent.JUMP_TO_PSESONAL_CENTER,{index:2,title:'投注记录'});
+				Sendnotification.instance.dispatchEvent(evt); */
+			}
+			protected function deleteBtn_clickHandler(event:MouseEvent):void
+			{
+				if(_timer){
+					_timer.stop();
+					_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+					_timer = null;
+					//倒计时停止后关闭窗口
+					dispatchEvent(new Event("closeShowLastResult"));
+				}
+			}
+			
+			protected function closeBtn_clickHandler(event:MouseEvent):void
+			{
+				//倒计时停止后关闭窗口
+				dispatchEvent(new Event("closeShowLastResult"));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="closeShowLastResult",type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Rect  left="0" right="0" top="0" bottom="0" radiusX="20" radiusY="20">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0xff0000" alpha="1"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	<s:Rect  left="4"  top="48" right="4" height="143" bottomLeftRadiusX="15" bottomLeftRadiusY="15"
+			 bottomRightRadiusX="15" bottomRightRadiusY="15">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0xffffff" />
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:VGroup width="100%" height="100%" paddingLeft="10" paddingRight="10">
+		<s:HGroup width="100%" height="46" verticalAlign="middle" paddingRight="5">
+			<!--  图标  -->
+			<!--<s:Image styleName="lastResultvoidStyle"/>-->
+			<!--  提示语  -->
+			<s:HGroup width="100%" height="40" verticalAlign="middle" horizontalAlign="center">
+				<s:Label text="{date.State==1?'很遗憾未中奖…':'恭喜中奖!'}" styleName="textLableStyle3_white"/>
+			</s:HGroup>
+			<!--  关闭按钮  -->
+			<s:Image source="{closeImage}" click="closeBtn_clickHandler(event)" buttonMode="true" smooth="true"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="140" gap="10" verticalAlign="middle">
+			<s:Image source="{date.State==1?loseImage:winImage}" width="100" height="100" smooth="true"/>
+			<!--  中奖未中奖提示语  -->
+			<s:VGroup width="100%"  verticalAlign="middle" paddingTop="0">
+				<!--  未中奖  -->
+				<s:VGroup width="100%" height="100%" gap="10" verticalAlign="middle"   visible="{date.State==1?true:false}" includeInLayout="{date.State==1?true:false}">
+					<s:Label text="{lotteryNameHelp.getCaizhong(date.LotteryID)}  {date.IssueNumber}期" styleName="textLableStyle3" />
+					<!--<s:Label text="盈亏{date.YkMoney}元。" styleName="textLableStyle3" />-->
+					<s:HGroup gap="0">
+						<s:Label text="盈亏" styleName="textLableStyle3" />
+						<s:Label text="{date.YkMoney}" styleName="textLableStyle3_gree" />
+						<s:Label text="元。" styleName="textLableStyle3" />
+					</s:HGroup>
+				</s:VGroup>
+				<!--  中奖  -->
+				<s:VGroup width="100%" height="100%" gap="10" verticalAlign="middle"  visible="{date.State==2?true:false}" includeInLayout="{date.State==2?true:false}">
+					<s:Label text="{lotteryNameHelp.getCaizhong(date.LotteryID)}  {date.IssueNumber}期" styleName="textLableStyle3" />
+					<s:Label text="投注{date.BetMoney}元，" styleName="textLableStyle3" />
+					<s:HGroup gap="0">
+						<s:Label text="中奖" styleName="textLableStyle3" />
+						<s:Label text="{date.WinngMoney}" styleName="textLableStyle3_red" />
+						<s:Label text="元，盈亏" styleName="textLableStyle3" />
+						<s:Label text="{date.YkMoney}" styleName="textLableStyle3_gree" />
+						<s:Label text="元。" styleName="textLableStyle3" />
+					</s:HGroup>
+				</s:VGroup>
+				<s:HGroup width="100%" height="100%">
+					<s:Button id="okBtn" label="确  定" click="closeBtn_clickHandler(event)" styleName="chongzhi_alertSubmitButtonStyle_2" 
+							  buttonMode="true" width="80"/> 
+				</s:HGroup>
+			</s:VGroup>
+			
+		</s:HGroup>
+		
+	</s:VGroup>
+</s:Group>

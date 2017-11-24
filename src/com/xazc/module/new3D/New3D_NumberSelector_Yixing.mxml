@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:NavigatorContent xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" 
+		 xmlns:new3D="com.xazc.module.new3D.*"
+		 xmlns:bettings="com.xazc.components.bettings.*"
+		 implements="com.xazc.interfaces.IInit"
+		 creationComplete="navigatorcontent1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.SystemEvent;
+			
+			import mx.events.FlexEvent;
+			//选号器数组
+			private var numbersArray:Array;
+			//玩法提示说明字体
+			[Bindable]
+			public var playerTipText:String;
+			//派发事件变量
+//			public static const BAIWEI_NUMBERS:String = "baiwei_numbers";
+//			public static const SHIWEI_NUMBERS:String = "shiwei_numbers";
+//			public static const GEWEI_NUMBERS:String = "gewei_numbers";
+			/**
+			 * 初始化
+			 */
+			public function init():void
+			{
+				if(numbersArray){
+					for(var i:int=0; i<numbersArray.length; i++){
+						var temp:New3D_NumberSelector = numbersArray[i] as New3D_NumberSelector;
+						if(temp){
+							temp.init();
+						}
+					}
+				}
+			}
+			/**
+			 * 监听选号，获取数组
+			 */
+			public function getSelectNumbersHandler(event:SystemEvent):void
+			{
+				if(numbersArray){
+					var index:New3D_NumberSelector = event.currentTarget as New3D_NumberSelector;
+						switch(index)
+						{
+							case numbers_1:
+								var baiWeiArray:Array = new Array();
+								baiWeiArray = event.body as Array; 
+								dispatchEvent(new CustomEvent(CustomEvent.BAIWEI_NUMBERS,baiWeiArray));
+								break;
+							case numbers_2:
+								var shiWeiArray:Array=new Array();
+								shiWeiArray = event.body as Array; 
+								dispatchEvent(new CustomEvent(CustomEvent.SHIWEI_NUMBERS,shiWeiArray));
+								break;
+							case numbers_3:
+								var geWeiArray:Array = new Array();
+								geWeiArray = event.body as Array; 
+								dispatchEvent(new CustomEvent(CustomEvent.GEWEI_NUMBERS,geWeiArray));
+								break;
+							default:
+								break;
+						}
+				}
+			}
+			/**
+			 * 初始化组件
+			 */
+			protected function navigatorcontent1_creationCompleteHandler(event:FlexEvent):void
+			{
+				numbersArray = [numbers_1,numbers_2,numbers_3];
+				if(numbersArray){
+					for(var i:int=0; i<numbersArray.length; i++){
+						var temp:New3D_NumberSelector = numbersArray[i] as New3D_NumberSelector;
+						if(temp){
+						 	temp.addEventListener(New3D_NumberSelector.NUMBER_CLICK,getSelectNumbersHandler);
+						}
+					}
+				}
+			}
+			protected function togglebutton1_clickHandler(event:MouseEvent):void
+			{
+				(event.target as ToggleButton).selected = true;
+				
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup verticalAlign="middle">
+		<s:Label text="{resourceManager.getString('LotteryTips','play_Selected')}" width="115" textAlign="center" styleName="labelStyles1" />
+		<s:ToggleButton label="{resourceManager.getString('LotteryTips','stander_Selected')}" selected="true" click="togglebutton1_clickHandler(event)" styleName="standardButtonSkinStyle"/>
+	</s:HGroup>
+	<s:HGroup width="100%" gap="30" horizontalAlign="center" verticalAlign="middle">
+		<s:HGroup horizontalAlign="center" verticalAlign="middle" width="55%">
+			<bettings:LineLeftRadiusItem width="45%" height="2"/>
+			<s:Label id="tishi" text="{playerTipText}" styleName="labelStyles2"/>
+			<bettings:LineRightRadiusItem width="45%" height="2"/>
+		</s:HGroup>
+		
+		<s:HGroup horizontalAlign="center" verticalAlign="middle" width="35%">
+			<bettings:LineLeftRadiusItem width="45%" height="2"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','help_Area')}" styleName="labelStyles2"/>
+			<bettings:LineRightRadiusItem width="45%" height="2"/>
+		</s:HGroup>
+	</s:HGroup>
+	<s:VGroup width="100%" horizontalAlign="center" gap="20" paddingTop="20">
+		<new3D:New3D_NumberSelector id="numbers_1" width="100%" headerText="{resourceManager.getString('LotteryTips','hundred')}"/>
+		<new3D:New3D_NumberSelector id="numbers_2" width="100%" headerText="{resourceManager.getString('LotteryTips','ten')}"/>
+		<new3D:New3D_NumberSelector id="numbers_3" width="100%" headerText="{resourceManager.getString('LotteryTips','single')}"/>
+	</s:VGroup>
+</s:NavigatorContent>

@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="creationCompleteHandler(event)" 
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  xmlns:jxssc="com.xazc.module.jxssc.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Group;
+			import spark.modules.Module;
+			
+			[Bindable]
+			public var lotteryID:int = 0;
+			
+			private var selectedItemContainer:Group;
+			
+			private var bettingInfo:Cathectic;
+			
+			private var selectedPlay:ToggleButton;
+			
+			private const singleLabelStyle:String = 
+				"<font color='#FFFFFF' size='13'>{0}</font>  " +
+				"<font color='#ffc446' size='13'>{1}</font>  "   +
+				"<font color='#FFFFFF' size='13'>{2}</font>  " +
+				"<font color='#ffc446' size='13'>{3}</font>  " +
+				"<font color='#FFFFFF' size='13'>{4}</font>  \n";
+			
+			private var betting5Star:JxSSCBetting5Star;
+			
+			private var betting4Star:JxSSCBetting4Star;
+			
+			private var betting3Selected:JxSSCBetting3Selected;
+			
+			private var betting3Group:JxSSCBetting3Group;
+			
+			private var betting2Selected:JxSSCBetting2Selected;
+			
+			private var betting2Group:JxSSCBetting2Group;
+			
+			private var betting1Star:JxSSCBetting1Star;
+			
+			private var bettingLSSD:JxSSCBettingLSSD;
+			
+			private var betting2Random:JxSSCBetting2Random;
+			
+			private var betting3Random:JxSSCBetting3Random;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlay = fiveStar;
+//				selectedItemContainer = fiveStarContainer;
+				betting5Star = new JxSSCBetting5Star();
+				betting5Star.lotteryID = ""+lotteryID;
+				playContainer.addElement(betting5Star);
+				addEventListener(BetsClickEvent.CONFIRM_BTN_ENABLE, confirmBtnEnableHandler);
+				addEventListener(BetsClickEvent.NUMBER_STICK, confirmBtnEnableHandler);
+				changeConfirmLabelHandler();
+			}
+			
+			public function changeConfirmLabelHandler():void
+			{
+				var label:String = singleLabelStyle;
+				label = label.replace("{0}", "你选择了");
+				label = label.replace("{1}", (bettingInfo == null ? 0 : bettingInfo.tzzs));
+				label = label.replace("{2}", "注，共");
+				label = label.replace("{3}", (bettingInfo == null ? 0 : bettingInfo.tzzs*CurrentLotteryInfo.beishu * CurrentLotteryInfo.perPrice/CurrentLotteryInfo.yuanjiaoMoshi));
+				label = label.replace("{4}", CurrentUserInfo.moneyType);
+				confirmLabel.htmlText = label;
+			}
+			private function confirmBtnEnableHandler(e:BetsClickEvent):void
+			{
+				bettingInfo = e.body as Cathectic;
+				changeConfirmLabelHandler();
+			}
+			
+			private function changeBetsTypeHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				var selectedID:String = target.id;
+				selectedPlay.selected = false;
+				target.selected = true;
+				selectedPlay = target;
+				bettingInfo = null;
+				changeConfirmLabelHandler();
+				Util.getInstance().dispatchEvent(new BetsClickEvent(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS));
+				playContainer.removeAllElements();
+				switch (selectedID)
+				{
+					case "fiveStar":
+//						selectedItemContainerVisiable(fiveStarContainer);
+						if(!betting5Star)
+						{
+							betting5Star = new JxSSCBetting5Star();
+							betting5Star.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting5Star);
+						break;
+					case "fourStar":
+//						selectedItemContainerVisiable(fourStarContainer);
+						if(!betting4Star)
+						{
+							betting4Star = new JxSSCBetting4Star();
+							betting4Star.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting4Star);
+						break;
+					case "threeSelected":
+//						selectedItemContainerVisiable(threeSelectedContainer);
+						if(!betting3Selected)
+						{
+							betting3Selected = new JxSSCBetting3Selected();
+							betting3Selected.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting3Selected);
+						
+						break;
+					case "threeGroup":
+//						selectedItemContainerVisiable(threeGroupContainer);
+						if(!betting3Group)
+						{
+							betting3Group = new JxSSCBetting3Group();
+							betting3Group.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting3Group);
+						break;
+					case "twoSelected":
+//						selectedItemContainerVisiable(twoSelectedContainer);
+						if(!betting2Selected)
+						{
+							betting2Selected = new JxSSCBetting2Selected();
+							betting2Selected.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting2Selected);
+						break;
+					case "twoGroup":
+//						selectedItemContainerVisiable(twoGroupContainer);
+						if(!betting2Group)
+						{
+							betting2Group = new JxSSCBetting2Group();
+							betting2Group.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting2Group);
+						break;
+					case "oneStar":
+//						selectedItemContainerVisiable(oneStarContainer);
+						if(!betting1Star)
+						{
+							betting1Star = new JxSSCBetting1Star();
+							betting1Star.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting1Star);
+						break;
+					case "lssd":
+//						selectedItemContainerVisiable(lssdContainer);
+						if(!bettingLSSD)
+						{
+							bettingLSSD = new JxSSCBettingLSSD();
+							bettingLSSD.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(bettingLSSD);
+						break;
+					case "twoRandom":
+//						selectedItemContainerVisiable(twoRandomContainer);
+						if(!betting2Random)
+						{
+							betting2Random = new JxSSCBetting2Random();
+							betting2Random.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting2Random);
+						break;
+					case "threeRandom":
+//						selectedItemContainerVisiable(threeRandomContainer);
+						if(!betting3Random)
+						{
+							betting3Random = new JxSSCBetting3Random();
+							betting3Random.lotteryID = ""+lotteryID;
+						}
+						playContainer.addElement(betting3Random);
+						break;
+				}
+			}
+			
+//			private function selectedItemContainerVisiable(container:Group):void
+//			{
+//				selectedItemContainer.visible = false;
+//				selectedItemContainer.includeInLayout = false;
+//				container.visible = true;
+//				container.includeInLayout = true;
+//				selectedItemContainer = container;
+//			}
+			
+			protected function confirm_clickHandler(event:MouseEvent):void
+			{
+				if(bettingInfo == null || isNaN(bettingInfo.tzzs) || bettingInfo.tzzs <= 0)
+				{
+					var alert:AlertMsg = new AlertMsg();
+					alert.show("请选择正确内容进行投注！", "温馨提示");
+					
+					//Alert.show("请选择正确内容进行投注！");
+					return;
+				}
+				var gameID:String = bettingInfo.game_id.replace(lotteryID.toString(), "");
+				if(gameID == "39" || gameID == "40" || gameID == "38")
+				{
+					if(bettingInfo.tzcontent.split("#").length > 1)
+					{
+						var selectedPos:String = bettingInfo.tzcontent.split("#")[1];
+						if(selectedPos.length < 3)
+						{
+							var alert1:AlertMsg = new AlertMsg();
+							alert1.show("该玩法必须选择三位位数", "温馨提示");
+							return;
+						}
+					}
+				}
+				else if(gameID == "13")
+				{
+					if(bettingInfo.tzcontent.split("#").length > 1)
+					{
+						var selectedPos1:String = bettingInfo.tzcontent.split("#")[1];
+						if(selectedPos1.length < 2)
+						{
+							var alert2:AlertMsg = new AlertMsg();
+							alert2.show("该玩法必须选择两位位数", "温馨提示");
+							return;
+						}
+					}
+				}
+				var ca:Cathectic = new Cathectic();
+				ca.tzzs = bettingInfo.tzzs;
+				ca.tzcontent = bettingInfo.tzcontent;
+				ca.sntuo = bettingInfo.sntuo;
+				ca.lottery_type = bettingInfo.lottery_type;
+				ca.game_id = bettingInfo.game_id;
+				var touzhuCathecticsArr:ArrayCollection = new ArrayCollection();
+				touzhuCathecticsArr.addItem(ca);
+				bettings_Module.sendAllTheTouzhu(touzhuCathecticsArr);
+				
+				Util.getInstance().dispatchEvent(new BetsClickEvent(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS));
+				bettingInfo = null;
+				changeConfirmLabelHandler();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:BorderContainer styleName="smallBgSkinStyle">
+		<s:VGroup width="100%" height="452">
+			<s:HGroup width="100%" horizontalAlign="left" verticalAlign="middle" gap="-8" paddingTop="10">
+				<s:ToggleButton id="fiveStar" label="五星" styleName="menuSelectSkinStyle"
+								selected="true" click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="fourStar" label="四星" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="threeSelected" label="三星直选" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="threeGroup" label="三星组选" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="twoSelected" label="二星直选" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="twoGroup" label="二星组选" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="oneStar" label="一星" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="lssd" label="大小单双" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="twoRandom" label="任选二" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+				<s:ToggleButton id="threeRandom" label="任选三" styleName="menuSelectSkinStyle"
+								click="changeBetsTypeHandler(event)"/>
+			</s:HGroup>
+			<s:HGroup id="playContainer" width="100%" height="100%">
+				
+			</s:HGroup>
+			<!--<jxssc:JxSSCBetting5Star id="fiveStarContainer" width="100%" height="100%"
+								 lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting4Star id="fourStarContainer" width="100%" height="100%" 
+								 visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting3Selected id="threeSelectedContainer" width="100%" height="100%" 
+									 visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting3Group id="threeGroupContainer" width="100%" height="100%"
+								  visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting2Selected id="twoSelectedContainer" width="100%" height="100%"
+									 visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting2Group id="twoGroupContainer" width="100%" height="100%"
+								  visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting1Star id="oneStarContainer" width="100%" height="100%"
+								 visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBettingLSSD id="lssdContainer" width="100%" height="100%"
+								visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting2Random id="twoRandomContainer" width="100%" height="100%"
+								   visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>
+			<jxssc:JxSSCBetting3Random id="threeRandomContainer" width="100%" height="100%"
+								   visible="false" includeInLayout="false" lotteryID="{lotteryID}"/>-->
+			
+			<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle">
+				<bettings:LineItem width="{this.width-this.width*0.4-confirmLabel.width-confirm.width-100}" height="1"/>
+				<mx:Label id="confirmLabel"/>
+				<s:Button id="confirm" label="确认投注" styleName="submitButtonSkinStyle"
+						  click="confirm_clickHandler(event)"/>
+				<bettings:LineItem width="40%" height="1"/>
+			</s:HGroup>
+			
+			<bettings:BettingBottom width="976" height="122" id="bettings_Module">
+			</bettings:BettingBottom>
+		</s:VGroup>
+	</s:BorderContainer>
+</s:VGroup>

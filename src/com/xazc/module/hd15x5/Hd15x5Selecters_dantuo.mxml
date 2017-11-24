@@ -1,0 +1,190 @@
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:hd15x5="com.xazc.module.hd15x5.*"
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  width="100%" height="100%"
+		  creationComplete="vgroup1_creationCompleteHandler(event)"
+		  gap="20"
+		  >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			
+			public static const SEND_DANTUO_NUMBERS_CLICK:String = "sendDantuoNumbersClick";
+			
+			private var touzhuContent_1:Array = new Array();
+			private var touzhuContent_2:Array = new Array();
+			
+			
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				
+				
+			}
+			
+			public function clear():void
+			{
+				touzhuContent_1 = new Array();
+				touzhuContent_2 = new Array();
+				
+				var togbtn:ToggleButton;
+				for(var i:int = 0; i < numbers_dan.numElements; i++)
+				{
+					togbtn = numbers_dan.getElementAt(i) as ToggleButton;
+					togbtn.selected = false;
+				}
+				for(var j:int = 0; j< numbers_tuo.numElements; j++)
+				{
+					togbtn = numbers_tuo.getElementAt(j) as ToggleButton;
+					togbtn.selected = false;
+				}
+				
+			}
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var btn:ToggleButton;
+				for(var i:int = 1; i <= 15; i++)
+				{
+					btn = new ToggleButton();
+					
+					btn.id = "num_dan_" + i;
+					if(i < 10)
+						btn.label = "0" + i;
+					else
+						btn.label = i.toString();
+					btn.addEventListener(MouseEvent.CLICK, nums_dan_click);
+					btn.styleName="numberSelectSkinStyle_large";
+					numbers_dan.addElement(btn);
+				}
+				
+				for(var j:int = 1; j <= 15; j++)
+				{
+					btn = new ToggleButton();
+					
+					btn.id = "num_tuo_" + j;
+					if(j < 10)
+						btn.label = "0" + j;
+					else
+						btn.label = j.toString();
+					btn.addEventListener(MouseEvent.CLICK, nums_tuo_click);
+					btn.styleName="numberSelectSkinStyle_large";
+					numbers_tuo.addElement(btn);
+				}
+			}
+			
+			private function nums_dan_click(event:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = event.target as ToggleButton;
+				var alert:AlertMsg;
+				if(TogBtn.selected == true)
+				{
+					if(touzhuContent_1.length == 4)
+					{
+						TogBtn.selected = !TogBtn.selected;
+						alert = new AlertMsg();
+						//alert.show("最多选择4个胆码！", "温馨提示");
+						alert.show(resourceManager.getString("LotteryTips","lotteryAlert_013"), resourceManager.getString("LotteryTips","message_004"));
+						
+						//Alert.show("最多选择4个胆码");
+						return;
+					}
+					for each(var str:String in touzhuContent_2)
+					{
+						if(str == TogBtn.label)
+						{
+							TogBtn.selected = !TogBtn.selected;
+							alert = new AlertMsg();
+							//alert.show("已选择相应的拖码！", "温馨提示");
+							alert.show(resourceManager.getString("LotteryTips","lotteryAlert_003"), resourceManager.getString("LotteryTips","message_004"));
+							
+							//Alert.show("已选择相应的拖码");
+							return;
+						}
+					}
+					touzhuContent_1.push(TogBtn.label);
+				
+				}else{
+					touzhuContent_1.splice(touzhuContent_1.indexOf(TogBtn.label),1);
+				}
+				this.sendNumbers();
+			}
+				
+			private function nums_tuo_click(event:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = event.target as ToggleButton;
+				if(TogBtn.selected == true)
+				{
+					
+					for each(var str:String in touzhuContent_1)
+					{
+						if(str == TogBtn.label)
+						{
+							TogBtn.selected = !TogBtn.selected;
+							var alert:AlertMsg = new AlertMsg();
+							//alert.show("已选择相应的胆码！", "温馨提示");
+							alert.show(resourceManager.getString("LotteryTips","lotteryAlert_004"), resourceManager.getString("LotteryTips","message_004"));
+							
+							//Alert.show("已选择相应的胆码");
+							return;
+						}
+					}
+					touzhuContent_2.push(TogBtn.label);
+				
+				}else{
+					touzhuContent_2.splice(touzhuContent_2.indexOf(TogBtn.label),1);
+				}
+				this.sendNumbers();
+			}
+			
+			private function sendNumbers():void
+			{
+				dispatchEvent(new CustomEvent(SEND_DANTUO_NUMBERS_CLICK,[touzhuContent_1,touzhuContent_2]));
+			
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" height="30">
+		<bettings:LineLeftRadiusItem width="35%" height="2" left="20" top="3"/>
+		<s:Label text="{resourceManager.getString('LotteryTips','play_Tips_23')}" styleName="labelStyles2"/>
+		<bettings:LineRightRadiusItem width="35%" height="2" right="20" top="3"/>
+	</s:HGroup>
+	<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" gap="20">
+		<s:Button label="{resourceManager.getString('LotteryTips','danMa_Area')}" styleName="orderButtonSkinStyle_large"/>
+		<s:HGroup id="numbers_dan" gap="20"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" gap="20">
+		<s:Button label="{resourceManager.getString('LotteryTips','tuoMa_Area')}" styleName="orderButtonSkinStyle_large"/>
+		<s:HGroup id="numbers_tuo" gap="20"/>
+	</s:HGroup>
+</s:VGroup>

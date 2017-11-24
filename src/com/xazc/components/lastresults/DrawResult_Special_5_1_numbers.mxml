@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:VerticalLayout paddingTop="10" paddingBottom="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Button;
+			[Bindable]
+			public var numbers:String = "";
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var numbersArray:Array = numbers.split(",");
+				createNumbers(numbersArray);
+			}
+			/**
+			 * 创建号码
+			 */
+			public function createNumbers(array:Array):void
+			{
+				numbersHGroup1.removeAllElements();
+				numbersHGroup2.removeAllElements();
+				var btn:spark.components.Button;
+				for(var i:int=0; i<array.length; i++){
+					btn = new spark.components.Button();
+					btn.label = array[i].toString();
+					btn.width = 60;
+					btn.styleName = "winNumberStyle_veryLarge";
+					if(i < 2){
+						numbersHGroup1.addElement(btn);
+					}else{
+						numbersHGroup2.addElement(btn);
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup id="numbersHGroup1" width="100%" horizontalAlign="center"/>
+	<s:HGroup id="numbersHGroup2" width="100%" horizontalAlign="center"/>
+</s:Group>

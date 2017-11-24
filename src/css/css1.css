@@ -1,0 +1,340 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+global {
+	fontFamily:"Microsoft YaHei,微软雅黑";
+}
+/*** 应用程序背景 ***/
+s|WindowedApplication.windowsApplicationStyle{
+/*	backgroundImage:Embed(source='css/skin1/assets/login.jpg');*/
+	skinClass:ClassReference("css.skin1.windowsApplicationSkin");
+}
+/*** 彩种名字字体样式 ***/
+s|Label.lotteryNameStyle{
+	color:#FFFFFF;
+	fontFamily:"Microsoft YaHei,微软雅黑";
+	fontSize:15;
+}
+/*** 彩种名字字体样式  mx***/
+mx|Label.lotteryNameStyle_mx{
+	color:#FFFFFF;
+	fontFamily:"Microsoft YaHei,微软雅黑";
+	fontSize:15;
+}
+/*** 向后翻页按钮样式 ***/
+s|Button.changeBtnLeftStyle{
+/*	getImage:Embed(source='css/skin1/assets/changePageLeftBtn.png');*/
+	skinClass:ClassReference("css.skin1.changeBtnSkin");
+}
+/*** 向前翻页按钮样式 ***/
+s|Button.changeBtnRightStyle{
+/*	getImage:Embed(source='css/skin1/assets/changePageRightBtn.png');*/
+	skinClass:ClassReference("css.skin1.changeBtnSkin");
+}
+
+mx|ToolTip{
+	backgroundColor: #000000;
+	backgroundAlpha: 0.8;
+	color: #FFFFFF;
+	fontSize: 14;
+	fontFamily: 'Microsoft YaHei,微软雅黑';
+}
+
+s|BorderContainer.userContainer
+{
+/*	bg:Embed(source="css/skin1/assets/user.png");*/
+	skinClass:ClassReference("css.skin1.UserContainer");
+}
+
+s|BorderContainer.userMenuContainer
+{
+/*	bg:Embed(source="css/skin1/assets/userMenu.png");*/
+	skinClass:ClassReference("css.skin1.UserMenuContainerSkin");
+}
+/*首页退出按钮样式*/
+s|Button.quitContainer
+{
+	color:#ffffff;
+/*	bg:Embed("css/skin1/universal/images/quit.png");
+	bg1:Embed("css/skin1/universal/images/quit1.png");
+	bg2:Embed("css/skin1/universal/images/quit2.png");*/
+	skinClass:ClassReference("css.skin1.QuitContainer")
+}
+/*首页消息按钮样式*/
+s|Button.msgBtnStyle{
+/*	bg:Embed("css/skin1/universal/images/msg.png");
+	bg1:Embed("css/skin1/universal/images/msg1.png");
+	bg2:Embed("css/skin1/universal/images/msg2.png");*/
+	skinClass:ClassReference("css.skin1.QuitContainer")
+}
+/*首页返回首页按钮样式*/
+s|Button.homeBtnStyle{
+/*	bg:Embed("css/skin1/universal/images/home.png");
+	bg1:Embed("css/skin1/universal/images/home1.png");
+	bg2:Embed("css/skin1/universal/images/home2.png");*/
+	skinClass:ClassReference("css.skin1.QuitContainer")
+}
+/*首页个人详情按钮样式*/
+s|Button.showUserDetailInfo_1
+{
+	bgRotation:180;
+	bg:Embed("css/skin1/universal/images/arrow.png");
+	bg1:Embed("css/skin1/universal/images/arrow1.png");
+/*	bg2:Embed("css/skin1/universal/images/arrow2.png");*/
+	skinClass:ClassReference("css.skin1.ShowDetailContainer")
+}
+s|Button.showUserDetailInfo_2
+{
+	bgRotation:0;
+	bg:Embed("css/skin1/universal/images/arrow.png");
+	bg1:Embed("css/skin1/universal/images/arrow1.png");
+	/*	bg2:Embed("css/skin1/universal/images/arrow2.png");*/
+	skinClass:ClassReference("css.skin1.ShowDetailContainer")
+}
+s|Label.labelCommonStyle
+{
+	fontSize:16;
+	color:#ffffff;
+	fontFamily:"Microsoft YaHei,微软雅黑";
+}
+mx|Label.labelCommonStyle_mx
+{
+	fontSize:15;
+	color:#FFFFFF;
+	rollOverColor:#000000;
+	selectionColor:#000000;
+/*	textRollOverColor:#333333;
+	textSelectedColor:#333333;*/
+	 
+	fontFamily:"Microsoft YaHei,微软雅黑";
+}
+s|BorderContainer.userDetailStyle
+{
+/*	bg:Embed("css/skin1/assets/userDetail.png");*/
+	skinClass:ClassReference("css.skin1.UserDetaileContainerSkin")
+}
+/*首页个人详情内刷新按钮样式*/
+s|Button.refreshButtonStyle
+{
+	bg:Embed("css/skin1/universal/images/refresh.png");
+	bg1:Embed("css/skin1/universal/images/refresh1.png");
+	bg2:Embed("css/skin1/universal/images/refresh2.png");
+	skinClass:ClassReference("css.skin1.RefreshButtonSkin")
+}
+
+s|Label.bottomLabelStyle
+{
+	fontSize:14;
+	color:#ffffff;
+	fontFamily:"Microsoft YaHei,微软雅黑";
+}
+
+s|Button.userMenuItemButtonSkin
+{
+	color:#ffffff;
+	fontFamily:"Microsoft YaHei,微软雅黑";
+	skinClass:ClassReference("css.skin1.universal.MenuItemButtonSkin")
+}
+
+s|TextInput.popUpTitleTextInputSkin
+{
+	
+}
+
+s|TextInput.popUpContextTextInputSkin
+{
+	
+}
+
+s|Button.changeBtnStyle
+{
+	skinClass:ClassReference("css.skin1.universal.refreshBtnSkin");
+}
+
+s|BorderContainer.popUpBgContainerSkin
+{
+/*	bg:Embed("css/skin1/assets/zhuihao.png");*/
+	skinClass:ClassReference("css.skin1.CommonBorderContainerSkin");
+	backgroundColor:#ffffff;
+}
+
+/*关闭样式*/
+s|Button.titleclose 
+{
+	skinClass:ClassReference("css.skin1.universal.CloseBtnSkintop");
+}
+/*最小化样式*/
+s|Button.titlesmall 
+{
+	skinClass:ClassReference("css.skin1.universal.CloseBtnSkintop");
+}
+s|ToggleButton.lottSelectBut{
+	
+	skinClass:ClassReference("css.skin1.universal.NavigationBtnSkins6");
+}
+
+s|ToggleButton.lottSelectButHot{
+	
+	skinClass:ClassReference("css.skin1.universal.HotNavigationBtnSkins6");
+}
+s|ToggleButton.lottSelectBut_new{
+	vis:true;
+	skinClass:ClassReference("css.skin1.universal.NavigationBtnSkins8");
+}
+
+s|ToggleButton.lottSelectBut_new2{
+	vis:false;
+	skinClass:ClassReference("css.skin1.universal.NavigationBtnSkins8");
+}
+
+/*登录页面下载按钮样式*/
+s|Button.loginDownBtnStyle{
+	downsIcon:Embed("css/skin1/assets/downicon.png");
+	skinClass:ClassReference("css.skin1.LoginDownBtnSkins");
+}
+s|Button.loginDownBtnStyle2{
+	downsIcon:Embed("css/skin1/assets/downicon2.png");
+	skinClass:ClassReference("css.skin1.LoginDownBtnSkins");
+}
+s|Button.loginDownBtnStyle3{
+	downsIcon:Embed("css/skin1/assets/downicon3.png");
+	skinClass:ClassReference("css.skin1.LoginDownBtnSkins");
+}
+s|Button.loginDownBtnStyle4{
+	downsIcon:Embed("css/skin1/assets/downicon4.png");
+	skinClass:ClassReference("css.skin1.LoginDownBtnSkins");
+}
+
+
+s|Button.loginDownPCBtnStyle{
+	
+	
+	downsIcon:Embed("css/skin1/assets/newlogin_pc_01.png");
+	skinClass:ClassReference("css.skin1.DownBtnPcSkins");
+}
+s|Button.loginDownPCBtnStyle2{
+	downsIcon:Embed("css/skin1/assets/newlogin_pc_02.png");
+	skinClass:ClassReference("css.skin1.DownBtnPcSkins");
+}
+/*点击打开个人中心页面按钮样式*/
+s|Button.personalNoIcomItemBtnStyle{
+	iconShow:false;
+	skinClass:ClassReference("css.skin1.PersonalItemBtnSkin");
+}
+s|Button.personalItemBtnStyle{
+	iconShow:true;
+	upIcon:Embed("css/skin1/assets/lotteryindex/wdzh_icon.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/wdzh_icon_over.png");
+	skinClass:ClassReference("css.skin1.PersonalItemBtnSkin");
+}
+s|Button.personalItemBtnStyle2{
+	iconShow:true;
+	upIcon:Embed("css/skin1/assets/lotteryindex/zhmx_icon.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/zhmx_icon_over.png");
+	skinClass:ClassReference("css.skin1.PersonalItemBtnSkin");
+}
+s|Button.personalItemBtnStyle3{
+	iconShow:true;
+	upIcon:Embed("css/skin1/assets/lotteryindex/yxjl_icon.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/yxjl_icon_over.png");
+	skinClass:ClassReference("css.skin1.PersonalItemBtnSkin");
+}
+s|Button.personalItemBtnStyle4{
+	iconShow:true;
+	upIcon:Embed("css/skin1/assets/lotteryindex/dlgl_icon.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/dlgl_icon_over.png");
+	skinClass:ClassReference("css.skin1.PersonalItemBtnSkin");
+}
+s|Button.personalItemBtnStyle5{
+	iconShow:true;
+	upIcon:Embed("css/skin1/assets/lotteryindex/power_icon.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/power_icon_over.png");
+	skinClass:ClassReference("css.skin1.PersonalItemBtnSkin");
+}
+s|Button.personalItemBtnStyle6{
+	iconShow:true;
+	upIcon:Embed("css/skin1/images/personalCenter/info.png");
+	downIcon:Embed("css/skin1/images/personalCenter/info_over.png");
+	skinClass:ClassReference("css.skin1.PersonalItemBtnSkin");
+}
+/*登录页面可点击链接样式*/
+s|Button.loginclickBtnStyle{
+	upIcon:Embed("css/skin1/assets/login/login_wjmm.png");
+	downIcon:Embed("css/skin1/assets/login/login_wjmm_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+s|Button.loginclickBtnStyle2{
+	upIcon:Embed("css/skin1/assets/login/login_zxkf.png");
+	downIcon:Embed("css/skin1/assets/login/login_zxkf_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+s|Button.loginclickBtnStyle3{
+	upIcon:Embed("css/skin1/assets/login/login_khdxz.png");
+	downIcon:Embed("css/skin1/assets/login/login_khdxz_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+s|Button.loginclickBtnStyle4{
+	upIcon:Embed("css/skin1/assets/login/login_xljc.png");
+	downIcon:Embed("css/skin1/assets/login/login_xljc_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+
+s|Button.lotterySelectBtnStyle_12{
+	upIcon:Embed("css/skin1/assets/lotteryindex/lottery_12.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/lottery_12_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+s|Button.lotterySelectBtnStyle_50{
+	upIcon:Embed("css/skin1/assets/lotteryindex/lottery_50.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/lottery_50_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+
+s|Button.lotterySelectBtnStyle_51{
+	upIcon:Embed("css/skin1/assets/lotteryindex/lottery_51.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/lottery_51_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+
+s|Button.lotterySelectBtnStyle_61{
+	upIcon:Embed("css/skin1/assets/lotteryindex/lottery_61.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/lottery_61_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+
+s|Button.lotterySelectBtnStyle_19{
+	upIcon:Embed("css/skin1/assets/lotteryindex/lottery_19.png");
+	downIcon:Embed("css/skin1/assets/lotteryindex/lottery_19_over.png");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+
+s|Image.lastResultvoidStyle{
+	
+	backgroundImage:Embed(source='css/skin1/images/lastresultVoid.png');
+	skinClass:ClassReference("css.skin1.GeneralImageSkins");
+}
+s|Image.lastResultCloseStyle{
+	
+	backgroundImage:Embed(source='css/skin1/images/lastresultclose.png');
+	skinClass:ClassReference("css.skin1.GeneralImageSkins");
+}
+
+s|Button.chessSelectBtnStyle{
+	upIcon:Embed("css/skin1/assets/chessindex/chess_gjc.jpg");
+	downIcon:Embed("css/skin1/assets/chessindex/chess_gjc_over.jpg");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+s|Button.chessSelectBtnStyle2{
+	upIcon:Embed("css/skin1/assets/chessindex/chess_cjc.jpg");
+	downIcon:Embed("css/skin1/assets/chessindex/chess_cjc_over.jpg");
+	skinClass:ClassReference("css.skin1.GeneralImagesBtnSkin");
+}
+
+/*活动页面 -子按钮（签到按钮） */
+s|ToggleButton.SignButtonStyle{
+	imageNormal:Embed("css/skin1/images/activityImages/sign_1.png");
+	imageSelected:Embed("css/skin1/images/activityImages/sign_3.png");
+	imageEnabel:Embed("css/skin1/images/activityImages/sign_2.png");
+	skinClass:ClassReference("css.skin1.signButtonSkin");
+}

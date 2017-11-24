@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="com.xazc.interfaces.IInit"  width="896" height="200"
+		 initialize="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			//绑定位数
+			[Bindable]
+			public var weiShu:String = "";
+			//号码
+			public var btns:Array = new Array();
+			//选号数组
+			public var numbersArray:Array = new Array();
+			//派发事件所用变量
+			public static const NUMBER_CLICK:String = "longhu_number_click";
+			/**
+			 *初始化 
+			 */
+			public function init():void{
+				numbersArray = new Array();
+				clean();
+			}
+			/**
+			 * 清除选号状态
+			 */
+			public function clean():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=0; i<numbersHGroup.numElements; i++){
+					toggleBtn = numbersHGroup.getElementAt(i) as ToggleButton;
+					toggleBtn.selected = false;
+				}
+			}
+			/**
+			 * 组件初始化完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				createToggleBtn();
+				createcontrolBtn();
+			}
+			/**
+			 * 创建选号
+			 */
+			public function createToggleBtn():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=0; i<28; i++){
+					toggleBtn = new ToggleButton();
+					if(i==0)toggleBtn.label = "1V2";if(i==1)toggleBtn.label = "1V3";if(i==2)toggleBtn.label = "1V4";
+					if(i==3)toggleBtn.label = "1V5";if(i==4)toggleBtn.label = "1V6";if(i==5)toggleBtn.label = "1V7";
+					if(i==6)toggleBtn.label = "1V8";
+					if(i==7)toggleBtn.label = "2V3";if(i==8)toggleBtn.label = "2V4";if(i==9)toggleBtn.label = "2V5";
+					if(i==10)toggleBtn.label = "2V6";if(i==11)toggleBtn.label = "2V7";if(i==12)toggleBtn.label = "2V8";
+					if(i==13)toggleBtn.label = "7V8";
+					if(i==14)toggleBtn.label = "3V4";if(i==15)toggleBtn.label = "3V5";if(i==16)toggleBtn.label = "3V6";
+					if(i==17)toggleBtn.label = "3V7";if(i==18)toggleBtn.label = "3V8";if(i==19)toggleBtn.label = "6V7";
+					if(i==20)toggleBtn.label = "6V8";
+					if(i==21)toggleBtn.label = "4V5";if(i==22)toggleBtn.label = "4V6";if(i==23)toggleBtn.label = "4V7";
+					if(i==24)toggleBtn.label = "4V8";if(i==25)toggleBtn.label = "5V6";if(i==26)toggleBtn.label = "5V7";
+					if(i==27)toggleBtn.label = "5V8";
+					toggleBtn.styleName = "numberSelectSkinStyle_large";
+					btns.push(toggleBtn);
+					toggleBtn.addEventListener(MouseEvent.CLICK,toggleBtn_clickHandler);
+					numbersHGroup.addElement(toggleBtn);
+				}
+			}
+			/**
+			 * 创建控制按钮
+			 */
+			public function createcontrolBtn():void
+			{
+				var btn:Button;
+				for(var i:int=1; i<3; i++){
+					btn = new Button();
+					if(i == 1){btn.label = resourceManager.getString('LotteryTips','all');}
+					if(i == 2){btn.label = resourceManager.getString('LotteryTips','clean');}
+					btn.id = "btn_0" + i.toString();
+					btn.styleName = "strSelectSkinStyle_mid";
+					btn.addEventListener(MouseEvent.CLICK,qdxjoq_clickHandler);
+					controlBtnHGroup.addElement(btn);
+				}
+			}
+			/**
+			 * 设置全，大小，奇偶点击事件
+			 */
+			public function qdxjoq_clickHandler(event:MouseEvent):void{
+				//清除号码样式
+				init();
+				var target:Button = event.target as Button;
+				switch(target.id)
+				{
+					case "btn_01":
+						//全选状态
+						setAllButtonState(true); 
+						break;
+					case "btn_02":
+						//全不选状态
+						setAllButtonState(false); 
+						break;
+					default:
+						break;
+				}
+			}
+			/**
+			 *	设置全选按钮选中状态
+			 */
+			public function setAllButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						if(selected == true){
+							numbersArray.push(temp.label);
+						}else{
+							numbersArray = [];
+						}
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+			/**
+			 * 处理点击按钮事件
+			 */
+			protected function toggleBtn_clickHandler(event:MouseEvent):void
+			{
+				var temp:ToggleButton = event.target as ToggleButton;
+				
+				var str:String = new String();
+				if(temp.label == "1V2")str = "1|2";if(temp.label == "1V3")str = "1|3";if(temp.label == "1V4")str = "1|4";
+				if(temp.label == "1V5")str = "1|5";if(temp.label == "1V6")str = "1|6";if(temp.label == "1V7")str = "1|7";
+				if(temp.label == "1V8")str = "1|8";
+				if(temp.label == "2V3")str = "2|3";if(temp.label == "2V4")str = "2|4";if(temp.label == "2V5")str = "2|5";
+				if(temp.label == "2V6")str = "2|6";if(temp.label == "2V7")str = "2|7";if(temp.label == "2V8")str = "2|8";
+				if(temp.label == "7V8")str = "7|8";
+				if(temp.label == "3V4")str = "3|4";if(temp.label == "3V5")str = "3|5";if(temp.label == "3V6")str = "3|6";
+				if(temp.label == "3V7")str = "3|7";if(temp.label == "3V8")str = "3|8";if(temp.label == "6V7")str = "6|7";
+				if(temp.label == "6V8")str = "6|8";
+				if(temp.label == "4V5")str = "4|5";if(temp.label == "4V6")str = "4|6";if(temp.label == "4V7")str = "4|7";
+				if(temp.label == "4V8")str = "4|8";if(temp.label == "5V6")str = "5|6";if(temp.label == "5V7")str = "5|7";
+				if(temp.label == "5V8")str = "5|8";
+				
+				if(temp.selected == true){
+					numbersArray.push(str);
+				}else{
+					numbersArray.splice(numbersArray.indexOf(str),1);
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup height="100%" verticalAlign="middle" gap="20">
+		<s:Button label="{weiShu}" styleName="orderButtonSkinStyle_mid"/>
+		<s:TileGroup id="numbersHGroup" height="100%" verticalAlign="middle" requestedColumnCount="7" horizontalGap="8" verticalGap="5" >
+		</s:TileGroup>
+	</s:HGroup>
+	<s:HGroup height="100%" verticalAlign="middle" id="controlBtnHGroup" gap="10" right="250">
+	</s:HGroup>
+</s:Group>

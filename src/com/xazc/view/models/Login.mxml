@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:login="com.xazc.view.login.*"
+		 implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		 width="100%" height="100%"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.JumpEvent;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			
+			
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				trace("初始化组件。。。Login");
+				if(loginGroup){
+					this.loginGroup.init();
+				}
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				trace("清空回收组件。。。Login");
+				if(loginGroup){
+					this.loginGroup.recycle();
+				}
+			}
+			
+			
+			protected function logingroup1_exitMoveEffectEventHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				moveExitEffect.play();
+			}
+			
+			protected function moveEffect_effectEndHandler(event:EffectEvent):void
+			{
+				// TODO Auto-generated method stub
+				//bgImage.visible=false;
+				dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_MAIN));
+			}
+			
+			/**
+			 *效果播放 
+			 **/
+			public function effectPlay():void{
+				//bgImage.visible=true;
+				moveInEffect.play();
+			}
+			
+			
+			protected function bgImage_mouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				FlexGlobals.topLevelApplication.nativeWindow.startMove();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<!-- 退场 -->
+		<s:Move id="moveExitEffect" target="{vg}" xFrom="0" xTo="-1024" duration="1000" effectEnd="moveEffect_effectEndHandler(event)"/>
+		<!-- 出场 -->
+		<s:Move id="moveInEffect" target="{vg}" xFrom="1024" xTo="0" duration="1000"/>
+	</fx:Declarations>
+	
+	<s:BitmapImage id="bgImage" source="css/skin1/assets/login/loginbg.jpg" width="100%" height="100%" smooth="true"/>
+	<s:VGroup id="vg" width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+		<login:LoginGroup width="646" height="600"  exitMoveEffectEvent="logingroup1_exitMoveEffectEventHandler(event)" id="loginGroup"/>
+		<!--<login:LoginWebGroup  width="646" height="600" exitMoveEffectEvent="logingroup1_exitMoveEffectEventHandler(event)" id="loginGroup"/>-->
+	</s:VGroup>
+</s:Group>

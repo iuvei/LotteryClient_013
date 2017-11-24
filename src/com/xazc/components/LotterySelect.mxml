@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.lotteryNameHelp;
+			private var _lotteryId:Number;
+			[Bindable]
+			private var lottertysource:String="";
+			
+			[Bindable]
+			private var lotteryname:String="";
+			
+			
+			public function get lotteryId():Number
+			{
+				return _lotteryId;
+			}
+
+			public function set lotteryId(value:Number):void
+			{
+				
+				lottertysource = "css/skin1/universal/lotteryimage/"+value+".png"
+				lotteryname = lotteryNameHelp.getCaizhong(value+"");
+				_lotteryId = value;
+			}
+
+			protected function image_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				Sendnotification.instance.dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE,{lotteryID:_lotteryId,mark:_lotteryId}));
+			}
+			
+		/* 	protected function label1_mouseUpHandler(event:MouseEvent):void
+			{
+				(event.target as Label).setStyle("color","0xfec500");
+				
+			}
+			
+			protected function label1_mouseOutHandler(event:MouseEvent):void
+			{
+				(event.target as Label).setStyle("color","0xffffff");
+			} */
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--<s:HGroup verticalAlign="middle">-->
+		<!--<s:Image source="{lottertysource}"  buttonMode="true" click="image_clickHandler(event)" visible="false" includeInLayout="false"/>-->
+		<!--<s:Label text="{lotteryname}" fontSize="13" color="0xffffff" buttonMode="true" mouseOut="label1_mouseOutHandler(event)" mouseOver="label1_mouseUpHandler(event)" click="image_clickHandler(event)"/>-->
+	<s:ToggleButton label="{lotteryname}" skinClass="css.skin1.universal.NavigationBtnSkins6" width="100%"/>
+<!--	</s:HGroup>-->
+</s:Group>

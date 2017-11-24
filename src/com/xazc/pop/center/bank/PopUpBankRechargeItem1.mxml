@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:finance="com.xazc.view.index.center.contentComponent.finance.*"
+		  width="100%" gap="10" horizontalAlign="center" xmlns:bank="com.xazc.pop.center.bank.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:RadioButtonGroup id="rbg1"/>
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="submitClickEvent",type="mx.events.DynamicEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import flashx.textLayout.operations.PasteOperation;
+			
+			import mx.controls.Alert;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.TextOperationEvent;
+			
+			
+			private var myRegexp:RegExp=/^(([1-9]\d{0,9})|0)(\.\d{1,2})?$/;
+			
+			//支付方式
+			private var typecode:String="";
+			//支付银行
+			private var bankcode:String="";
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			[Bindable]
+			private var minMoney:Number = 0;
+			[Bindable]
+			private var maxMoney:Number = 0;
+			
+			/**
+			 *选择充值方式 
+			 **/
+			public function rbClick(index:int):void{
+				input_money.text="";
+				var rechargeType:Number = 0;
+				if(index==4){//易宝
+					rechargeType = 16;
+				}else if(index==5){//MY18工行
+					rechargeType = 151;
+				}else if(index==6){//汇潮
+					rechargeType = 17;
+				}else if(index==7){//MY18建行
+					rechargeType = 153;
+				}else if(index==8){//MY18支付宝
+					rechargeType = 154;
+				}else if(index==9){//环讯
+					rechargeType = 19;
+				}else if(index==10){//MY18招行
+					rechargeType = 152;
+				}else if(index==11){//MY18财付通
+					rechargeType = 155;
+				}else if(index==12){//宝付
+					rechargeType = 20;
+				}else if(index==13){//国付宝
+					rechargeType = 21;
+				}else if(index==14){//MY18民生
+					rechargeType = 156;
+				}else if(index==15){//卡卡连
+					rechargeType = 22;
+				}else if(index==16){//摩宝   23
+					rechargeType = 23;
+				}else if(index==17){//通汇  24
+					rechargeType = 24;
+				}else if(index==18){//中信联通  25
+					rechargeType = 25;
+				}
+				/*
+				易宝 16,
+				汇潮 17,
+				环讯 19,
+				宝付 20,
+				工行 151,
+				招行 152,
+				建行 153,
+				支付宝 154,
+				财付通 155
+				摩宝   23
+				通汇  24
+				中信联通  25
+				*/
+				//获取充值大小范围
+				this.minMoney = CurrentBusinessInfo.rechargeLimiteObj['recharge_'+rechargeType+'_minRecMoney'];
+				this.maxMoney = CurrentBusinessInfo.rechargeLimiteObj['recharge_'+rechargeType+'_maxRecMoney'];
+				//关闭招行显示
+				this.cmb_help.visible = false;
+				this.cmb_help.includeInLayout = false;
+				//关闭民生显示
+				this.cmbc_help.visible = false;
+				this.cmbc_help.includeInLayout = false;
+				//摩宝  充值提示
+				this.mobao_help.visible=false;
+				this.mobao_help.includeInLayout=false;
+				
+				//my18
+				this.v_my18.visible=false;
+				this.v_my18.includeInLayout=false;
+				//在线支付按钮
+				this.v_online.visible=false;
+				this.v_online.includeInLayout=false;
+				
+				//摩宝支付按钮
+				this.v_mobao.visible=false;
+				this.v_mobao.includeInLayout=false;
+				
+				
+				
+				//选中当前要选择的银行
+				this["rbtn_"+index].selected=true;
+				typecode=this["rbtn_"+index].value;
+				
+				switch(index)
+				{
+					case 16://摩宝
+					{
+						rbBankMobaoClick(2);//默认显示网银支付；
+						this.v_mobao.visible=true;
+						this.v_mobao.includeInLayout=true;
+						this.mobao_help.visible=true;
+						this.mobao_help.includeInLayout=true;
+						break;
+					}
+					case 4://易宝
+					case 6://e汇通
+					case 9://环讯支付
+					case 12://宝付支付
+					case 13://国付宝支付
+					case 15://卡卡连
+					case 17:// 通汇
+					case 18://中信联通
+					{
+						rbBankOnlineClick(1);
+						this.v_online.visible=true;
+						this.v_online.includeInLayout=true;
+						break;
+					}
+//					case 18://中信联通
+//					{
+//						bankcode="zlxt";//当前选择的银行
+//						break;
+//					}
+					case 5://my18工行
+					{
+						rbBankMy18Click(1);
+						this.v_my18.visible=true;
+						this.v_my18.includeInLayout=true;
+						break;
+					}
+					case 7://my18建行
+					{
+						rbBankMy18Click(2);
+						this.v_my18.visible=true;
+						this.v_my18.includeInLayout=true;
+						break;
+					}
+					case 8://my18支付宝
+					{
+						rbBankMy18Click(3);
+						this.v_my18.visible=true;
+						this.v_my18.includeInLayout=true;
+						break;
+					}
+					case 10://my18招行
+					{
+						rbBankMy18Click(4);
+						this.v_my18.visible=true;
+						this.v_my18.includeInLayout=true;
+						this.cmb_help.visible = true;
+						this.cmb_help.includeInLayout = true;
+						break;
+					}
+					case 11://my18财付通
+					{
+						rbBankMy18Click(5);
+						this.v_my18.visible=true;
+						this.v_my18.includeInLayout=true;
+						break;
+					}
+					case 14://my18民生
+					{
+						rbBankMy18Click(6);
+						this.v_my18.visible=true;
+						this.v_my18.includeInLayout=true;
+						this.cmbc_help.visible = true;
+						this.cmbc_help.includeInLayout = true;
+						break;
+					}
+					default://上面所有支付方式都没有
+					{
+						this.group_1.visible=false;
+						this.group_1.includeInLayout=false;
+						break;
+					}
+				}
+			}
+			
+			/**
+			 *选择银行('my18')
+			 **/
+			public function rbBankMy18Click(index:int):void{
+				for(var i:int=1;i<7;i++){
+					if(i==index){
+						this["bank_my18_"+index].selected=true;
+						bankcode=this["bank_my18_"+index].value;
+					}else{
+						this["bank_my18_"+i].selected=false;
+					}
+				}
+			}
+			/**
+			 * 在线充值选择银行 
+			 */
+			public function rbBankOnlineClick(index:int):void{
+				for(var i:int=1;i<18;i++){
+					if(i==index){
+						this["bank_online_"+index].selected=true;//该银行按钮选中
+						bankcode=this["bank_online_"+index].value;//当前选择的银行
+					}else{
+						this["bank_online_"+i].selected=false;
+					}
+				}
+			}
+			
+			/**
+			 * 摩宝充值选择银行 
+			 */
+			public function rbBankMobaoClick(index:int):void{
+				for(var i:int=1;i<3;i++){
+					if(i==index){
+						this["bank_mobao_"+index].selected=true;//该银行按钮选中
+						bankcode=this["bank_mobao_"+index].value;//当前选择的银行
+					}else{
+						this["bank_mobao_"+i].selected=false;
+					}
+				}
+				
+				if(index == 2)//网银支付；与上面的在线支付一样的显示。
+				{
+					rbBankOnlineClick(1);
+					this.v_online.visible=true;
+					this.v_online.includeInLayout=true;
+				}else{
+					this.v_online.visible=false;
+					this.v_online.includeInLayout=false;
+				}
+			}
+			
+			/**
+			 *确定提交 
+			 **/
+			private function submitClick():void{
+				if(input_money.text==""||input_money.text=="."){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_recharge_item1_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return;
+				}else{
+					var m:Number=Number(input_money.text);
+					if(m<this.minMoney || m>this.maxMoney){
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_recharge_item1_check2'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return;
+					}
+					//摩宝微信 单笔不能大于500；
+					if(typecode == "15" && bank_mobao_1.selected){
+						if(m > 500){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_recharge_item1_check2'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'));
+							return;
+						}
+					}
+				}
+				var evt:DynamicEvent=new DynamicEvent("submitClickEvent");
+				evt.typeCode=typecode;
+				evt.money=input_money.text;
+				evt.bankCode=bankcode;
+				dispatchEvent(evt);
+			}
+			/**
+			 * 金额验证 
+			 */
+			protected function input_money_changeHandler(event:Event):void
+			{
+				var str:String=input_money.text.substring(input_money.text.indexOf("."),input_money.text.length);
+				var value:String=input_money.text;
+				var len:int=value.length-str.length+3;
+				if(input_money.text.indexOf(".")>0 && str.length>3){
+					input_money.text=value.substring(0,len);
+				}
+				if(input_money.text.split('.').length>2){
+					input_money.text = input_money.text.replace('.','');
+				}
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!--  显示用户名称及余额  -->
+	<s:HGroup width="100%" verticalAlign="middle">
+		<!--<mx:Label text="{CurrentUserInfo.userName}" styleName="textLableStyle_16size"/>
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','recharge_Tips_10')}："  styleName="textLableStyle_16size"/>
+		<mx:Label id="label_umoney" text="{Number(CurrentUserInfo.userCPBalance)}"  styleName="textLableStyle_16size_red"/>
+		<mx:Label text="{CurrentUserInfo.moneyType}"  styleName="textLableStyle_16size"/>-->
+		
+		<mx:Label text="账户余额："  styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label id="label_umoney" text="{Number(CurrentUserInfo.userCPBalance)}"  styleName="personalCenterDetailLabelStyle_3"/>
+		<mx:Label text="{CurrentUserInfo.moneyType}"  styleName="personalCenterDetailLabelStyle_1"/>
+	</s:HGroup>
+	
+	
+	
+	<!--  显示充值方式  -->
+	<s:HGroup width="100%"  gap="10">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','recharge_Moudle')}："  styleName="personalCenterDetailLabelStyle_1"/>
+		<s:TileGroup  requestedColumnCount="6" verticalGap="10"  paddingBottom="10">
+			<!--MY18-->
+			<!--  MY18工行  -->
+			<s:RadioButton id="rbtn_5" fontSize="13"  visible="{CurrentBusinessInfo.isOpenMY18}" includeInLayout="{CurrentBusinessInfo.isOpenMY18}" label="{resourceManager.getString('PersonalCenterPage','recharge_my18')}"  click="rbClick(5)" group="{rbg1}" value="4" buttonMode="true" />
+			<!--  MY18建行  -->
+			<s:RadioButton id="rbtn_7" fontSize="13"   visible="{CurrentBusinessInfo.isOpenMY18CCB}" includeInLayout="{CurrentBusinessInfo.isOpenMY18CCB}" label="{resourceManager.getString('PersonalCenterPage','recharge_my18CCB')}" click="rbClick(7)" group="{rbg1}" value="6" buttonMode="true" />
+			<!--  MY18支付宝  -->
+			<s:RadioButton id="rbtn_8" fontSize="13"  visible="{CurrentBusinessInfo.isOpenMY18Alipay}" includeInLayout="{CurrentBusinessInfo.isOpenMY18Alipay}" label="{resourceManager.getString('PersonalCenterPage','recharge_my18Alipay')}" click="rbClick(8)" group="{rbg1}" value="7" buttonMode="true" />
+			<!--  MY18招行 -->
+			<s:RadioButton id="rbtn_10" fontSize="13"   visible="{CurrentBusinessInfo.isOpenMY18CMB}" includeInLayout="{CurrentBusinessInfo.isOpenMY18CMB}" label="{resourceManager.getString('PersonalCenterPage','recharge_my18CMB')}"  click="rbClick(10)" group="{rbg1}" value="9" buttonMode="true" />
+			<!--  MY18财付通 -->
+			<s:RadioButton id="rbtn_11" fontSize="13"   visible="{CurrentBusinessInfo.isOpenMY18Tenpay}" includeInLayout="{CurrentBusinessInfo.isOpenMY18Tenpay}" label="{resourceManager.getString('PersonalCenterPage','recharge_my18Tenpay')}"  click="rbClick(11)" group="{rbg1}" value="10" buttonMode="true" />
+			<!--  my18民生银行 -->
+			<s:RadioButton id="rbtn_14" fontSize="13"   visible="{CurrentBusinessInfo.isOpenMY18CMBC}" includeInLayout="{CurrentBusinessInfo.isOpenMY18CMBC}" label="{resourceManager.getString('PersonalCenterPage','recharge_my18CMBC')}"  click="rbClick(14)" group="{rbg1}" value="13" buttonMode="true" />
+			
+			<!--在线支付-->
+			<!--  e汇通  -->
+			<s:RadioButton id="rbtn_6" fontSize="13"   visible="{CurrentBusinessInfo.isOpenEHT}" includeInLayout="{CurrentBusinessInfo.isOpenEHT}" label="{resourceManager.getString('PersonalCenterPage','recharge_ehuitong')}"  click="rbClick(6)" group="{rbg1}" value="5" buttonMode="true" />
+			<!--  国付宝支付 -->
+			<s:RadioButton id="rbtn_13" fontSize="13"   visible="{CurrentBusinessInfo.isOpenGopay}" includeInLayout="{CurrentBusinessInfo.isOpenGopay}" label="{resourceManager.getString('PersonalCenterPage','recharge_gopay')}" click="rbClick(13)" group="{rbg1}" value="12" buttonMode="true" />
+			<!--  摩宝 -->
+			<s:RadioButton id="rbtn_16" fontSize="13"   visible="{CurrentBusinessInfo.isOpenMobao}" includeInLayout="{CurrentBusinessInfo.isOpenMobao}" label="{resourceManager.getString('PersonalCenterPage','recharge_mobao')}" click="rbClick(16)" group="{rbg1}" value="15" buttonMode="true" />
+			<!--  易宝  -->
+			<s:RadioButton id="rbtn_4" fontSize="13"  visible="{CurrentBusinessInfo.isOpenYiBao}" includeInLayout="{CurrentBusinessInfo.isOpenYiBao}"  label="{resourceManager.getString('PersonalCenterPage','recharge_yibao')}" click="rbClick(4)" group="{rbg1}" value="3" buttonMode="true" />
+			<!--  宝付支付 -->
+			<s:RadioButton id="rbtn_12" fontSize="13"  visible="{CurrentBusinessInfo.isOpenBAOFOOpay}" includeInLayout="{CurrentBusinessInfo.isOpenBAOFOOpay}" label="{resourceManager.getString('PersonalCenterPage','recharge_baofoo')}"  click="rbClick(12)" group="{rbg1}" value="11" buttonMode="true" />
+			<!--  卡卡联 -->
+			<s:RadioButton id="rbtn_15" fontSize="13"   visible="{CurrentBusinessInfo.isOpenKKL}" includeInLayout="{CurrentBusinessInfo.isOpenKKL}" label="{resourceManager.getString('PersonalCenterPage','recharge_kkl')}" click="rbClick(15)" group="{rbg1}" value="14" buttonMode="true" />
+			<!--  环讯 支付 -->
+			<s:RadioButton id="rbtn_9" fontSize="13"  visible="{CurrentBusinessInfo.isOpenHuanXun}" includeInLayout="{CurrentBusinessInfo.isOpenHuanXun}" label="{resourceManager.getString('PersonalCenterPage','recharge_huanXun')}" click="rbClick(9)" group="{rbg1}" value="8" buttonMode="true" />
+			<!--  通汇 -->
+			<s:RadioButton id="rbtn_17" fontSize="13"   visible="{CurrentBusinessInfo.isOpenTonghui}" includeInLayout="{CurrentBusinessInfo.isOpenTonghui}" label="{resourceManager.getString('PersonalCenterPage','recharge_tonghui')}" click="rbClick(17)" group="{rbg1}" value="16" buttonMode="true" />
+			<!--  中信联通 -->
+			<s:RadioButton id="rbtn_18" fontSize="13"   visible="{CurrentBusinessInfo.isOpenZXLT}" includeInLayout="{CurrentBusinessInfo.isOpenZXLT}" label="{resourceManager.getString('PersonalCenterPage','recharge_zxlt')}" click="rbClick(18)" group="{rbg1}" value="17" buttonMode="true" />
+		</s:TileGroup>
+	</s:HGroup>
+	
+	<!--  输入充值金额  -->
+	<s:HGroup width="100%" verticalAlign="middle" gap="10">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','recharge_Money')}：" styleName="personalCenterDetailLabelStyle_1" />
+		<s:HGroup gap="3">
+			<mx:TextInput id="input_money" width="143"  styleName="personalCenterDetailTextInputStyle" restrict="0-9." change="input_money_changeHandler(event)"/>
+			<mx:Label  text="{CurrentUserInfo.moneyType}" styleName="personalCenterDetailLabelStyle_1" />
+		</s:HGroup>
+		<mx:Label id="tishi" text="{'('+ resourceManager.getString('PersonalCenterPage','the_Round')}{minMoney}-{maxMoney}{resourceManager.getString('PersonalCenterPage','money_Type') + ')'}" styleName="personalCenterDetailLabelStyle_3" />
+	</s:HGroup>
+	<!--  选择充值银行（提示）  -->
+	
+	<!-- 摩宝支付选择银行显示-->
+	<s:HGroup width="100%" id="v_mobao" visible="false" includeInLayout="false">
+		<s:HGroup width="100%" verticalAlign="middle" gap="10">
+			<mx:Label text="支付方式：" styleName="personalCenterDetailLabelStyle_1"/>	
+			<bank:BankItem id="bank_mobao_1" source="css/skin1/universal/bank/weixin.jpg" click="rbBankMobaoClick(1)" value="wechat"/>
+			<bank:BankItem id="bank_mobao_2" source="css/skin1/universal/bank/yinlian.jpg" click="rbBankMobaoClick(2)" value="online"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<!--  选择充值银行  -->
+	<s:Group width="100%" id="group_1">
+		<!--  my18  -->
+		<s:HGroup width="100%" id="v_my18" visible="true" includeInLayout="true" gap="10">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','please_Select_Recharge_Bank')}：" styleName="personalCenterDetailLabelStyle_1"/>					
+			<s:HGroup width="100%" verticalAlign="middle" >
+				<!-- 工行 -->
+				<bank:BankItem id="bank_my18_1" source="css/skin1/universal/bank/bank1.jpg" visible="{rbtn_5.selected}" includeInLayout="{rbtn_5.selected}"  click="rbBankMy18Click(1)" value="icbc"/>
+				<!-- 建行 -->
+				<bank:BankItem id="bank_my18_2" source="css/skin1/universal/bank/bank2.jpg" visible="{rbtn_7.selected}" includeInLayout="{rbtn_7.selected}" click="rbBankMy18Click(2)" value="ccb" />
+				<!-- 支付宝 -->
+				<bank:BankItem id="bank_my18_3" source="css/skin1/universal/bank/bank25.jpg" visible="{rbtn_8.selected}" includeInLayout="{rbtn_8.selected}"  click="rbBankMy18Click(3)" value="alipay"  />
+				<!--  招行  -->
+				<bank:BankItem id="bank_my18_4" source="css/skin1/universal/bank/bank5.jpg" visible="{rbtn_10.selected}" includeInLayout="{rbtn_10.selected}"  click="rbBankMy18Click(4)" value="cmb"/>
+				<!-- 财付通  -->
+				<bank:BankItem id="bank_my18_5" source="css/skin1/universal/bank/bank26.jpg" visible="{rbtn_11.selected}" includeInLayout="{rbtn_11.selected}"   click="rbBankMy18Click(5)" value="tenpay"/>
+				<!--  民生银行  -->
+				<bank:BankItem id="bank_my18_6" source="css/skin1/universal/bank/bank8.jpg" visible="{rbtn_14.selected}" includeInLayout="{rbtn_14.selected}"   click="rbBankMy18Click(6)" value="cmbc"/>
+			</s:HGroup>
+		</s:HGroup>
+		<!-- 在线支付选择银行显示-->
+		<s:HGroup width="100%" id="v_online" visible="false" includeInLayout="false" gap="10">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','please_Select_Recharge_Bank')}：" styleName="personalCenterDetailLabelStyle_1"/>					
+			<s:VGroup width="100%">
+				<!--  中国工商银行，中国农业银行，中国建设银行，招商银行 -->
+				<s:HGroup width="100%" verticalAlign="middle" gap="10" >
+					<bank:BankItem id="bank_online_1" source="css/skin1/universal/bank/bank1.jpg" click="rbBankOnlineClick(1)" value="icbc"/>
+					<bank:BankItem  id="bank_online_2" source="css/skin1/universal/bank/bank3.jpg" click="rbBankOnlineClick(2)" value="abc" />
+					<bank:BankItem  id="bank_online_3" source="css/skin1/universal/bank/bank2.jpg" click="rbBankOnlineClick(3)" value="ccb"/>
+					<bank:BankItem id="bank_online_4" source="css/skin1/universal/bank/bank5.jpg" click="rbBankOnlineClick(4)" value="cmb"/>
+					<bank:BankItem id="bank_online_5" source="css/skin1/universal/bank/bank21.jpg" click="rbBankOnlineClick(5)" value="spdb"/>
+				</s:HGroup>
+				<!-- 浦发银行，民生银行，中国银行，中国光大银行  -->
+				<s:HGroup width="100%" verticalAlign="middle"  gap="10" >
+					<bank:BankItem id="bank_online_6" source="css/skin1/universal/bank/bank8.jpg"  click="rbBankOnlineClick(6)" value="cmbc"/>
+					<bank:BankItem  id="bank_online_7" source="css/skin1/universal/bank/bank6.jpg" click="rbBankOnlineClick(7)" value="boc"/>
+					<bank:BankItem id="bank_online_8" source="css/skin1/universal/bank/bank13.jpg"  click="rbBankOnlineClick(8)" value="ceb"/>
+					<bank:BankItem id="bank_online_9" source="css/skin1/universal/bank/bank4.jpg" click="rbBankOnlineClick(9)" value="psbc"/>
+					<bank:BankItem id="bank_online_10" source="css/skin1/universal/bank/bank10.jpg"  click="rbBankOnlineClick(10)" value="bos"/>
+				</s:HGroup>
+				<!-- 中国邮政，上海银行，华夏银行，兴业银行  -->
+				<s:HGroup width="100%" verticalAlign="middle" gap="10" >
+					<bank:BankItem id="bank_online_11" source="css/skin1/universal/bank/bank16.jpg" click="rbBankOnlineClick(11)" value="hxb"/>
+					<bank:BankItem id="bank_online_12" source="css/skin1/universal/bank/bank12.jpg" click="rbBankOnlineClick(12)" value="cib"/>
+					<bank:BankItem id="bank_online_13" source="css/skin1/universal/bank/bank14.jpg"  click="rbBankOnlineClick(13)" value="gdb"/>
+					<bank:BankItem id="bank_online_14" source="css/skin1/universal/bank/bank24.jpg" click="rbBankOnlineClick(14)" value="cpb"/>
+					<bank:BankItem id="bank_online_15" source="css/skin1/universal/bank/bank22.jpg" click="rbBankOnlineClick(15)" value="ecitic"/>
+				</s:HGroup>
+				<!--  广发银行，平安银行，中信银行，北京银行 -->
+				<s:HGroup width="100%" verticalAlign="middle" gap="10" >
+					<bank:BankItem  id="bank_online_16" source="css/skin1/universal/bank/bank9.jpg" click="rbBankOnlineClick(16)" value="bob"/>
+					<bank:BankItem id="bank_online_17" source="css/skin1/universal/bank/bank7.jpg"  click="rbBankOnlineClick(17)" value="comm"/>
+				</s:HGroup>
+			</s:VGroup>
+		</s:HGroup>
+	</s:Group>
+	<!--  立即充值  -->
+	<s:HGroup width="100%" horizontalAlign="left" verticalAlign="middle" gap="0">
+		<s:Spacer height="70" width="80"/>
+		<s:Button  label="立即充值" styleName="personalSubmitButtonStyle" click="submitClick()" buttonMode="true"/>
+		<s:Spacer height="30" width="30"/>
+		<!--  摩宝  充值提示  -->
+		<s:HGroup id="mobao_help" width="100%" height="30" gap="0" horizontalAlign="left" verticalAlign="middle" visible="false" includeInLayout="false">
+			<mx:Label text="备注：微信单笔最大500元。" styleName="personalCenterDetailLabelStyle_1" />
+		</s:HGroup>
+	</s:HGroup>
+	
+	<!--  摩宝  充值提示  -->
+	<!--<s:HGroup id="mobao_help" width="100%" height="30" gap="0" horizontalAlign="left" verticalAlign="middle" visible="false" includeInLayout="false">
+		<s:Spacer height="70" width="80"/>
+		<mx:Label text="备注：微信单笔最大500元。" styleName="personalCenterDetailLabelStyle_1" />
+	</s:HGroup>-->
+	
+	<!--  招商银行充值提示  -->
+	<s:VGroup width="100%" id="cmb_help"  visible="false" includeInLayout="false" gap="0" height="200" verticalAlign="middle">
+		<s:HGroup  verticalAlign="middle">
+			<mx:Label text="温馨提示：" styleName="personalCenterDetailLabelStyle_1" />	
+		</s:HGroup>
+		<s:HGroup  verticalAlign="middle" gap="0">
+			<mx:Label text="招行支持同行转账和跨行转账，包括" styleName="personalCenterDetailLabelStyle_1" />	
+			<mx:Label text="招行同行转招行、工行跨行转招行、建行跨行转招行、农行跨行转招行、交行跨行转招行" styleName="personalCenterDetailLabelStyle_3" />	
+			<mx:Label text="。" styleName="personalCenterDetailLabelStyle_1" />	
+		</s:HGroup>
+	</s:VGroup>
+	<!--  民生银行充值提示  -->
+	<s:VGroup width="100%" id="cmbc_help"  visible="false" includeInLayout="false" gap="0" height="200" verticalAlign="middle">
+		<s:HGroup  verticalAlign="middle">
+			<mx:Label text="温馨提示：" styleName="personalCenterDetailLabelStyle_1" />	
+		</s:HGroup>
+		<s:HGroup  verticalAlign="middle" gap="0">
+			<mx:Label text="民生银行支持同行转账和跨行转账。" styleName="personalCenterDetailLabelStyle_1" />	
+		</s:HGroup>
+	</s:VGroup>
+	
+</s:VGroup>

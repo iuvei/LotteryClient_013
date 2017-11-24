@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="creationCompleteHandler(event)" 
+		  xmlns:ssc="com.xazc.components.ssc.*" gap="0"
+		  xmlns:bettings="com.xazc.components.bettings.*" xmlns:miaomiaocai="com.xazc.module.miaomiaocai.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			private var game_id:String = "10";
+			
+			public var lotteryID:String = "";
+			
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlayContainer = playContainer1;
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				
+			}
+			
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				if(playType == 1)
+				{
+					zhushu = tenThousand.selectedNum.length + oneThousand.selectedNum.length + 
+						hundred.selectedNum.length + ten.selectedNum.length + one.selectedNum.length;
+					var ww:Array=tenThousand.selectedNum; 
+					var qw:Array=oneThousand.selectedNum;
+					var bw:Array=hundred.selectedNum; 
+					var sw:Array=ten.selectedNum; 
+					var gw:Array=one.selectedNum;
+					if(zhushu>0){
+						if(ww.length<=0) ww=["*"]; if(qw.length<=0) qw=["*"];
+						if(bw.length<=0) bw=["*"]; if(sw.length<=0) sw=["*"]; if(gw.length<=0) gw=["*"];
+					}
+					bettingInfo.tzcontent = ww+"|"+qw+"|"+bw+"|"+sw+"|"+gw;
+				}
+				else if(playType == 2)
+				{
+					zhushu = top3.selectedNum.length;
+					bettingInfo.tzcontent = top3.selectedNum..toString();
+					
+				}
+				else if(playType == 3)
+				{
+					zhushu = behined3.selectedNum.length;
+					bettingInfo.tzcontent = behined3.selectedNum..toString();
+				}
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			private function clearAll(e:BetsClickEvent = null):void
+			{
+				clearSelectedNumbers();
+				clearTopSelectedNumber();
+				clearBehindSelectedNumber();
+			}
+			
+			private function clearSelectedNumbers():void
+			{
+				tenThousand.clearAllSelectedNumHandler();
+				oneThousand.clearAllSelectedNumHandler();
+				hundred.clearAllSelectedNumHandler();
+				ten.clearAllSelectedNumHandler();
+				one.clearAllSelectedNumHandler();
+			}
+			
+			private function clearBehindSelectedNumber():void
+			{
+				behined3.clearAllSelectedNumHandler();
+			}
+			
+			private function clearTopSelectedNumber():void
+			{
+				top3.clearAllSelectedNumHandler();
+			} 
+			
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				target.selected = true;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				switch(targetID)
+				{
+					case "play_10":
+						playType = 1;
+						showPlayContainer(playContainer1);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_39');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_39');
+						break;
+					case "play_23":
+						playType = 2;
+						showPlayContainer(playContainer2);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_40');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_40');
+						break;
+					case "play_24":
+						playType = 3;
+						showPlayContainer(playContainer3);
+						this.gameType.text = resourceManager.getString('LotteryTips','ssc_game_tip_41');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','ssc_game_tip_emp_41');
+						break;
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer  backgroundAlpha="0.0" width="100%" height="46">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="24" paddingLeft="30"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton id="play_10" label="{resourceManager.getString('LotteryTips','location_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_24" label="{resourceManager.getString('LotteryTips','back_3_Unlocation_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 3}" click="playClickHandler(event)" visible="false"/>
+			<s:ToggleButton id="play_23" label="{resourceManager.getString('LotteryTips','forword_3_Unlocation_Selected')}" styleName="mmcSecondMenuToggleButtonStyle" 
+							selected="{playType == 2}" click="playClickHandler(event)" visible="false"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	<s:Group width="100%" height="28">
+		<s:Rect right="22" left="22" width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0x000000" alpha="0.5"/>
+			</s:fill>
+			<s:stroke> 
+				<s:SolidColorStroke color="0xac9759" weight="1" joints="round"/> 
+			</s:stroke> 
+		</s:Rect>
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="30">
+			<s:Label text="玩法说明：" styleName="labelStyles2" color="0xdabd6d"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','ssc_game_tip_39')}" styleName="labelStyles2" color="0xdabd6d"/>
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.MMCTipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','ssc_game_tip_emp_39')}"/>
+		</s:HGroup>
+	</s:Group>
+	<s:VGroup id="playContainer1" width="100%" height="260" paddingLeft="30" verticalAlign="middle" gap="0">
+		<miaomiaocai:MMCNumberSelected id="tenThousand" bettingRowName="{resourceManager.getString('LotteryTips','ten_Thousand')}"/>
+		<miaomiaocai:MMCNumberSelected id="oneThousand" bettingRowName="{resourceManager.getString('LotteryTips','thousand')}"/>
+		<miaomiaocai:MMCNumberSelected id="hundred" bettingRowName="{resourceManager.getString('LotteryTips','hundred')}"/>
+		<miaomiaocai:MMCNumberSelected id="ten" bettingRowName="{resourceManager.getString('LotteryTips','ten')}"/>
+		<miaomiaocai:MMCNumberSelected id="one" bettingRowName="{resourceManager.getString('LotteryTips','single')}"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer2" width="100%" height="260" paddingLeft="30" verticalAlign="middle" visible="false" includeInLayout="false">
+		<miaomiaocai:MMCNumberSelected id="top3" bettingRowName="{resourceManager.getString('LotteryTips','number')}"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer3" width="100%" height="260" paddingLeft="30" verticalAlign="middle" visible="false" includeInLayout="false">
+		<miaomiaocai:MMCNumberSelected id="behined3" bettingRowName="{resourceManager.getString('LotteryTips','number')}"/>
+	</s:VGroup>
+</s:VGroup>

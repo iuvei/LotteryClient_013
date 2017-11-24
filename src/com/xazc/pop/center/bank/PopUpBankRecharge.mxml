@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="init()" 
+		 width="100%" height="100%"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:bank="com.xazc.pop.center.bank.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.events.DynamicEvent;
+			import mx.rpc.events.ResultEvent;
+			public var markID:String="1020200";
+			public static var markID:String="1020200";
+			[Bindable]
+			public var labelTitleText:String="充值";
+			
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			
+			private var typeCode:String="";//标识支付平台
+			
+			private var service:ServerToolImpl;
+			
+			protected function item1_submitClickEventHandler(event:DynamicEvent):void
+			{
+				loading.visible=true;
+				typeCode=event.typeCode;
+				addRechargeInfo(event.typeCode,event.money,event.bankCode);
+			}
+			
+			/**
+			 *初始化信息 
+			 **/
+			private function init():void{
+				initPropertys();
+				Sendnotification.instance.addEventListener("waitingItemCloseEvent",waitingItemCloseHandler);
+			}
+			private function waitingItemCloseHandler(e:Event):void{
+				initPropertys();
+			}
+			/**
+			 *初始化页面属性
+			 **/
+			public function initPropertys():void{
+				item1.init();
+				item1.visible=true;
+				
+				if(CurrentBusinessInfo.allPayTypeArray.length < 1)
+				{
+					//全部关闭时处理
+					noRecharge.visible = true;
+					item1.visible = false;
+				}
+				//item1.rbClick(2);
+				//item1.rbBankClick(1);
+				item2.visible=false;
+				item2.includeInLayout=false;
+				item2.closeTimer();
+				item3.wait.visible=false;
+				item3.visible=false;
+				item3.includeInLayout=false;
+				loading.visible=false;
+			}
+			/**
+			 *充值 
+			 **/
+			private function addRechargeInfo(type:String,money:String,bankCode:String):void{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var typestr:String="";
+				var bankcodestr:String="";
+				//Alert.show(type+"%%"+money+"%%"+bankCode);
+				
+				
+				if(type=="2" ){//支付宝
+					typestr="0";
+					typeCode="2";
+					bankcodestr="alipay";
+				}else if(type=="16"){//易宝支付
+					typestr="5";
+					typeCode="16";
+					bankcodestr=bankCode;
+				}else if(type=="151"){//MY18支付工行
+					typestr="6";
+					typeCode="151";
+					bankcodestr=bankCode;
+				}else if(type=="17"){//汇潮支付
+					typestr="8";
+					typeCode="17";
+					bankcodestr=bankCode;
+				}else if(type=="153"){//MY18建行
+					typestr="11";//正式时需要修改11
+					typeCode="153";
+					bankcodestr=bankCode;
+				}else if(type=="154"){//MY18支付宝
+					typestr="10";//正式时需要修改10
+					typeCode="154";
+					bankcodestr=bankCode;
+				}else if(type=="19"){//环讯支付
+					typestr="9";//正式时需要修改9
+					typeCode="19";
+					bankcodestr=bankCode;
+				}else if(type=="152"){//MY18招行
+					typestr="12";//正式时需要修改12
+					typeCode="152";
+					bankcodestr=bankCode;
+				}else if(type=="155"){//MY18财付通
+					typestr="13";//正式时需要修改13
+					typeCode="155";
+					bankcodestr=bankCode;
+				}else if(type=="20"){//宝付支付
+					typestr="14";//正式时需要修改14
+					typeCode="20";
+					bankcodestr=bankCode;
+				}else if(type=="21"){//国付宝支付
+					typestr="15";//正式时需要修改15
+					typeCode="21";
+					bankcodestr=bankCode;
+				}else if(type=="156"){//my18民生
+					typestr="17";//正式时需要修改17
+					typeCode="156";
+					bankcodestr=bankCode;
+				}else if(type=="22"){//卡卡连
+					typestr="16";//正式时需要修改16
+					typeCode="22";
+					bankcodestr=bankCode;
+				}else if(type=="23"){//摩宝
+					typestr="18";//正式时需要修改18
+					typeCode="23";
+					bankcodestr=bankCode;
+				}else if(type=="24"){//通汇
+					typestr="19";//正式时需要修改19
+					typeCode="24";
+					bankcodestr=bankCode;
+				}else if(type=="25"){//中信联通
+					typestr="20";//正式时需要修改20
+					typeCode="25";
+					bankcodestr=bankCode;
+				}else if(type=="26"){//OPEN2PAY  
+					typestr="21";//正式时需要修改21
+					typeCode="26";
+					bankcodestr=bankCode;
+				}else if(type=="27"){//新贝支付  
+					typestr="22";//正式时需要修改22
+					typeCode="27";
+					bankcodestr=bankCode;
+				}else if(type=="28"){//新汇潮支付  
+					typestr="23";//正式时需要修改23
+					typeCode="28";
+					bankcodestr=bankCode;
+				}else if(type=="29"){//快捷通支付 
+					typestr="24";//正式时需要修改24
+					typeCode="29";
+					bankcodestr=bankCode;
+				}else if(type=="30"){//智付支付 
+					typestr="25";//正式时需要修改25
+					typeCode="30";
+					bankcodestr=bankCode;
+				}else if(type=="31"){//国付宝手机支付
+					typestr="26";//正式时需要修改26
+					typeCode="31";
+					bankcodestr=bankCode;
+				}else if(type=="32"){//新生
+					typestr="32";
+					typeCode="32";
+					bankcodestr=bankCode;
+				}else if(type=="33"){//新生微信
+					typestr="33";
+					typeCode="33";
+					bankcodestr=bankCode;
+				}else if(type=="34"){//汇付宝
+					typestr="34";
+					typeCode="34";
+					bankcodestr=bankCode;
+				}else if(type=="35"){//汇付宝微信
+					typestr="35";
+					typeCode="35";
+					bankcodestr=bankCode;
+				}else if(type=="36"){//通汇微信
+					typestr="36";
+					typeCode="36";
+					bankcodestr=bankCode;
+				}else if(type=="37"){//锐付
+					typestr="37";
+					typeCode="37";
+					bankcodestr=bankCode;
+				}else if(type=="38"){//锐付微信
+					typestr="38";
+					typeCode="38";
+					bankcodestr=bankCode;
+				}else if(type=="157"){//MY18支付宝2
+					typestr="157";
+					typeCode="157";
+					bankcodestr=bankCode;
+				}else if(type=="39"){//智付微信
+					typestr="39";
+					typeCode="39";
+					bankcodestr=bankCode;
+				}else if(type=="40"){//首信易
+					typestr="40";
+					typeCode="40";
+					bankcodestr=bankCode;
+				}else if(type=="41"){//首信易微信
+					typestr="41";
+					typeCode="41";
+					bankcodestr=bankCode;
+				}else if(type=="42"){//乐付微信
+					typestr="42";
+					typeCode="42";
+					bankcodestr=bankCode;
+				}else if(type=="43"){//乐付网银
+					typestr="43";
+					typeCode="43";
+					bankcodestr=bankCode;
+				}else if(type=="44"){//乐付快捷
+					typestr="44";
+					typeCode="44";
+					bankcodestr=bankCode;
+				}else if(type=="45"){//乐付支付宝
+					typestr="45";
+					typeCode="45";
+					bankcodestr=bankCode;
+				}else if(type=="47"){//汇博支付(QQPay)  47
+					typestr="47";
+					typeCode="47";
+					bankcodestr=bankCode;
+				}else if(type=="50"){//汇博支付
+					typestr="50";
+					typeCode="50";
+					bankcodestr=bankCode;
+				}else if(type=="51"){//华仁支付
+					typestr="51";
+					typeCode="51";
+					bankcodestr=bankCode;
+				}else if(type=="52"){//华仁支付(快捷支付)
+					typestr="52";
+					typeCode="52";
+					bankcodestr=bankCode;
+				}else if(type=="48"){//华仁支付(微信支付)
+					typestr="48";
+					typeCode="48";
+					bankcodestr=bankCode;
+				}else if(type=="53"){//多得宝  网银  53
+					typestr="53";
+					typeCode="53";
+					bankcodestr=bankCode;
+				}else if(type=="54"){//多得宝  微信  54
+					typestr="54";
+					typeCode="54";
+					bankcodestr=bankCode;
+				}else if(type=="55"){//多得宝  支付宝  55
+					typestr="55";
+					typeCode="55";
+					bankcodestr=bankCode;
+				}else if(type=="56"){//新摩宝网银 56
+					typestr="56";
+					typeCode="56";
+					bankcodestr=bankCode;
+				}else if(type=="57"){//华仁支付 支付宝   57 
+					typestr="57";
+					typeCode="57";
+					bankcodestr=bankCode;
+				}else if(type=="58"){//华仁支付(QQPay) 58
+					typestr="58";
+					typeCode="58";
+					bankcodestr=bankCode;
+				}else if(type=="59"){//乐付QQ支付   59
+					typestr="59";
+					typeCode="59";
+					bankcodestr=bankCode;
+				}else if(type=="60"){//智付(QQ支付)   60
+					typestr="60";
+					typeCode="60";
+					bankcodestr=bankCode;
+				}else if(type=="61"){//汇博微信扫码    61
+					typestr="61";
+					typeCode="61";
+					bankcodestr=bankCode;
+				}else if(type=="62"){//速汇宝网银支付   62
+					typestr="62";
+					typeCode="62";
+					bankcodestr=bankCode;
+				}else if(type=="63"){//速汇宝微信   63
+					typestr="63";
+					typeCode="63";
+					bankcodestr=bankCode;
+				}else if(type=="64"){//速汇宝QQ   64
+					typestr="64";
+					typeCode="64";
+					bankcodestr=bankCode;
+				}else if(type=="65"){//扫码付微信支付  65
+					typestr="65";
+					typeCode="65";
+					bankcodestr=bankCode;
+				}else if(type=="66"){//扫码付QQ支付  66
+					typestr="66";
+					typeCode="66";
+					bankcodestr=bankCode;
+				}else if(type=="67"){//扫码付支付宝支付  67
+					typestr="67";
+					typeCode="67";
+					bankcodestr=bankCode;
+				}else if(type=="68"){//扫码付网银支付   68
+					typestr="68";
+					typeCode="68";
+					bankcodestr=bankCode;
+				}else{
+					typestr=type;
+					bankcodestr=bankCode;
+				}
+				service.addRechargeInfo({"RechargeType":typestr,"RechargeMoney":money,"BankCode":bankcodestr},addRechargeInfoHandler);
+				//				service.addRechargeInfo({"RechargeType":type=="2"?0:type,"RechargeMoney":money,"BankCode":type=="2"?"alipay":bankCode},addRechargeInfoHandler);
+			}
+			private function addRechargeInfoHandler(e:ResultEvent):void{
+				loading.visible=false;
+				var alert:AlertMsgCenter = new AlertMsgCenter();
+				var obj:Object=Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				
+				if(obj.hasOwnProperty("SystemState")){
+					if(obj.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(obj.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+					}
+				}
+				
+				if(obj.Result==1){
+					var arr:Array=obj.Context as Array;
+					if(typeCode=="0" || typeCode=="2"|| typeCode=="151"|| typeCode=="152"|| typeCode=="153"|| typeCode=="154"|| typeCode=="155"
+						|| typeCode=="156"){//网银，支付宝，MY18工行、建行，支付宝,招行，财付通
+						item1.visible=false;
+						item2.visible=true;
+						item2.includeInLayout=true;
+						item3.visible=false;
+						item3.includeInLayout=false;
+						var object:Object=new Object();
+						object.PayBank=arr[0].PayBank;//银行
+						object.PayBankAccount=arr[0].PayBankAccount;//存款卡号
+						object.PayMoney=arr[0].PayMoney;//存款金额
+						object.PayBankName=arr[0].PayBankName;//存款姓名
+						object.BankUrl=arr[0].BankUrl;//存款地址
+						object.MethodWay=arr[0].MethodWay;//跳转方式
+						object.MValue=arr[0].MValue;//跳转参数
+						object.OrderNumber=arr[0].OrderID;//订单号
+						object.type = typeCode;
+						if(typeCode=="151"||typeCode=="152"||typeCode=="153"||typeCode=="154"||typeCode=="155"|| typeCode=="156"|| typeCode=="157"){
+							object.Postscript = arr[0].PayFuYan;
+						}
+						item2.setViewPropertyValues(object);
+					}
+					if(typeCode=="157"){//支付宝2
+						item1.visible=false;
+						item2.visible=false;
+						item2.includeInLayout=false;
+						item3.visible=true;
+						item3.includeInLayout=true;
+						
+						//var url_str:String =  new String();
+						//url_str = ((arr[0].PayBank).toString()).split(",")[1];
+						//url_str = url_str + "?jiage=" + arr[0].PayMoney + "&lianxi=" + arr[0].Postscript; 
+						
+						item3.setUrlAndDates_alipay2(arr[0],typeCode);
+					}
+					if(typeCode=="16"||typeCode=="17"||typeCode=="19"||typeCode=="20"||typeCode=="21"||typeCode=="22"
+						||typeCode=="23"||typeCode=="24"||typeCode=="25"||typeCode=="26"||typeCode=="27"||typeCode=="28"
+						||typeCode=="29"||typeCode=="30"||typeCode=="31"||typeCode=="32"||typeCode=="33"||typeCode=="34"
+						||typeCode=="35"||typeCode=="36"||typeCode=="37"||typeCode=="38"||typeCode=="39"||typeCode=="40"
+						||typeCode=="41"||typeCode=="42"||typeCode=="43"||typeCode=="44"||typeCode=="45"||typeCode=="47"||typeCode=="50"
+						||typeCode=="51"||typeCode=="52"||typeCode=="48"||typeCode=="53"||typeCode=="54"||typeCode=="55"
+						||typeCode=="56"||typeCode=="57"||typeCode=="58"||typeCode=="59"||typeCode=="60"||typeCode=="61"
+						||typeCode=="62"||typeCode=="63"||typeCode=="64"||typeCode=="65"||typeCode=="66"||typeCode=="67"||typeCode=="68"
+					){//易宝或e汇通宝付
+						
+						item1.visible=false;
+						item2.visible=false;
+						item2.includeInLayout=false;
+						item3.visible=true;
+						item3.includeInLayout=true;
+						
+						item3.setUrlAndDates(arr[0].BankUrl,arr[0].MValue.toString(),arr[0].PayMoney,int(typeCode));
+					}
+				}else if(obj.Result==-6){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_recharge_state1'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result==2){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_recharge_state2'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result==5){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_recharge_state3'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_recharge_state4'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					//					alert.show("系统暂不支持您选择的支付银行，\n请您选择其他银行或更换支付方式。","提示信息");
+				}
+				//Result=2 银行卡不能为空
+				//Result=3 充值失败
+				//Result=5 卡号不存在
+			}
+			
+			protected function sendDate(url:String,values:String):void
+			{
+				var request:URLRequest = new URLRequest(); 
+				//				request.url ="detail/detail.html"; 
+				request.url=CurrentBusinessInfo.serverUrl_net+"/"+CurrentBusinessInfo.MerchantProjectName+"/detail/tempyb.html";
+				var param:URLVariables=new URLVariables();
+				param["Url"] =url;
+				var mvalue:Array=values.split("$");
+				for(var i:int= 0;i<mvalue.length;i+=2){
+					param[mvalue[i]] = mvalue[i+1];
+				}
+				request.data=param;
+				navigateToURL(request,"_bank");
+			}
+			
+			protected function item3_backBankRecharItem1EventHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				item1.visible=true;
+				item2.visible=false;
+				item2.includeInLayout=false;
+				item3.visible=false;
+				item3.includeInLayout=false;
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("HomePage")]
+	</fx:Metadata>
+	
+	<bank:PopUpBankRechargeItem1_new id="item1" top="15" width="95%" horizontalCenter="0" submitClickEvent="item1_submitClickEventHandler(event)"/>
+	<bank:PopUpBankRechargeItem2 id="item2" top="15" width="95%" height="100%" horizontalCenter="0" visible="false" includeInLayout="false"/>
+	<bank:PopUpBankRechargeItem3 id="item3" top="15" width="95%" bottom="20" horizontalCenter="0" visible="false" includeInLayout="false"
+								 backBankRecharItem1Event="item3_backBankRecharItem1EventHandler(event)"/>
+	<s:BorderContainer id="loading" width="100%" height="100%" styleName="czLoadingBgBorderContainerStyle_1" visible="false">
+		<s:BorderContainer styleName="czLoadingBgBorderContainerStyle_2"  width="200" height="30" verticalCenter="0" horizontalCenter="0">
+			<mx:Label verticalCenter="0" horizontalCenter="0" text="{resourceManager.getString('HomePage','loading_Prompt_5')}" styleName="personalCenterRechargeLoadingStyle_1"/>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	<s:Group width="100%" height="467"  id="noRecharge"  visible="false">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff"   />
+					<s:GradientEntry color="0xe6eef3"/>
+					<s:GradientEntry color="0xdce5ea"  />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Label text="{resourceManager.getString('PersonalCenterPrompt','alert_recharge_prompt')}" styleName="personalCenterDetailLabelStyle_1" fontSize="18" verticalCenter="0" horizontalCenter="0"/>
+	</s:Group>
+	<!--<s:BorderContainer width="100%" height="100%"  id="noRecharge" visible="false" includeInLayout="false" borderVisible="false">
+	<s:HGroup verticalAlign="middle" horizontalAlign="center" width="100%" height="100%">
+	<s:Label text="您的账户暂不支持充值!" styleName="personalCenterDetailLabelStyle_1" fontSize="18"/>
+	</s:HGroup>
+	</s:BorderContainer>-->
+	<bank:PopUpWaitingItem width="100%" height="100%" id="wait" visible="false"/>
+</s:Group>

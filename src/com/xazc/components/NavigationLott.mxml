@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:components="com.xazc.components.*"
+		 >
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import css.skin1.universal.NavigationBtnSkins5;
+			import css.skin1.universal.NavigationBtnSkins5New;
+			import css.skin1.universal.NavigationBtnSkins6;
+			
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.components.ToggleButton;
+			
+			//彩种菜单项目名称
+			[Bindable]
+			private var lotteryItemname:String;
+			//初始化采种内容
+			public function set　LottName(itemname:String):void
+			{
+				lotteryItemname=itemname;
+			}
+			
+			//采种类型编号ID
+			//[Bindable]
+			private var lotteryTypeID:String;
+			
+			public function set LottID(_ItemID:String):void
+			{
+				lotteryTypeID=_ItemID;
+				/* if(lotteryTypeID == "QPGAME"){
+					btnLottItem.setStyle("skinClass",NavigationBtnSkins5New);
+				}
+				else{ */
+				btnLottItem.setStyle("skinClass",NavigationBtnSkins5);
+				//}
+			}
+			//初始化要加载彩种列表
+			private var _lotlist:Array;
+			
+			//设置采种列表
+			public function set lotlist(value:Array):void
+			{
+				_lotlist = value;
+				AddLottItem();
+			}
+			
+			//加载采种内容
+			public function AddLottItem():void
+			{
+				lottlist.removeAllElements();
+				var liscount:Number=_lotlist.length;
+				
+				if(liscount>0)
+				{
+					var lot:ToggleButton;
+			 		for(var i:Number=0;i<liscount;i++)
+					{
+						lot=new ToggleButton();
+						lot.buttonMode = true;
+						lot.label=lotteryNameHelp.getCaizhong(_lotlist[i].toString());
+						lot.addEventListener(MouseEvent.CLICK,TranLott);
+						if('50'==_lotlist[i]){
+							lot.styleName = "lottSelectButHot";
+						}else{
+							lot.styleName = "lottSelectBut";
+						}
+						lot.percentWidth=100;
+						lot.name=_lotlist[i].toString();
+						/* if(lot.name=="12")//默认选中重庆时时彩
+						{
+							btnLottItem.selected=true;
+							lot.selected=true;
+						} */
+						lottlist.addElement(lot);
+					}
+						
+				}
+			}
+			
+			//采种按钮，click 回调事件
+			private function TranLott(eve:MouseEvent):void
+			{
+				var _lotName:String=(eve.target as ToggleButton).name;
+				
+				if('100'==(eve.target as ToggleButton).name){
+					//Alert.show("百人牛牛");
+					(eve.target as ToggleButton).selected = false;
+					//获取登录信息
+					this.userNNLogin();
+					return;
+				
+				}
+				if(!CurrentLotteryInfo.lotteryState){
+					if(_lotName!=CurrentLotteryInfo.lotteryId){
+						(eve.target as ToggleButton).selected = false;
+						//SetShowTime(CurrentLotteryInfo.lotteryId);
+					} 
+					//当前点击的彩种未加载完不能切换彩种
+					return;
+				}
+				
+				CurrentLotteryInfo.lotteryState = false;//已经开始加载
+				//设置其他未选中
+				SetShowTime(_lotName);
+				//设置跳转菜单
+				Sendnotification.instance.dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE,{lotteryID:_lotName,mark:_lotName}));
+			}
+			private function userNNLogin():void
+			{
+				var serverTool:ServerTool = new ServerToolImpl();
+				var obj:Object = new Object();
+				serverTool.userNNLogin(obj,userNNLoginReturn);
+			}
+			/**
+			 * 登录棋牌 
+			 */
+			private function userNNLoginReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString());
+				//Alert.show(arr.LoginURl);
+				navigateToURL(new URLRequest(arr.LoginURl+"&nickname="+encodeURI(encodeURI(CurrentUserInfo.userName))),"_blank");
+			}
+			
+			
+			
+			
+			//设置其他未选中
+			protected function SetShowTime(lottID:String):void
+			{
+				var ChildCount:Number=_lotlist.length;
+				for(var i:Number=0;i<ChildCount;i++)
+				{
+					var _LottID:String=_lotlist[i].toString();
+					var lot:ToggleButton=lottlist.getChildByName(_LottID) as ToggleButton;
+					 if(_LottID!=lottID)
+					{
+						 if(lot.selected)
+						 	lot.selected=false
+					}
+					else
+					{
+						lot.selected=true
+					} 
+				}
+			}
+			
+			//控制是否是否显示内容
+			public function SetShowItem(ShowNum:Number):void
+			{
+				if(ShowNum==1)
+				{
+					//(btnLottItem.skin as NavigationBtnSkins4).currentState="";
+					btnLottItem.selected = true;
+					if(!lottlist.visible)
+					{
+						lottlist.visible=true;
+					}
+					if(!lottlist.includeInLayout)
+						lottlist.includeInLayout=true;
+				}
+				else
+				{	
+					//(btnLottItem.skin as NavigationBtnSkins4).currentState="noselect";
+					btnLottItem.selected = false;
+					if(lottlist.visible)
+					{
+						lottlist.visible=false;
+					}
+					if(lottlist.includeInLayout)
+						lottlist.includeInLayout=false;
+				}
+				
+				//隐藏关闭时默认选中当前彩种
+				var ChildCount:Number=_lotlist.length;
+				if(0==ChildCount){
+					btnLottItem.selected = false;
+				}
+				var lot:ToggleButton;
+				for(var i:Number=0;i<ChildCount;i++)
+				{
+					lot = lottlist.getChildAt(i) as ToggleButton;
+					if(CurrentLotteryInfo.lotteryId==lot.name){
+						lot.selected=true;
+					}else{
+						lot.selected=false;
+					}
+					
+				}
+				
+			}
+			
+			//展示菜单栏
+			protected function LottTypeclickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var _currentID:String=lotteryTypeID;
+				dispatchEvent(new SystemEvent(SystemEvent.SHOW_LOTTERY_MAIN_MENU,{lotteryID:_currentID,mark:_currentID})); 
+				
+			}
+		]]>
+	</fx:Script>
+	<!--<s:Rect  left="0" right="0" top="0" bottom="0" radiusX="4">
+		<s:fill>
+			<s:LinearGradient rotation="0">
+				<s:GradientEntry color="0x626abd"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:Rect left="0" right="0" top="0" bottom="0" radiusX="4">
+		<s:stroke>
+			<s:LinearGradientStroke rotation="90" weight="1">
+				<s:GradientEntry color="0x9fa8db"  alpha="0.5" />
+				<!--<s:GradientEntry color="0x8188ca"/>-->
+				<!--<s:GradientEntry color="0x8a97d5"  alpha="0.24" />-->
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<s:VGroup width="100%" height="100%" horizontalAlign="center">
+		<!--<s:Button  label="{lotteryItemname}" id="btnLottItem"  skinClass="css.skin1.universal.NavigationBtnSkins4" width="100%" click="LottTypeclickHandler(event)"/>-->
+		<s:ToggleButton  buttonMode="true" label="{lotteryItemname}" id="btnLottItem" selected="{lottlist.visible}" width="100%" click="LottTypeclickHandler(event)"/>
+		
+		<s:VGroup id="lottlist" width="100%" height="100%" horizontalAlign="center" visible="false" includeInLayout="false">
+		</s:VGroup>
+		<s:Spacer height="20" visible="{lottlist.visible}" includeInLayout="{lottlist.includeInLayout}"/>
+	</s:VGroup>
+	
+	
+</s:Group>

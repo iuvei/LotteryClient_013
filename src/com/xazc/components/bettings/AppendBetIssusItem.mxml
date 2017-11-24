@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false" width="100%" height="35">
+	<fx:Metadata>
+		[Event(name="appendItemUpdate", type="com.xazc.event.CustomEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			
+			import spark.events.TextOperationEvent;
+			
+			/**
+			 * 移除单签 
+			 */
+			public static const APPEND_ITEM_UAPDATE:String = "appendItemUpdate";
+			
+			protected function onFocusIn(event:FocusEvent):void
+			{
+				event.stopImmediatePropagation();
+			}
+			//切换是否选中旗号
+			protected function issus_clickHandler(event:MouseEvent):void
+			{
+				if(issus.selected){
+					data.issusState = true;
+					this.multiple.enabled = true;
+					this.money.text = data.allMoney+"元";
+				}else{
+					data.issusState = false;
+					this.multiple.enabled = false;
+					this.money.text = '0元';
+				}
+				this.update();
+			}
+			//改变倍数
+			protected function multiple_changeHandler(event:TextOperationEvent):void
+			{
+				if(Number(multiple.text)<1){
+					multiple.text = "1";
+				}
+				data.multipleNum = Number(multiple.text);
+				
+				data.allMoney = Number(data.multipleNum)*Number(data.baseMoney);
+				this.money.text =Number(Number(data.allMoney).toFixed(5))+"元";;
+				
+				this.update();
+			}
+			
+			public function update():void
+			{
+				dispatchEvent(new CustomEvent(APPEND_ITEM_UAPDATE, data));
+			}
+		]]>
+	</fx:Script>
+	
+	<!--<s:Label text="{data}"/>-->
+	
+	
+	
+	<s:HGroup width="100%" height="100%" verticalAlign="middle">
+		<!-- 序号 -->
+		<s:Label id="num" text= "{data.indexNum}" width="10%" textAlign="center"/>
+		<!-- 期号 -->
+		<s:CheckBox id="issus" styleName="zhuihaoCheckBoxStyle" click="issus_clickHandler(event)"  focusIn="onFocusIn(event)" label="{data.issusNum}{data.issusNum==CurrentLotteryInfo.currentIssue?'(当前期)':''}" width="25%" selected="{data.issusState}"/>
+		<!-- 倍数 -->
+		<s:TextInput id="multiple" enabled="{data.issusState}" textAlign="center" text="{data.multipleNum}" width="10%" focusIn="onFocusIn(event)" restrict="0-9" maxChars="4" change="multiple_changeHandler(event)"/>
+		<!-- 金额 -->
+		<s:Label id="money" text= "{data.allMoney}元" width="25%" textAlign="center"/>
+		<!-- 时间 -->
+		<s:Label text= "{data.EndTime}" width="30%" textAlign="center"/>
+	</s:HGroup>
+	<mx:HRule width="100%" height="1" chromeColor="#777777" alpha=".5"/>
+</s:ItemRenderer>

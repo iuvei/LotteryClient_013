@@ -1,0 +1,937 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+
+global {
+	modalTransparencyBlur: 0;
+/* 模糊度*/
+	modalTransparency: 0.4; 
+/* 透明度*/
+	modalTransparencyColor: white;
+/* 背景色*/
+	modalTransparencyDuration: 0;
+/* 过渡时间*/
+}
+
+
+/***个人中心  详情背景  大***/
+s|BorderContainer.threeLevelBg_large
+{
+/*	bg:Embed(source='css/skin1/universal/center/three_bg_large.png');*/
+	skinClass:ClassReference("css.skin1.universal.BorderContainerSkin")
+}
+/***个人中心 详情背景 中***/
+s|BorderContainer.threeLevelBg_mid
+{
+/*	bg:Embed(source='css/skin1/universal/center/three_bg_mid.png');*/
+	skinClass:ClassReference("css.skin1.universal.BorderContainerSkin")
+}
+/***个人中心 详情背景 特殊号***/
+s|BorderContainer.threeLevelBg_special
+{
+/*	bg:Embed(source='css/skin1/universal/center/three_bg_special.png');*/
+	skinClass:ClassReference("css.skin1.universal.BorderContainerSkin")
+}
+/*** 三级菜单按钮样式 ***/
+s|ToggleButton.threeLevelMenu
+{
+	fontSize:15;
+	site:'center';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+/*	disabledImg:Embed(source='css/skin1/universal/center/three_menu.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_checked.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_checked.png');*/
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnSkin")
+}
+/***三级菜单按钮样式 方向向右边***/
+s|ToggleButton.threeLevelMenu_right
+{
+	fontSize:15;
+	site:'left';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	getLeft:20;
+/*	disabledImg:Embed(source='css/skin1/universal/center/three_menu_right.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_right_checked.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_right_checked.png');*/
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnRightSkin")
+}
+/*** 三级菜单按钮样式 方向向左边***/
+s|ToggleButton.threeLevelMenu_left
+{
+	fontSize:15;
+	site:'right';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+/*	disabledImg:Embed(source='css/skin1/universal/center/three_menu_left_1.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_1.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_1.png');*/
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnLeftSkin")
+}
+
+
+/*** 三级菜单按钮样式 ***/
+s|ToggleButton.threeLevelMenu_1
+{
+	fontSize:15;
+	site:'center';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+/*	disabledImg:Embed(source='css/skin1/universal/center/three_menu_1.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_checked_1.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_checked_1.png');*/
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnSkin")
+}
+/***三级菜单按钮样式 方向向右边***/
+s|ToggleButton.threeLevelMenu_right_1
+{
+	fontSize:15;
+	site:'left';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	getLeft:10;
+/*	disabledImg:Embed(source='css/skin1/universal/center/three_menu_right_1.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_right_checked_1.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_right_checked_1.png');*/
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnRightSkin")
+}
+/*** 三级菜单按钮样式 方向向左边***/
+s|ToggleButton.threeLevelMenu_left_1
+{
+	fontSize:15;
+	site:'right';
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+/*	disabledImg:Embed(source='css/skin1/universal/center/three_menu_left_2.png');
+	upImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_2.png');
+	downImg:Embed(source='css/skin1/universal/center/three_menu_left_checked_2.png');*/
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterToggleBtnLeftSkin")
+}
+/**个人中心  表格翻页按钮样式**/
+mx|LinkButton.linkButtonStyle
+{
+	fontSize:13;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	verticalAlign:middle;
+	
+	color:#717070;
+	selectionColor:#ffffff;
+	rollOverColor:#9c833f;
+	radius:5;
+	textAlign:center;
+}
+
+
+/**个人中心 菜单上显示的字体样式**/
+s|Label.personalCenterLabelStyle
+{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.personalCenterLabelStyle
+{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**白色字体 加粗**/
+s|Label.personalCenterDetailLabelStyle_bold
+{
+	fontSize:15;
+	color:#768a99;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+}
+mx|Label.personalCenterDetailLabelStyle_bold
+{
+	fontSize:15;
+	color:#768a99;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+}
+/**彩种选择  字体样式 **/
+s|Label.lottreySelectStyle_1
+{
+	fontSize:18;
+	color:#d2b96c;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+	 
+}
+s|Label.lottreySelectStyle_2
+{
+	fontSize:14;
+	color:#555555;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:left;
+}
+/**弹出窗口  详情列表默认样式  **/
+s|Label.personalCenterGameRecordStyle
+{
+	fontSize:13;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+s|Label.personalCenterDetailLabelStyle_1
+{
+	fontSize:13;
+	/*color:#768a99;*/
+	color:#555555;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Label.personalCenterDetailLabelStyle_1
+{
+	fontSize:13;
+	/*color:#768a99;*/
+	color:#555555;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+s|Label.personalCenterDetailLabelStyle_1_proxyRiGongZiSetting
+{
+	fontSize:13;
+	color:#d50000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Label.personalCenterDetailLabelStyle_1_proxyRiGongZiSetting
+{
+	fontSize:13;
+	color:#d50000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Text.personalCenterDetailLabelStyle_1_mx_min_txt
+{
+	fontSize:12;
+	color:#4d3f84;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/* 个人中心   表头的白色字体*/
+mx|Label.personalCenterDetailLabelStyle_1_white
+{
+	fontSize:13;
+	/*color:#768a99;*/
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/* 公告  白色字体*/
+mx|Label.NoticeLabelStyle_1_white
+{
+	fontSize:12;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/* 个人中心   底部  翻页的红色字体*/
+mx|Label.personalCenterDetailLabelStyle_1_red
+{
+	fontSize:13;
+	/*color:#768a99;*/
+	color:#d50000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/*  奖金详情  表头字体样式*/
+s|Label.personalCenterRebateLabelStyle
+{
+	fontSize:13;
+	/*color:#768a99;*/
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Label.personalCenterDetailLabelStyle_1_mx
+{
+	fontSize:13;
+	color:#4d3f84;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/**黄色字体**/
+s|Label.personalCenterDetailLabelStyle_2
+{
+	fontSize:13;
+	color:#f5f377;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Label.personalCenterDetailLabelStyle_2
+{
+	fontSize:13;
+	color:#f5f377;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/* 代理 注册下级  标头  黑色字体*/
+mx|Label.personalCenterDetailLabelStyle_black
+{
+	fontSize:13;
+	color:#000000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/**红色字体**/
+s|Label.personalCenterDetailLabelStyle_3
+{
+	fontSize:13;
+	/*color:#428cb3;*/
+	/*color:#375d8b;*/
+	color:#d50000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+mx|Label.personalCenterDetailLabelStyle_3
+{
+	fontSize:13;
+	color:#d50000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+/**红色字体**/
+s|Label.personalCenterDetailLabelStyle_4
+{
+	fontSize:13;
+	color:#c64e46;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**银行资料的提示信息样式**/
+mx|Label.personalCenterBankInfoLabelStyle_red
+{
+	fontSize:12;
+	color:#d60000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.personalCenterDetailLabelStyle_4
+{
+	fontSize:13;
+	color:#c64e46;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+
+mx|Label.personalCenterDetailLabelStyle_5
+{
+	fontSize:13;
+	color:#3e68a2;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**textinput 输入框样式**/
+s|TextInput.personalCenterDetailTextInputStyle
+{
+	color:#555555;
+	borderColor:#707070;
+	contentBackgroundColor:#f9f9f9;
+	focusAlpha:0;
+}
+/**textinput 输入框样式**/
+mx|TextInput.personalCenterDetailTextInputStyle
+{
+	color:#555555;
+	borderColor:#707070;
+	contentBackgroundColor:#f9f9f9;
+	focusAlpha:0;
+}
+/**combobox下拉框样式**/
+s|ComboBox.personalCenterDetailComboBoxStyle
+{
+	color:#555555;
+	contentBackgroundColor:#ffffff;
+	skinClass:ClassReference("css.skin1.universal.PopUpComboBoxSkin");
+	selectionColor:#a68b44;
+}
+/**DateField**/
+/*mx|DateField.personalCenterDateFieldStyle{
+	color:#555555;
+	borderColor:#c9d2dc;
+	contentBackgroundColor:#eaeff2;
+}*/
+/**button 操作按钮样式  蓝色 小号**/
+s|Button.personalCenterBlueButtonStyle_small
+{
+	fontSize:12;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:45;
+	h:20	;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBlueButtonSkin")
+}
+/**button 操作按钮样式  蓝色 大号**/
+s|Button.personalCenterBlueButtonStyle_large
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:80;
+	h:25;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBlueButtonSkin")
+}
+
+/**button 操作按钮样式  褐色 大号**/
+s|Button.personalCenterBrownButtonStyle_large
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:80;
+	h:25;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBrownButtonSkin")
+}
+/**button 操作按钮样式  褐色 中号**/
+s|Button.personalCenterBrownButtonStyle_mid
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	w:60;
+	h:25;
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterBrownButtonSkin")
+}
+s|RadioButton.personalCenterRadioButtonStyle
+{
+	fontSize:13;
+	fontFamily:"Microsoft YaHei,微软雅黑";
+	color:#768a99;
+}
+s|RadioButton.popupRechargeRadioButtonStyle
+{
+	fontSize:12;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	skinClass:ClassReference("css.skin1.universal.RechargeRadioBtnSkin");
+}
+mx|Grid
+{
+	borderStyle: solid;
+	borderColor:#c9d2dc;
+	horizontalGap:-1;
+	verticalGap:-1;
+	paddingLeft:-1;
+	paddingTop:-1;
+	paddingRight:-1;
+	paddingBottom:-1;
+	
+}
+
+mx|GridItem{
+	borderStyle: solid;
+	borderColor:#c9d2dc;
+	horizontalAlign: center;
+	verticalAlign: middle;
+	paddingTop:-1;
+	paddingBottom:-1;
+	
+}
+/**text 蓝色字体**/
+mx|Text.personalCenterTextStyle_1
+{
+	fontSize:13;
+	color:#428cb3;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/**text 白色字体**/
+mx|Text.personalCenterTextStyle_2
+{
+	fontSize:13;
+	color:#98b9d1;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+}
+s|ToggleButton.personalCenterToggleButtonStyle
+{
+	w:20;
+	h:20;
+	color:#ffffff;
+	fontSize:13;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	skinClass:ClassReference("css.skin1.universal.PersonalCenterPageToggleButtonSkin")
+}
+/*个人中心滚动条样式*/
+s|Scroller.personalCenterScrollerStyle_1
+{
+	symbolColor:#898989;
+	skinClass:ClassReference("css.skin1.universal.scroll.personalCenterScrollerSkin")
+}
+/*mx VScrollBar的组件样式*/
+mx|VScrollBar.mxVScrollBarStyle{
+	symbolColor:#FFFFFF;
+	chromeColor:#ffffff;
+}
+/*mx Tree样式*/
+mx|Tree.mxTreeStyle
+{
+	rollOverColor:#ccd2d5;
+	selectionColor:#b9bdbf;
+}
+/*###########倒计时############*/
+mx|Label.timerLabelYellowStyle{
+	color:#6482a5;
+	fontSize:18;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########在线充值############*/
+mx|Label.zxLabelStyle{
+	color:#4d3f84;
+	fontSize:15;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########充值 wating############*/
+s|Button.zxWatingButtonStyle{
+	skinClass:ClassReference("css.skin1.universal.closeBtnSkin")
+}
+mx|Label.zxWatingLabelStyle_1{
+	color:#ffffff;
+	fontSize:13;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.zxWatingLabelStyle_2{
+	color:#ffffff;
+	fontSize:18;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+s|BorderContainer.czLoadingBgBorderContainerStyle_1{
+	bgColor1:#000000;
+	bgAlpha1:0.6;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupBgBorderContainerSkin")
+}
+s|BorderContainer.czLoadingBgBorderContainerStyle_2{
+	bgColor1:#435b67;
+	bgAlpha1:1;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupBgBorderContainerSkin")
+}
+/*##############*/
+/*###########详细信息弹出框#############*/
+s|BorderContainer.personalPopUpTitleBorderContainerStyle_1{
+	bgColor1:#595959;
+	bgAlpha1:0.33333;
+	bgColor2:#2b2d2f;
+	bgAlpha2:0.33333;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupTitleBorderContainerSkin")
+}
+s|BorderContainer.personalPopUpBgBorderContainerStyle_1{
+	bgColor1:#000000;
+	bgAlpha1:0.9;
+	skinClass:ClassReference("css.skin1.universal.PersonalPopupBgBorderContainerSkin")
+}
+/*##################*/
+/*###########三级导航菜单style#############*/
+mx|Label.threeMenuLabelStyle{
+	fontSize:15;
+	color:#ffffff; 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##################*/
+/*###########领取奖金style#############*/
+s|Button.personalPrizeButtonStyle{
+	fontSize:15;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	skinClass:ClassReference("css.skin1.universal.PersonalButtonSkin")
+}
+/*##################*/
+/*###########MemberTabButtonItem style#############*/
+mx|Label.memberTabButtonItemLabelStyle{
+	fontSize:14;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##################*/
+/*###########ProxyMemberDetail style############*/
+mx|Label.personalPMDStyle_1{
+	color:#6482a5;
+	fontSize:15;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########公告  NoticeItem.mxml############*/
+mx|Label.noticeItemLabelStyle_1{
+	color:#ffffff;
+	fontSize:13;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.noticeItemLabelStyle_2{
+	color:#ffffff;
+	fontSize:20;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*##############*/
+/*###########个人中心   SecondButtonItem.mxml############*/
+mx|Label.personalSecondButtonItemLabelStyle_1{
+	color:#ffffff;
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+s|SkinnableContainer.pseronalSecondButtonItemImageStyle_1{
+/*	getImage:Embed("css/skin1/universal/center/two_menu_mask.png");*/
+	skinClass:ClassReference("css.skin1.universal.moduelSkinnableContainerSkin");
+}
+/*##############*/
+/*#########登录textinput 圆角##########*/
+s|TextInput.loginTextInputStyle_user{
+	borderColor:#345e8a;
+	color:#FFFFFF; 
+	contentBackgroundAlpha:1;  
+	contentBackgroundColor:#17324c; 
+	fontFamily:"Microsoft YaHei,微软雅黑"; 
+	fontSize:12;
+	logoImage:Embed("css/skin1/universal/images/login_user.png");
+	skinClass:ClassReference("css.skin1.universal.RoundCornerTextInputSkin")
+}
+s|TextInput.loginTextInputStyle_psd{
+	borderColor:#345e8a;
+	color:#FFFFFF; 
+	contentBackgroundAlpha:1;  
+	contentBackgroundColor:#17324c; 
+	fontFamily:"Microsoft YaHei,微软雅黑"; 
+	fontSize:12;
+	logoImage:Embed("css/skin1/universal/images/login_psd.png");
+	skinClass:ClassReference("css.skin1.universal.RoundCornerTextInputSkin")
+}
+s|TextInput.loginTextInputStyle{
+	borderColor:#345e8a;
+	color:#FFFFFF; 
+	contentBackgroundAlpha:1;  
+	contentBackgroundColor:#17324c; 
+	fontFamily:"Microsoft YaHei,微软雅黑"; 
+	fontSize:12;
+	skinClass:ClassReference("css.skin1.universal.RoundCornerTextInputSkin")
+}
+/*###########*/
+
+/*########弹出窗口方式下的部分样式#########*/
+/*####### 标题##########*/
+mx|Label.popupWindowTitleStyle{
+	fontSize:16;
+	color:#ffffff;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*###########PoUpTabButtonItem style#############*/
+mx|Label.popUpTabButtonItemLabelStyle_default{
+	fontSize:14;
+	color:#535353;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.popUpTabButtonItemLabelStyle_selected{
+	fontSize:14;
+	color:#ffffff;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*###########PoUpTabMenuButtonItem style#############*/
+mx|Label.popUpTabMenuButtonItemLabelStyle_default{
+	fontSize:14;
+	color:#ffffff;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.popUpTabMenuButtonItemLabelStyle_selected{
+	fontSize:14;
+	color:#d60000;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*###########################*/
+/*###########PoUpActivityTabButtonItem style#############*/
+mx|Label.popUpActivityTabButtonItemLabelStyle_default{
+	fontSize:14;
+	color:#375d8b;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.popUpActivityTabButtonItemLabelStyle_selected{
+	fontSize:14;
+	color:#ffffff;
+	 
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*###########################*/
+/*#######查询记录确定按钮###########*/
+s|Button.personalSubmitButtonStyle
+{
+/*	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	 
+	disabledImg:Embed(source='css/skin1/universal/center/submit_default.png');
+	downImg:Embed(source='css/skin1/universal/center/submit_down.png');
+	skinClass:ClassReference("css.skin1.universal.PopUpPersonalButtonSkin")*/
+		
+	fontSize:14;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+	verticalAlign:middle;
+	skinClass:ClassReference("css.skin1.universal.AlertSubmitBtnSkin")
+}
+/* 充值民生银行  确认按钮  大  */
+s|Button.MinshengButtonStyle
+{
+	fontSize:14;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+	verticalAlign:middle;
+	skinClass:ClassReference("css.skin1.universal.MinshengBtnSkin")
+}
+s|Button.personalLookButtonStyle
+{
+/*	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	 
+	disabledImg:Embed(source='css/skin1/universal/center/submit_default.png');
+	downImg:Embed(source='css/skin1/universal/center/submit_down.png');
+	skinClass:ClassReference("css.skin1.universal.PopUpPersonalButtonSkin")*/
+		
+	fontSize:14;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+	verticalAlign:middle;
+	w:85;
+	h:30;
+	skinClass:ClassReference("css.skin1.universal.LookBtnSkin")
+}
+s|Button.LottreySelectBtnStyle
+{
+	fontSize:14;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	verticalAlign:middle;
+	skinClass:ClassReference("css.skin1.universal.LottreySelectBtnSkin")
+}
+s|Button.LottreySelectBtnStyle_hot
+{
+	fontSize:14;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	verticalAlign:middle;
+	skinClass:ClassReference("css.skin1.universal.LottreySelectBtnSkin_hot")
+}
+
+s|Button.chongzhi_alertSubmitButtonStyle_1
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+	skinClass:ClassReference("css.skin1.universal.AlertSubmitBtnSkin_1")
+}
+s|Button.chongzhi_alertSubmitButtonStyle_2
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+	skinClass:ClassReference("css.skin1.universal.AlertSubmitBtnSkin_2")
+}
+s|Button.chongzhi_alertSubmitButtonStyle_3
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+	skinClass:ClassReference("css.skin1.universal.AlertSubmitBtnSkin_3")
+}
+s|Button.alertSubmitButtonStyle
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	 
+	skinClass:ClassReference("css.skin1.universal.AlertSubmitBtnSkin")
+}
+s|Button.alertCancelButtonStyle
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	 
+	skinClass:ClassReference("css.skin1.universal.PopUpPersonalButtonSkin")
+}
+
+
+
+/*##################*/
+/*##### 确定提交按钮 #####*/
+s|Button.popUpPersonalCenterBlueButtonStyle_large
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#7b8d9b;
+	 
+	w:115;
+	h:28;
+	skinClass:ClassReference("css.skin1.universal.PopUpPersonalCenterButtonSkin")
+}
+/*##########*/
+/*##### 确定提交按钮 #####*/
+s|Button.popUpPersonalCenterBlueButtonStyle_mid
+{
+	fontSize:14;
+	color:#7b8d9b;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	w:39;
+	h:20;
+	skinClass:ClassReference("css.skin1.universal.PopUpPersonalCenterButtonSkin")
+}
+/*##########*/
+/*#########公告#############*/
+mx|Label.noticeDetailLabelStyle_1
+{
+	fontSize:13;
+	color:#555555;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.noticeDetailLabelStyle_2
+{
+	fontSize:18;
+/*	color:#768a99;*/
+	color:#d60000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*######################*/
+/*#######弹出提示框确定按钮###########*/
+s|Button.personalPopSubmitButtonStyle
+{
+	fontSize:15;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	color:#ffffff;
+	 
+	disabledImg:Embed(source='css/skin1/universal/center/alert_default.png');
+	downImg:Embed(source='css/skin1/universal/center/alert_down.png');
+	skinClass:ClassReference("css.skin1.universal.PopUpPersonalButtonSkin")
+}
+/*##################*/
+mx|Label.personalCenterRechargeLoadingStyle_1
+{
+	fontSize:13;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	textAlign:center;
+}
+
+
+/**DateField**/
+mx|DateField.personalCenterDateFieldStyle{
+	color:#000000;
+	dateChooserStyleName:dateChooser;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	fontSize:14;
+	borderAlpha:0;
+	textInputStyleName:TimerlistTextInputStele;
+}
+.dateChooser{
+	color:#2b2b2b;
+	cornerRadius:5;
+	headerColors:#e6e6e6,#e6e6e6;
+	contentBackgroundColor:#e6e6e6;
+	
+	fontSize:16;
+	 
+	rollOverColor:#ff0000;
+	selectionColor:#ff0000;
+	disabledColor:#a29f9f;
+	
+	weekDayStyleName:weekdayStyleName;
+	todayColor:#465983;
+	
+	horizontalGap:20;
+	horizontalAlign:center;
+	
+	headerStyleName:headStyleName;
+}
+.weekdayStyleName{
+	color:#2b2b2b;
+}
+.headStyleName{
+	textAlign:center;
+}
+/* DateField  图标   样式*/
+mx|Button.timerListIconStele{
+	skin:ClassReference("css.skin1.DataFietdIconSkin");
+}
+
+/* DateField  显示时间TextInput 样式*/
+.TimerlistTextInputStele
+{
+	contentBackgroundColor:#fcfcfc;
+	contentBackgroundAlpha:1;
+	borderColor:#c9d2dc;
+	borderAlpha:1;
+	
+	borderVisible:true;
+}
+
+/* DateField  月份上下翻页  样式*/
+/*.mydropDownStyleName
+{
+	nextMonthSkin:ClassReference("skin1.DateChooserNextMonthButtonSkin");
+	prevMonthSkin:ClassReference("skin1.DateChooserPrewMonthButtonSkin");
+	dropShadowVisible:false;
+}*/
+
+
+/*个人中心-订单详情     带背景样式*/
+mx|GridItem.RecordsGridItemStyleName{
+	horizontalAlign: center;
+	verticalAlign: middle;
+	paddingTop:0;
+	paddingBottom:0;
+	
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	backgroundColor:#f3f3f3;
+	borderColor:#cccccc;
+}
+/*个人中心-各个记录-列表     头样式 加黑边*/
+mx|GridItem.RecordsGridItemStyle_borderBlack{
+	horizontalAlign: center;
+	verticalAlign: middle;
+	paddingTop:0;
+	paddingBottom:0;
+	
+	fontFamily:'Microsoft YaHei,微软雅黑';
+	backgroundAlpha:0;
+	borderColor:#ff0000;
+}
+
+/*   中奖弹窗  样式*/
+s|Label.textLableStyle3{
+	fontSize:14;
+	color:#000000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*   中奖弹窗  样式*/
+s|Label.textLableStyle3_white{
+	fontSize:16;
+	color:#ffffff;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*   中奖弹窗  样式*/
+s|Label.textLableStyle3_red{
+	fontSize:14;
+	color:#e50000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+/*   中奖弹窗  样式*/
+s|Label.textLableStyle3_gree{
+	fontSize:14;
+	color:#36bf00;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+
+/*   契约  标题  样式*/
+s|Label.contract_styleName{
+	fontSize:14;
+	color:#000000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+mx|Label.contract_styleName{
+	fontSize:14;
+	color:#000000;
+	fontFamily:'Microsoft YaHei,微软雅黑';
+}
+
+
+

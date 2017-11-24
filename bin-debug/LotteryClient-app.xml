@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<application xmlns="http://ns.adobe.com/air/application/3.1">
+
+<!-- Adobe AIR Application Descriptor File Template.
+
+	Specifies parameters for identifying, installing, and launching AIR applications.
+
+	xmlns - The Adobe AIR namespace: http://ns.adobe.com/air/application/3.1
+			The last segment of the namespace specifies the version 
+			of the AIR runtime required for this application to run.
+			
+	minimumPatchLevel - The minimum patch level of the AIR runtime required to run 
+			the application. Optional.
+-->
+
+	<!-- A universally unique application identifier. Must be unique across all AIR applications.
+	Using a reverse DNS-style name as the id is recommended. (Eg. com.example.ExampleApplication.) Required. -->
+	<id>LotteryClient013</id>
+    <!-- 软件ID，当安装时系统将会检测同一ID软件版本，版本高的即做更新操作 -->
+	
+	<!-- Used as the filename for the application. Required. -->
+	<filename>恒运娱乐</filename>
+    <!-- 安装界面中 Application: --> 
+
+	<!-- The name that is displayed in the AIR application installer. 
+	May have multiple values for each language. See samples or xsd schema file. Optional. -->
+	<name>恒运娱乐V1.3.7</name>
+    <!-- 桌面快捷方程式及窗口和系统控制面板添加程序中名称 --> 
+	
+	<!-- A string value of the format <0-999>.<0-999>.<0-999> that represents application version which can be used to check for application upgrade. 
+	Values can also be 1-part or 2-part. It is not necessary to have a 3-part value.
+	An updated version of application must have a versionNumber value higher than the previous version. Required for namespace >= 2.5 . -->
+	<versionNumber>1.3.7</versionNumber>
+    <!-- 软件版本 --> 
+		         
+	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. Optional. -->
+	<!-- <versionLabel></versionLabel> -->
+
+	<!-- Description, displayed in the AIR application installer.
+	May have multiple values for each language. See samples or xsd schema file. Optional. -->
+	<description>恒运娱乐客户端</description>
+    <!-- 安装第二个界面中的 description --> 
+
+	<!-- Copyright information. Optional -->
+	<copyright>2016-2020</copyright>
+
+	<!-- Publisher ID. Used if you're updating an application created prior to 1.5.3 -->
+	<!-- <publisherID></publisherID> -->
+
+	<!-- Settings for the application's initial window. Required. -->
+	<initialWindow>
+		<!-- The main SWF or HTML file of the application. Required. -->
+		<!-- Note: In Flash Builder, the SWF reference is set automatically. -->
+		<content>LotteryClient.swf</content>
+		
+		<!-- The title of the main window. Optional. -->
+		<!-- <title></title> --><!-- 窗体标题，当此处为注释状态时取 name标签中内容 --> 
+
+		<!-- The type of system chrome to use (either "standard" or "none"). Optional. Default standard. -->
+		<systemChrome>standard</systemChrome>
+        <!-- standard为标准窗体,none 为圆滑窗体  -->
+
+		<!-- Whether the window is transparent. Only applicable when systemChrome is none. Optional. Default false. -->
+		<!-- <transparent></transparent> --><!-- 背景是否透明 --> 
+
+		<!-- Whether the window is initially visible. Optional. Default false. -->
+		<!-- <visible></visible> --><!-- 窗体初始化的时候是否可见 --> 
+
+		<!-- Whether the user can minimize the window. Optional. Default true. -->
+		<minimizable>true</minimizable>
+        <!-- 是否允许最小化 --> 
+
+		<!-- Whether the user can maximize the window. Optional. Default true. -->
+		<maximizable>true</maximizable>
+        <!-- 是否允许最大化 --> 
+
+		<!-- Whether the user can resize the window. Optional. Default true. -->
+		<resizable>true</resizable>
+        <!-- 是否允许缩放窗体 --> 
+
+		<!-- The window's initial width in pixels. Optional. -->
+<!-- 		<width>1024</width>窗体宽  -->
+
+		<!-- The window's initial height in pixels. Optional. -->
+<!-- 		<height>768</height>窗体高  -->
+
+		<!-- The window's initial x position. Optional. -->
+		<!--<x>0</x> 窗体X位置坐标 -->
+
+		<!-- The window's initial y position. Optional. -->
+		<!--<y>0</y> 窗体Y位置坐标 --> 
+
+		<!-- The window's minimum size, specified as a width/height pair in pixels, such as "400 200". Optional. -->
+<!-- 		<minSize>1024 768</minSize> 窗体最小化值  -->
+
+		<!-- The window's initial maximum size, specified as a width/height pair in pixels, such as "1600 1200". Optional. -->
+<!-- 		<maxSize>1024 768</maxSize> 窗体最大化值 -->
+
+        <!-- The initial aspect ratio of the app when launched (either "portrait" or "landscape"). Optional. Mobile only. Default is the natural orientation of the device -->
+
+        <!-- <aspectRatio></aspectRatio> -->
+
+        <!-- Whether the app will begin auto-orienting on launch. Optional. Mobile only. Default false -->
+
+        <!-- <autoOrients></autoOrients> -->
+
+        <!-- Whether the app launches in full screen. Optional. Mobile only. Default false -->
+
+        <!-- <fullScreen></fullScreen> -->
+
+        <!-- The render mode for the app (either auto, cpu, or gpu). Optional. Mobile only. Default auto -->
+
+        <!-- <renderMode></renderMode> -->
+
+		<!-- Whether or not to pan when a soft keyboard is raised or lowered (either "pan" or "none").  Optional.  Defaults "pan." -->
+		<!-- <softKeyboardBehavior></softKeyboardBehavior> -->
+	<autoOrients>false</autoOrients>
+        <fullScreen>false</fullScreen>
+        <visible>false</visible>
+    </initialWindow>
+
+	<!-- We recommend omitting the supportedProfiles element, -->
+	<!-- which in turn permits your application to be deployed to all -->
+	<!-- devices supported by AIR. If you wish to restrict deployment -->
+	<!-- (i.e., to only mobile devices) then add this element and list -->
+	<!-- only the profiles which your application does support. -->
+	<!-- <supportedProfiles>desktop extendedDesktop mobileDevice extendedMobileDevice</supportedProfiles> -->
+
+	<!-- The subpath of the standard default installation location to use. Optional. -->
+	<!-- <installFolder></installFolder> --><!-- 默认安装路径 C:\Program Files\AIRInstrallField\AIR --> 
+
+	<!-- The subpath of the Programs menu to use. (Ignored on operating systems without a Programs menu.) Optional. -->
+	<!-- <programMenuFolder></programMenuFolder> --><!-- 开始/程序 快捷方程式所在文件夹 --> 
+
+	<!-- The icon the system uses for the application. For at least one resolution,
+	specify the path to a PNG file included in the AIR package. Optional. -->
+	 <!-- 图标的大小必须和标签中标写的尺寸一致 -->
+	<icon>
+		<image16x16>/css/img/icon/16.png</image16x16>
+        <!-- 系统菜单中及系统控制面板添加程序中的图标 -->
+		<image32x32>/css/img/icon/32.png</image32x32>
+        <!-- 桌面图标，窗口图标 -->
+		<image36x36>/css/img/icon/36.png</image36x36>
+		<image48x48>/css/img/icon/48.png</image48x48>
+        <!-- 安装目录EXE文件图标 -->
+		<image57x57>/css/img/icon/57.png</image57x57>
+		<image72x72>/css/img/icon/72.png</image72x72>
+		<image114x114>/css/img/icon/114.png</image114x114>
+		<image128x128>/css/img/icon/128.png</image128x128>
+	</icon>
+
+	<!-- Whether the application handles the update when a user double-clicks an update version
+	of the AIR file (true), or the default AIR application installer handles the update (false).
+	Optional. Default false. -->
+	<!-- <customUpdateUI></customUpdateUI> --><!-- 是否为同一版本的时候双击直接更新 -->
+	
+	<!-- Whether the application can be launched when the user clicks a link in a web browser.
+	Optional. Default false. -->
+	<!-- <allowBrowserInvocation></allowBrowserInvocation> --><!-- 是否应用程序可以通过浏览器激活 --> 
+
+	<!-- Listing of file types for which the application can register. Optional. -->
+	<!-- <fileTypes> -->
+
+		<!-- Defines one file type. Optional. -->
+		<!-- <fileType> -->
+
+			<!-- The name that the system displays for the registered file type. Required. -->
+			<!-- <name></name> -->
+
+			<!-- The extension to register. Required. -->
+			<!-- <extension></extension> -->
+			
+			<!-- The description of the file type. Optional. -->
+			<!-- <description></description> -->
+			
+			<!-- The MIME content type. -->
+			<!-- <contentType></contentType> -->
+			
+			<!-- The icon to display for the file type. Optional. -->
+			<!-- <icon>
+				<image16x16></image16x16>
+				<image32x32></image32x32>
+				<image48x48></image48x48>
+				<image128x128></image128x128>
+			</icon> -->
+			
+		<!-- </fileType> -->
+	<!-- </fileTypes> -->
+
+    <!-- iOS specific capabilities -->
+	<!-- <iPhone> -->
+		<!-- A list of plist key/value pairs to be added to the application Info.plist -->
+		<!-- <InfoAdditions>
+            <![CDATA[
+                <key>UIDeviceFamily</key>
+                <array>
+                    <string>1</string>
+                    <string>2</string>
+                </array>
+                <key>UIStatusBarStyle</key>
+                <string>UIStatusBarStyleBlackOpaque</string>
+                <key>UIRequiresPersistentWiFi</key>
+                <string>YES</string>
+            ]]>
+        </InfoAdditions> -->
+        <!-- A list of plist key/value pairs to be added to the application Entitlements.plist -->
+		<!-- <Entitlements>
+            <![CDATA[
+                <key>keychain-access-groups</key>
+                <array>
+                    <string></string>
+                    <string></string>
+                </array>
+            ]]>
+        </Entitlements> -->
+	<!-- Display Resolution for the app (either "standard" or "high"). Optional. Default "standard" -->
+	<!-- <requestedDisplayResolution></requestedDisplayResolution> -->
+	<!-- </iPhone> -->
+
+	<!-- Specify Android specific tags that get passed to AndroidManifest.xml file. -->
+    <!--<android> -->
+    <!--	<manifestAdditions>
+		<![CDATA[
+			<manifest android:installLocation="auto">
+				<uses-permission android:name="android.permission.INTERNET"/>
+				<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+				<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+				<uses-feature android:required="true" android:name="android.hardware.touchscreen.multitouch"/>
+				<application android:enabled="true">
+					<activity android:excludeFromRecents="false">
+						<intent-filter>
+							<action android:name="android.intent.action.MAIN"/>
+							<category android:name="android.intent.category.LAUNCHER"/>
+						</intent-filter>
+					</activity>
+				</application>
+            </manifest>
+		]]>
+        </manifestAdditions> -->
+	    <!-- Color depth for the app (either "32bit" or "16bit"). Optional. Default 16bit before namespace 3.0, 32bit after -->
+        <!-- <colorDepth></colorDepth> -->
+    <!-- </android> -->
+	<!-- End of the schema for adding the android specific tags in AndroidManifest.xml file -->
+
+</application>

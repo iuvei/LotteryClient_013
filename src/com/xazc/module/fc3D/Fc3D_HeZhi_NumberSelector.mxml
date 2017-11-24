@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="com.xazc.interfaces.IInit" width="100%" height="100%" 
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 xmlns:bettings="com.xazc.components.bettings.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			//需要显示的行数
+			[Bindable]
+			public var columnCount:int = 15;
+			//起始选号
+			[Bindable]
+			public var startNumbers:int = 0;
+			//结束选号
+			[Bindable]
+			public var endNumbers:int = 28;
+			//选号数组
+			public var numbersArray:Array = new Array();
+			//派发事件所用变量
+			public static const HZ_NUMBER_CLICK:String = "hz_number_click";
+			/**
+			 *初始化 
+			 */
+			public function init():void{
+				numbersArray = new Array();
+				clean();
+			}
+			/**
+			 * 清除选号状态
+			 */
+			public function clean():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=0; i<numbersTileGroup.numElements; i++){
+					toggleBtn = numbersTileGroup.getElementAt(i) as ToggleButton;
+					toggleBtn.selected = false;
+				}
+			}
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				createToggleBtn()
+				
+			}
+			/**
+			 * 创建号码
+			 */
+			protected function createToggleBtn():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=startNumbers; i<endNumbers; i++){
+					toggleBtn = new ToggleButton();
+					toggleBtn.label = i.toString();
+					toggleBtn.styleName = "numberSelectSkinStyle_large";
+					toggleBtn.addEventListener(MouseEvent.CLICK,toggleBtn_clickHandler);
+					numbersTileGroup.addElement(toggleBtn);
+				}
+			}
+			/**
+			 * 处理点击按钮事件
+			 */
+			protected function toggleBtn_clickHandler(event:MouseEvent):void
+			{
+				var temp:ToggleButton = event.target as ToggleButton;
+				if(temp.selected == true){
+					numbersArray.push(temp.label);
+				}else{
+					numbersArray.splice(numbersArray.indexOf(temp.label),1);
+				}
+				dispatchEvent(new CustomEvent(HZ_NUMBER_CLICK,numbersArray));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:TileGroup id="numbersTileGroup" requestedRowCount="2" 
+				 requestedColumnCount="{columnCount}" horizontalGap="8" verticalGap="24">
+	</s:TileGroup>
+</s:VGroup>

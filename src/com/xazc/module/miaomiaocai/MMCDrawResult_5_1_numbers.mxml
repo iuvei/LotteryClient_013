@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="464" height="189">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.Sendnotification;
+			
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Button;
+			[Bindable]
+			public var numbers:String = "";
+			public var fistEnter:Boolean = false;
+			public var lotteryID:int;
+			private var _timer:Timer;
+			private var palyTimes:int = 0;
+			private var runIndex:int = 0;
+			private var newTextArray:Array = new Array();
+			/**第一个球开始播放动画时间 */
+			private var PlayFirstDemoTime:Number = 4;
+			/**上次开奖结果静态缓存  */
+			private var lastTextArray:Array = new Array();
+			public function StartRun():void
+			{
+				palyTimes = 0;
+				runIndex = 0;
+				if(_timer!=null)
+				{
+					_timer.stop();
+					_timer.removeEventListener(TimerEvent.TIMER, ontime);
+					_timer =null;
+				}
+				_timer = new Timer(150);
+				_timer.addEventListener(TimerEvent.TIMER,ontime);
+				var numbersArray:Array = numbers.split(",");
+				createNumbers(numbersArray);
+			}
+			private function ontime(event:Event):void{
+				palyTimes++;
+				if(palyTimes <= 5*5)
+				{
+					var mc:TimerAnimation = tittleGroup.getElementAt(runIndex) as TimerAnimation;
+					if(palyTimes%5 == 0)
+					{
+						var numbersArray:Array = numbers.split(",");
+						var stopKey:int = int(numbersArray[runIndex])*2+1;
+						mc.mcNumber.gotoAndStop(stopKey);
+						runIndex++
+					}
+				}
+				else
+				{
+					palyTimes = 0;
+					runIndex = 0;
+					if(_timer!=null)
+					{
+						_timer.stop();
+						_timer.removeEventListener(TimerEvent.TIMER, ontime);
+						_timer =null;
+					}
+					if(!fistEnter)
+						Sendnotification.instance.dispatchEvent(new CustomEvent(CustomEvent.ENDPLAYLOTTERYANIMATION,numbers));
+				}
+			}
+			/**
+			 * 创建号码
+			 */
+			public function createNumbers(array:Array):void
+			{
+				var mc:*;
+				newTextArray = array;
+				if(array.length == 1)//没有开奖数据
+				{
+					tittleGroup.removeAllElements();
+					if(newTextArray[0] == "准备开奖!")
+					{
+						for (var k:int = 0; k < 5; k++) 
+						{
+							mc = new TimerAnimation();
+							mc.mcZero.visible = false;
+							mc.mcNumber.visible = true;
+							tittleGroup.addElementAt(mc,k);
+						}
+					}
+					else if(newTextArray[0] == "投注失败!")
+					{
+						for (var i3:int = 0; i3 < 5; i3++) 
+						{
+							mc = new TimerAnimation();
+							mc.mcZero.visible = true;
+							mc.mcNumber.visible = false;
+							tittleGroup.addElementAt(mc,i3);
+						}
+					}
+					else if(newTextArray[0] == "")//没有任何投注记录
+					{
+						for (var i4:int = 0; i4 < 5; i4++) 
+						{
+							mc = new TimerAnimation();
+							mc.mcZero.visible = true;
+							mc.mcNumber.visible = false;
+							tittleGroup.addElementAt(mc,i4);
+						}
+					}
+				}
+				else if(array.length == 5)
+				{
+					lastTextArray = newTextArray;
+					tittleGroup.removeAllElements();
+					if(fistEnter == false)
+						PlayFirstDemoTime = 0;
+					else
+						PlayFirstDemoTime = 4;
+					if(	tittleGroup.numChildren == 0)
+					{
+						for (var k0:int = 0; k0 < array.length; k0++) 
+						{
+							mc = new TimerAnimation();
+							mc.mcZero.visible = false;
+							tittleGroup.addElementAt(mc,k0);
+						}
+						_timer.start();
+					}
+					else
+					{
+						for (var j:int = 0; j < array.length; j++) 
+						{
+							mc = new TimerAnimation();
+							mc.mcZero.visible = false;
+							tittleGroup.addElementAt(mc,j);
+						}
+						_timer.start();
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup id="tittleGroup" gap="16">
+		
+	</s:HGroup>
+</s:Group>

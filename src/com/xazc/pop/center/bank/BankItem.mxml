@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 buttonMode="true"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			//银行编码
+			private var _value:String;
+			
+			private var _source:String;
+			//是否是选中状态
+			private var _selected:Boolean;
+			
+			[Bindable]
+			public function get selected():Boolean
+			{
+				return _selected;
+			}
+			
+			public function set selected(value:Boolean):void
+			{
+				_selected = value;
+			}
+			
+			[Bindable]
+			public function get source():String
+			{
+				return _source;
+			}
+			
+			public function set source(value:String):void
+			{
+				_source = value;
+			}
+			
+			public function get value():String
+			{
+				return _value;
+			}
+			
+			public function set value(value:String):void
+			{
+				_value = value;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup verticalAlign="middle" gap="2">
+		<s:RadioButton selected="{selected}" visible="false" includeInLayout="false" id="radioBtn"/>
+		<s:BorderContainer backgroundAlpha="0" borderColor="#c40000" cornerRadius="3" borderWeight="2" borderVisible="{radioBtn.selected}" >
+			<s:Image source="{source}" x="3" y="3"/>
+		</s:BorderContainer>
+	</s:HGroup>
+</s:Group>

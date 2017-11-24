@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark"  cornerRadius="2" borderColor="#759992" backgroundColor="#2e5055"
+				   xmlns:mx="library://ns.adobe.com/flex/mx" width="340">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.resultlists.ResultItem;
+			private var _objItem:Array;
+
+			public function get objItem():Array
+			{
+				return _objItem;
+			}
+
+			public function set objItem(value:Array):void
+			{
+				_objItem = value;
+				add();
+			}
+			private function add():void{
+				vg.removeAllElements();
+				for(var i:int=2;i<10;i++){
+					var item:ResultItem=new ResultItem();
+					item.objItem=objItem[i];
+					item.minHeight=25;
+					item.maxHeight=35;
+					vg.addElement(item);
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup id="vg" width="100%" top="5" bottom="5"/>
+</s:BorderContainer>

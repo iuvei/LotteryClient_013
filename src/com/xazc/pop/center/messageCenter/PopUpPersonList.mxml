@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="645" height="485" xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentCenterInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			public function init():void
+			{
+				var service:ServerToolImpl = new ServerToolImpl();
+				var object:Object = new Object();
+				object.UserID = CurrentUserInfo.myUserID;
+				service.getSubUserName(object,getSubUserNameHandler);
+			}
+			
+			/**
+			 * 返回结果
+			 */
+			protected function getSubUserNameHandler(event:ResultEvent):void
+			{
+				trace(event.result.toString());
+				var object:Object = Util.getInstance().resuleFormatToJSon(event.result.toString(),1);
+				if(object.SystemState== 64)
+				{
+					//UserModels[{"User_ID":6,"ChildUserName":"015www01",}];
+					setView(object.UserModels);
+					
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bets_records_error'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			
+			
+			private function setView(arr:Array):void
+			{
+				for(var i:int=0; i<arr.length ; i++)
+				{
+					var obj:CheckBox = new CheckBox();
+					obj.label = arr[i].ChildUserName;
+					obj.id = arr[i].User_ID;
+					obj.addEventListener(MouseEvent.CLICK,checkBoxClickHandler);
+					down_level.addElement(obj);
+				}
+				
+				if(down_level.numElements < 1)
+				{
+					no_xiaji.visible = true;
+					no_xiaji.includeInLayout = true;
+				}
+			}
+			protected function checkBoxClickHandler(event:MouseEvent):void
+			{
+				all_btn.selected = false;
+			}
+			
+			protected function up_level_clickHandler(event:MouseEvent):void
+			{
+				all_btn.selected = false;
+			}
+			
+			protected function all_btn_clickHandler(event:MouseEvent):void
+			{
+				if((event.currentTarget as CheckBox).selected)
+				{
+					//设置搜有的checkbox为选中状态；
+					if(my_shangji.visible){
+						up_level.selected = true;
+					}
+						
+					for(var i:int = 0; i< down_level.numElements; i++)
+					{
+						(down_level.getElementAt(i) as CheckBox).selected = true;
+					}
+				}else{
+					//设置搜有的checkbox为选中状态；
+					up_level.selected = false;
+					for(var i:int = 0; i< down_level.numElements; i++)
+					{
+						(down_level.getElementAt(i) as CheckBox).selected = false;
+					}
+				}
+			}
+			
+			var obj_arr:ArrayCollection;
+			protected function add_btn_clickHandler(event:MouseEvent):void
+			{
+				obj_arr = new ArrayCollection();
+					
+				var obj:Object;
+				if(up_level.selected && my_shangji.visible)
+				{
+					obj = new Object();
+					obj.name = up_level.label;
+					obj.id = "-1";
+					obj_arr.addItem(obj);
+				}
+				
+				for(var i:int = 0; i< down_level.numElements; i++)
+				{
+					if((down_level.getElementAt(i) as CheckBox).selected)
+					{
+						obj = new Object();
+						obj.name = (down_level.getElementAt(i) as CheckBox).label;
+						obj.id = (down_level.getElementAt(i) as CheckBox).id;
+						obj_arr.addItem(obj);
+					}
+				}
+				Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.ADDUSERNAME_MSSAGE,obj_arr));
+				PopUpManager.removePopUp(this);
+			}
+			
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:BitmapImage id="img" width="645" height="485"  source="@Embed('css/skin1/universal/images/alert_bg.png',
+				   scaleGridLeft='100', scaleGridRight='110', scaleGridTop='100', scaleGridBottom='110')"/>
+	
+	<s:Label x="35" y="48" width="575" height="19" text="联系人列表" textAlign="center" color="0xffffff" fontSize="14"/>
+	<s:Image id="imgClose" x="585" y="45" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+			 rollOut="imgClose_rollOutHandler(event)"
+			 rollOver="imgClose_rollOverHandler(event)"/>
+	
+	
+	<s:VGroup x="66" y="86" width="516" height="357">
+		<s:VGroup width="517" height="42" id="my_shangji" visible="{PersonCenterInfo.userInfoDetail.UserLevel==1?false:true}"
+				  includeInLayout="{PersonCenterInfo.userInfoDetail.UserLevel==1?false:true}">
+			<s:Label text="我的上级" />
+			<s:HGroup>
+				<s:Spacer width="20" height="15"/>
+				<s:CheckBox label="上级" id="up_level" click="up_level_clickHandler(event)"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:VGroup width="516" height="278">
+			<s:Label text="我的下级" />
+			<s:HGroup width="515" height="255">
+				<s:Spacer width="20" height="12"/>
+				<s:Scroller width="172" horizontalScrollPolicy="off">
+					<s:TileGroup id="down_level" width="488" height="249" />
+				</s:Scroller>
+			</s:HGroup>
+		</s:VGroup>
+		<s:CheckBox label="全选" id="all_btn" click="all_btn_clickHandler(event)"/>
+	</s:VGroup>
+	
+	<s:Label x="77" y="153" text="无下级" id="no_xiaji" visible="false" includeInLayout="false"/>
+	
+	<common:PopUpTabButtonItem id="add_btn" x="242" y="413" click="add_btn_clickHandler(event)"
+							   labelTitle="添   加"/>
+</s:Group>

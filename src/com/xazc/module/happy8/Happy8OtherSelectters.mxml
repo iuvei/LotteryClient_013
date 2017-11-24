@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable">
+	<fx:Script>
+		
+		<![CDATA[
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			import spark.skins.spark.StackedFormHeadingSkin;
+			
+			//点击号码是抛出事件（参数）
+			public static const NUMBER_CLICK:String = "number_Click";
+			//存储选择的号码的数组
+			public var numbersArr:Array = new Array();
+			
+			public var styleNameIndex:String = "";
+			public var dateArr:ArrayCollection;
+			//=new ArrayCollection([{"lable":"金","value":0},{"lable":"木","value":1},{"lable":"水","value":2},{"lable":"火","value":3},{"lable":"土","value":4}]);
+			/**
+			 * 初始该UI（模块） 
+			 * 
+			 */
+			public function init():void
+			{
+				numbers.removeAllElements();
+				
+				var btn:ToggleButton;
+				for(var i:int = 1; i <= dateArr.length; i++)
+				{
+					btn = new ToggleButton();
+					btn.id = "num_" + dateArr[i-1].value;
+					btn.label = dateArr[i-1].lable;
+					btn.addEventListener(MouseEvent.CLICK, nums_click);
+					btn.styleName="numberSelectSkinStyle_Happy_8";
+					numbers.addElement(btn);
+				}
+				
+			}
+			
+			/**
+			 * 点击号码执行方法
+			 * 
+			 */
+			private function nums_click(event:MouseEvent):void
+			{
+				var btnTemp:ToggleButton = event.target as ToggleButton;
+				// TODO Auto-generated method stub
+				if(btnTemp.selected==true){
+					numbersArr.push((btnTemp.id as String).split("_")[1]);
+				}else{
+					numbersArr.splice(numbersArr.indexOf((btnTemp.id as String).split("_")[1]),1);
+				}
+				
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.BETS_NUMBER_CLICK));
+				
+				//dispatchEvent(new CustomEvent(NUMBER_CLICK, numbersArr));
+			}
+			
+			public function clear():void
+			{
+				numbersArr = new Array();
+				var togbtn:ToggleButton;
+				for(var i:int = 0; i < numbers.numElements; i++)
+				{
+					togbtn = numbers.getElementAt(i) as ToggleButton;
+					togbtn.selected = false;
+				}
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				
+				
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.init();
+			}
+		]]>
+		
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:TileGroup id="numbers" horizontalGap="10" requestedRowCount="1">
+	</s:TileGroup>
+</s:Group>

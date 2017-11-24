@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" implements="com.xazc.interfaces.IInit"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:gd11x5="com.xazc.module.gd11x5.*" xmlns:jx11x5="com.xazc.module.jx11x5.*">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.events.FlexEvent;
+			[Bindable]
+			private var playType:int = 1;
+			
+			public var game_id:String = "01";
+			
+			public var lotteryID:String = "";
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			public var sntuo:int = 0;
+			//派发事件变量
+			public static const RANDOM_STAND_NUMBERS:String = "Syxw_randomStand";
+			//派发注数变量
+			public static const COUNT_ZERO:String = "Syxw_RandomStander_count_zero";
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				clearAll();
+				playType = 1;
+				game_id = "01";
+				gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_1');
+				gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_1');
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,lotteryID + game_id));
+			}
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+//				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				stander.addEventListener(jx11x5_NumberSelector_Biaozhun.NUMBERS_CLICK,getSelectNumbersHandler);
+				init();
+			}
+			/**
+			 * 监听获取选号 
+			 */
+			public function getSelectNumbersHandler(event:CustomEvent):void
+			{
+				var getNumbersArray:Array = new Array();
+				getNumbersArray = event.body as Array;
+				dispatchEvent(new CustomEvent(RANDOM_STAND_NUMBERS,getNumbersArray));
+			}
+			
+			protected function playClickHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				var targetID:String = target.id;
+				game_id =(targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				target.selected = true;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				switch (target.id)
+				{
+					case "play_01":
+						playType = 1;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_1');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_1');
+						break;
+					case "play_02":
+						playType = 2;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_2');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_2');
+						break;
+					case "play_03":
+						playType = 3;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_5');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_5');
+						break;
+					case "play_04":
+						playType = 4;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_8');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_8');
+						break;
+					case "play_05":
+						playType = 5;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_11');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_11');
+						break;
+					case "play_06":
+						playType = 6;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_14');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_14');
+						break;
+					case "play_07":
+						playType = 7;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_17');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_17');
+						break;
+					case "play_08":
+						playType = 8;
+						gameType.text = resourceManager.getString('LotteryTips','jx11x5_game_tip_20');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_20');
+						break;
+				}
+				dispatchEvent(new CustomEvent(COUNT_ZERO));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,lotteryID + game_id));
+			}
+			public function clearAll(e:BetsClickEvent = null):void
+			{
+				stander.init();
+			}
+		]]>
+	</fx:Script>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle" gap="4" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton id="play_01" label="一中一" styleName="standardButtonSkinStyle"
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_02" label="二中二" styleName="standardButtonSkinStyle" 
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_03" label="三中三" styleName="standardButtonSkinStyle"
+							selected="{playType == 3}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_04" label="四中四" styleName="standardButtonSkinStyle"
+							selected="{playType == 4}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_05" label="五中五" styleName="standardButtonSkinStyle"
+							selected="{playType == 5}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_06" label="六中五" styleName="standardButtonSkinStyle" 
+							selected="{playType == 6}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_07" label="七中五" styleName="standardButtonSkinStyle"
+							selected="{playType == 7}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_08" label="八中五" styleName="standardButtonSkinStyle"
+							selected="{playType == 8}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','jx11x5_game_tip_1')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','jx11x5_game_tip_emp_1')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	
+	<s:HGroup width="100%" height="310" paddingLeft="15" verticalAlign="middle">
+		<jx11x5:jx11x5_NumberSelector_Biaozhun id="stander" num="1"/>
+	</s:HGroup>
+</s:Group>

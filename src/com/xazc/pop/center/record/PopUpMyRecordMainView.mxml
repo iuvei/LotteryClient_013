@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   gap="0" width="100%" height="100%"
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   xmlns:proxy="com.xazc.center.proxy.*" 
+				   xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CommonMethodClass;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.rpc.events.ResultEvent;
+			
+			private var p_1:PopUpAccountDetails;//账户明细
+			private var p_2:PopUpBetsRecords;//投注记录
+			private var p_3:PopUpWinningRecords;//中奖记录
+			private var p_4:PopUpRecoveryRecords;//追号记录
+			private var p_5:PopUpBankRechargerRecords;// 充值记录
+			private var p_6:PopUpBankWithdrawalsRecords;//提款记录
+			private var p_7:PopUpPersonalReport;//个人报表(彩票)
+			private var p_8:PopUpPersonalReport_Card;//个人报表（棋牌）
+			
+			
+			/**
+			 *  点击按钮的时候
+			 * 
+			 */
+			public function menu_clickHandler(index:int):void
+			{
+				for(var i:int=1;i<9;i++){
+					if(index==i){
+						this["menu_"+i].selected=true;
+						detailSelected(i);
+					}else{
+						this["menu_"+i].selected=false;
+					}
+				}
+			}
+			/**
+			 *显示具体详细页面 
+			 **/
+			private function detailSelected(index:int):void{
+				group.removeAllElements();
+				if(!this["p_"+index]){
+					if(index==1){
+						//获取最新的支付方式！
+						getUserPayment();
+						return;
+					}
+					if(index==2){
+						this["p_"+index]=new PopUpBetsRecords();
+					}
+					if(index==3){
+						this["p_"+index]=new PopUpWinningRecords();
+					}
+					if(index==4){
+						this["p_"+index]=new PopUpRecoveryRecords();
+					}
+					if(index==5){
+						this["p_"+index]=new PopUpBankRechargerRecords();
+					}
+					if(index==6){
+						this["p_"+index]=new PopUpBankWithdrawalsRecords();
+					}
+					if(index==7){
+						this["p_"+index]=new PopUpPersonalReport();
+					}
+					if(index==8){
+						this["p_"+index]=new PopUpPersonalReport_Card();
+					}
+				}
+				this["p_"+index].horizontalCenter=0;
+				group.addElement(this["p_"+index]);
+				this["p_"+index]=null;//释放资源
+			}
+		
+			private var service:ServerTool;
+			private function getUserPayment():void
+			{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.getUserGroupPayment(new Object(),selectUserDetailHandler);
+			}
+			/**
+			 *查询用户信息回调 
+			 **/
+			private function selectUserDetailHandler(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64)
+				{
+					//保存个人信息；
+					CommonMethodClass.commom_payInfo(obj);	
+					
+					p_1 = new PopUpAccountDetails();
+					p_1.horizontalCenter=0;
+					group.addElement(p_1);
+					p_1=null;//释放资源
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 菜单导航 -->
+	<s:Group width="100%">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient >
+					<s:GradientEntry color="0xcfcece" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:HGroup width="100%" height="55" gap="10" left="23" verticalAlign="middle">
+			<common:PopUpTabButtonItem id="menu_1" labelTitle="{resourceManager.getString('PersonalCenterPage','account_Detail')}" selected="true" click="menu_clickHandler(1)"/>
+			<common:PopUpTabButtonItem id="menu_2" labelTitle="{resourceManager.getString('PersonalCenterPage','bets_Record')}" click="menu_clickHandler(2)" visible="false" includeInLayout="false"/>
+			<common:PopUpTabButtonItem id="menu_3" labelTitle="{resourceManager.getString('PersonalCenterPage','award_Record')}" click="menu_clickHandler(3)" visible="false" includeInLayout="false"/>
+			<common:PopUpTabButtonItem id="menu_4" labelTitle="{resourceManager.getString('PersonalCenterPage','follow_Number_Record')}" click="menu_clickHandler(4)" visible="false" includeInLayout="false"/>
+			<common:PopUpTabButtonItem id="menu_5" labelTitle="{resourceManager.getString('PersonalCenterPage','rechargeRecord')}" click="menu_clickHandler(5)" visible="false" includeInLayout="false"/>
+			<common:PopUpTabButtonItem id="menu_6" labelTitle="{resourceManager.getString('PersonalCenterPage','ewithdrawalRecord')}" click="menu_clickHandler(6)" visible="false" includeInLayout="false"/>
+			<common:PopUpTabButtonItem id="menu_7" labelTitle="{resourceManager.getString('PersonalCenterPage','personal_ReportForms')}" click="menu_clickHandler(7)"/>
+			<common:PopUpTabButtonItem id="menu_8" labelTitle="{resourceManager.getString('PersonalCenterPage','personal_ReportForms2')}" click="menu_clickHandler(8)" visible="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}" includeInLayout="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}"/>
+		</s:HGroup>
+	</s:Group>
+	<!-- 内容 -->
+	<s:Group id="group" width="100%"/>
+</s:VGroup>

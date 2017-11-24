@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="850" height="40">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			
+			private var bank_ico_src_Arr:Array = ["icbc_css/skin1/universal/bank/bank1.jpg",
+				"abc_css/skin1/universal/bank/bank3.jpg",
+				"ccb_css/skin1/universal/bank/bank2.jpg",
+				"cmb_css/skin1/universal/bank/bank5.jpg",
+				
+				"comm_css/skin1/universal/bank/bank7.jpg",
+				"cmbc_css/skin1/universal/bank/bank8.jpg",
+				"boc_css/skin1/universal/bank/bank6.jpg",
+				"bob_css/skin1/universal/bank/bank9.jpg",
+				
+				"bos_css/skin1/universal/bank/bank10.jpg",
+				"sdb_css/skin1/universal/bank/bank24.jpg",
+				"cib_css/skin1/universal/bank/bank12.jpg",
+				"ceb_css/skin1/universal/bank/bank13.jpg",
+				
+				"gdb_css/skin1/universal/bank/bank14.jpg",
+				"gzb_css/skin1/universal/bank/bank15.jpg",
+				"hxb_css/skin1/universal/bank/bank16.jpg",
+				"czb_css/skin1/universal/bank/bank17.jpg",
+				
+				"hzb_css/skin1/universal/bank/bank18.jpg",
+				"bod_css/skin1/universal/bank/bank19.jpg",
+				"cbhb_css/skin1/universal/bank/bank20.jpg",
+				"spdb_css/skin1/universal/bank/bank21.jpg",
+				
+				"citic_css/skin1/universal/bank/bank22.jpg",
+				"psbc_css/skin1/universal/bank/bank4.jpg",
+			];
+			
+			private var _bank_ico:String;//银行图标
+			private var _account_name:String;//开户人姓名
+			private var _card_number:String;//银行卡号
+			private var _address:String;//开户地址
+			private var _bind_time:String;//绑定时间
+			private var _default_use:Boolean;//默认使用
+			
+			private var _card_id:String;//银行卡id
+			
+
+			
+			[Bindable]
+			public function get card_id():String
+			{
+				return _card_id;
+			}
+
+			public function set card_id(value:String):void
+			{
+				_card_id = value;
+			}
+
+			[Bindable]
+			public function get default_use():Boolean
+			{
+				return _default_use;
+			}
+
+			public function set default_use(value:Boolean):void
+			{
+				_default_use = value;
+			}
+
+			[Bindable]
+			public function get bind_time():String
+			{
+				return _bind_time;
+			}
+
+			public function set bind_time(value:String):void
+			{
+				_bind_time = value;
+			}
+
+			[Bindable]
+			public function get address():String
+			{
+				return _address;
+			}
+
+			public function set address(value:String):void
+			{
+				_address = value;
+			}
+
+			[Bindable]
+			public function get card_number():String
+			{
+				return _card_number;
+			}
+
+			public function set card_number(value:String):void
+			{
+				_card_number = value;
+			}
+
+			[Bindable]
+			public function get account_name():String
+			{
+				return _account_name;
+			}
+
+			public function set account_name(value:String):void
+			{
+				_account_name = value;
+			}
+
+			[Bindable]
+			public function get bank_ico():String
+			{
+				return _bank_ico;
+			}
+
+			public function set bank_ico(value:String):void
+			{
+				_bank_ico = value;
+				
+				for(var i:int = 0;i<bank_ico_src_Arr.length ; i++)
+				{
+					if(_bank_ico == bank_ico_src_Arr[i].toString().split("_")[0])
+					{
+						_bank_ico = bank_ico_src_Arr[i].toString().split("_")[1];
+					}
+				}
+			}
+
+			protected function radiobutton1_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("MoveEndEvent",true));
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--银行卡列表   item-->
+	<s:Group>
+		<s:Rect width="850" height="40">
+			<s:fill>
+				<s:SolidColor color="0xff0000" alpha="0"/>
+			</s:fill> 
+			<s:stroke> 
+				<s:SolidColorStroke color="0x666666" weight="1"/> 
+			</s:stroke> 
+		</s:Rect>
+		<s:HGroup width="850" height="40" verticalAlign="middle">
+			
+			<s:HGroup width="180" horizontalAlign="center">
+				<s:Image source="{bank_ico}" />
+			</s:HGroup>
+			<mx:Label width="140" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="{account_name}"/>
+			<mx:Label width="200" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="{'*************' + card_number.toString().substring(card_number.toString().length-4,card_number.toString().length)}"/>
+			<mx:Label width="200" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="{bind_time}"/>
+			<s:HGroup width="100" horizontalAlign="center">
+				<s:RadioButton selected="{default_use}"  buttonMode="true" click="radiobutton1_clickHandler(event)"/>
+			</s:HGroup>
+		</s:HGroup>
+	</s:Group>
+</s:Group>

@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  creationComplete="getAllPlatformMoney()"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" gap="20">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PopKeyBoardManager;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			private var service:ServerToolImpl;
+			
+			[Bindable]
+			public var rechargeItem:Object;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			private var myRegexp:RegExp=/^(([1-9]\d{0,9})|0)(\.\d{1,2})?$/;
+			
+			[Bindable]
+			private var markType:ArrayCollection=new ArrayCollection([
+				{label:"转账",code:"1"},
+				{label:"分红",code:"2"},
+				{label:"奖励",code:"3"},
+				{label:"日工资",code:"5"},
+				{label:"其他",code:"4"},
+			]);
+			
+			
+			/**
+			 *提交 
+			 **/			
+			private function submit():void{
+				this.submit_btn.enabled = false;
+				if(!check()){
+					this.submit_btn.enabled = true;
+					return ;
+				}
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				/* var obj:Object=new Object();
+				obj.TargetUserID=rechargeItem.UserID;
+				obj.TransferMoney=input_money.text;
+				obj.Password=input_psw.text;
+				
+				obj.TargetUserName=rechargeItem.UserName;
+				if(3==marks.selectedIndex){
+					obj.Mark = otherMarks.text;
+				}else{
+					obj.Mark = marks.selectedItem.label;
+				} */
+				
+				var obj:Object;
+				if(3==marks.selectedIndex){
+					//选择日工资特殊处理
+					obj = new Object();
+					obj.Mark = marks.selectedItem.label;
+					//					//转账的用户的ID
+					//					obj.UserID = CurrentUserInfo.myUserID;
+					//					//转账的用户的用户名
+					//					obj.UserName = CurrentUserInfo.userName;
+					//接收转账的用户ID	
+					obj.ToUserID = rechargeItem.UserID;
+					//接收转账的用户名	
+					obj.ToUserName = rechargeItem.UserName
+					//转账金额 （日工资）
+					obj.DailyWages = input_money.text;
+					obj.Password=input_psw.text;
+					
+					service.dailyWagesTransefer(obj,lowerRechargeHandler);
+				}else{
+					obj = new Object();
+					obj.TargetUserID=rechargeItem.UserID;
+					obj.TransferMoney=input_money.text;
+					obj.Password=input_psw.text;
+					obj.TargetUserName=rechargeItem.UserName;
+					
+					if(4==marks.selectedIndex){
+						obj.Mark = otherMarks.text;
+					}else{
+						obj.Mark = marks.selectedItem.label;
+					}
+					service.addTransferInfo_LotteryTransfer(obj,lowerRechargeHandler);
+				}
+				
+				//service.addTransferInfo_LotteryTransfer(obj,lowerRechargeHandler);
+			}
+			
+			/**
+			 *充值回调函数 
+			 **/
+			private function lowerRechargeHandler(e:ResultEvent):void{
+				this.submit_btn.enabled = true;
+				
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.hasOwnProperty("SystemState")){
+					if(arr.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(arr.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+						return;
+					}
+				}
+				trace(e.result.toString());
+				if(arr.StateResult){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_state1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					otherMarks.text = '';
+				}else{
+					//ErrorState="1"  输入资金密码
+					//ErrorState="2" 资金密码错误
+					//ErrorState="3" 下级用户不存在
+					if(arr.ErrorState){
+						if(arr.ErrorState=="1"){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_state2'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						}else if(arr.ErrorState=="2"){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_state3'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						}else if(arr.ErrorState=="3"){
+							alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_state4'),
+								resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						}else if(arr.ErrorState=="4"){
+							alert.show("无给下级充值权限",
+								resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						}else if(arr.ErrorState=="-4"){
+							alert.show('当前用户已被冻结无法进行转账操作!',
+								resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						}else if(arr.ErrorState=="-5"){
+							alert.show('资金密码输错次数过多，用户已被冻结!',
+								resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						}else if(arr.ErrorState=="-6"){
+							alert.show('您还没有完成与下级的分红契约，无法给下级转账!',
+								resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						}
+					}else{
+						alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_state5'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					}
+					
+				}
+				input_money.text="";
+				input_psw.text="";
+//				getAllPlatformMoney();
+				Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+			}
+			/**
+			 *检查 
+			 **/
+			private function check():Boolean{
+				if(input_money.text==""){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					return false;
+				}
+				if(input_psw.text==""){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_check2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					return false;
+				}
+//				if(!myRegexp.test(input_money.text)){
+//					alert.show("请输入正确的充值金额(充值金额只能精确到2位小数)！","提示信息");
+//					return false;
+//				}
+				if(Number(input_money.text)>50000 || Number(input_money.text)<1){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_check3'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					return false;
+				}
+				if(Number(input_money.text)>Number(label_balance.text)){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_check4'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					return false;
+				}
+				
+				
+				//当备注选择其他时需要写入备注
+				if(4==marks.selectedIndex){
+					this.otherMarks.text = otherMarks.text.replace( /^\s*|\s*$/g,"");
+					if(''==otherMarks.text){
+						alert.show('备注选择“其他”时，需手动写入备注！',
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						return false;
+						
+					}
+					
+					if(otherMarks.text.length>10){
+						alert.show('备注最大输入10个字符！请重新输入！',
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						return false;
+					}
+				}
+				
+				
+				return true;
+			}
+			/**
+			 *查询平台余额 
+			 **/
+			public function getAllPlatformMoney():void
+			{
+				return;
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object = new Object();
+				service.getAllPlatformMoney(obj,getAllPlatformMoneyReturn);
+				
+			}
+			private function getAllPlatformMoneyReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString(),null);
+				if(arr.hasOwnProperty("SystemState")){
+					if(arr.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(arr.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				
+				trace(e.result.toString());
+				var alert:AlertMsgCenter = new AlertMsgCenter();
+				if(arr.Result==1){
+//					label_balance.text=arr.UMoney;//可用金额
+//					label_lockmoney.text=arr.LockMoney;	//锁定金额
+					 var context:Array=arr.Context as Array;
+					for(var i:int=0;i<context.length;i++){
+						if(context[i].ProjectCode=="lotp"){
+							var str:String=context[i].Balance;//彩票可用余额
+							//label_balance.text=Number(str).toFixed(2);
+						}						
+					} 
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_member_recharge_error'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+				}
+			}
+			protected function input_money_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var str:String=input_money.text.substring(input_money.text.indexOf("."),input_money.text.length);
+				var value:String=input_money.text;
+				var len:int=value.length-str.length+3;
+				if(input_money.text.indexOf(".")>0 && str.length>3){
+					input_money.text=value.substring(0,len);
+				}
+				if(input_money.text.split('.').length>2){
+					input_money.text = input_money.text.replace('.','');
+				}
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function img_clickHandler(event:MouseEvent):void
+			{
+				if(!Util.getInstance().isPop)
+					PopKeyBoardManager.show(input_psw);
+				else
+					PopKeyBoardManager.clear();
+				Util.getInstance().isPop = !Util.getInstance().isPop;
+			}
+			
+			//修改备注类型后触发事件
+			protected function marks_changeHandler(event:IndexChangeEvent):void
+			{
+				if(4==marks.selectedIndex){
+					otherMarks.visible = true;
+				}else{
+					otherMarks.visible = false;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Spacer height="0"/>
+	<s:HGroup width="100%">
+		<mx:Label width="20%" text="{resourceManager.getString('PersonalCenterPage','next_Lever_Accounts')}：" textAlign="right"  styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label id="label_username" text="{rechargeItem.UserName}" styleName="personalCenterDetailLabelStyle_1"/>
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<mx:Label width="20%" text="{resourceManager.getString('PersonalCenterPage','your_Lottery_Lower_Money')}：" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label id="label_balance"  styleName="personalCenterDetailLabelStyle_1" text="{Number(CurrentUserInfo.userCPBalance)}"/>
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<mx:Label width="20%" text="{resourceManager.getString('PersonalCenterPage','next_Money')}：" textAlign="right"  styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:TextInput id="input_money"  styleName="personalCenterDetailTextInputStyle"  restrict="0-9." change="input_money_changeHandler(event)" />
+		<mx:Label  text="{resourceManager.getString('PersonalCenterPage','money_Type')}" styleName="personalCenterDetailLabelStyle_1"/>
+		<mx:Label  text="      {resourceManager.getString('PersonalCenterPage','the_Round')}1-50000{CurrentUserInfo.moneyType}" styleName="personalCenterDetailLabelStyle_4"/>
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<mx:Label width="20%" text="{resourceManager.getString('PersonalCenterPage','pay_PassWord')}："  textAlign="right"  styleName="personalCenterDetailLabelStyle_1"/>
+		<s:Group id="groupProxy" click="img_clickHandler(event)" buttonMode="true">
+			<mx:TextInput id="input_psw"  styleName="personalCenterDetailTextInputStyle" displayAsPassword="true" enabled="false"/>
+			<s:HGroup id="HGroupProxy" width="{input_psw.width-4}" height="{input_psw.height}" horizontalAlign="right"  verticalAlign="middle">
+				<s:Image id="imgInput_psw" source="css/skin1/assets/keyboard.png"/>
+			</s:HGroup>
+		</s:Group>
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<mx:Label width="20%" text="备注：" textAlign="right"  styleName="personalCenterDetailLabelStyle_1"/>
+		<s:ComboBox id="marks"  initialize="marks.textInput.editable = false" width="160" change="marks_changeHandler(event)" selectedIndex="0" styleName="personalCenterDetailComboBoxStyle"  dataProvider="{markType}"  labelField="label"/>
+		<mx:TextInput id="otherMarks"   styleName="personalCenterDetailTextInputStyle" visible="false" />
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<s:Spacer width="20%"/>
+		<s:Button id="submit_btn" styleName="personalSubmitButtonStyle" label="{resourceManager.getString('PersonalCenterPage','ensure')}" click="submit()" buttonMode="true"/>
+	</s:HGroup>
+</s:VGroup>

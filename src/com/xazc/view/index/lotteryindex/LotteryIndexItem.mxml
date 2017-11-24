@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="creationCompleteHandler(event)"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			[Bindable]
+			public var LotteryId:Number = 12;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				this.addEventListener(MouseEvent.MOUSE_OVER,mouseOverHandler);
+				this.addEventListener(MouseEvent.MOUSE_OUT,mouseOutHandler);
+			}
+			
+			private function mouseOverHandler(e:MouseEvent):void
+			{
+				if(lottery_over.visible){return;}
+				trace("-------in---------");
+				lottery.visible = false;
+				lottery_over.visible = true;
+			}
+			private function mouseOutHandler(e:MouseEvent):void
+			{
+				if(lottery.visible){return;}
+				trace("-------out---------");
+				lottery.visible = true;
+				lottery_over.visible = false;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Image source="{'css/skin1/assets/lotteryindex/lottery_'+LotteryId+'.png'}" id='lottery'/>
+	<s:Image source="{'css/skin1/assets/lotteryindex/lottery_'+LotteryId+'_over.png'}" id="lottery_over" visible="false"/>
+</s:Group>

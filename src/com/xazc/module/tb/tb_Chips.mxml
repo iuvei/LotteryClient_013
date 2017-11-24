@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_01.png")]
+			private var chips_01:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_02.png")]
+			private var chips_02:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_03.png")]
+			private var chips_03:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_04.png")]
+			private var chips_04:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_05.png")]
+			private var chips_05:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_06.png")]
+			private var chips_06:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_07.png")]
+			private var chips_07:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_08.png")]
+			private var chips_08:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_09.png")]
+			private var chips_09:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_10.png")]
+			private var chips_10:Class;
+			
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_01.png")]
+			private var chips_hide_01:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_02.png")]
+			private var chips_hide_02:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_03.png")]
+			private var chips_hide_03:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_04.png")]
+			private var chips_hide_04:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_05.png")]
+			private var chips_hide_05:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_06.png")]
+			private var chips_hide_06:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_07.png")]
+			private var chips_hide_07:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_08.png")]
+			private var chips_hide_08:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_09.png")]
+			private var chips_hide_09:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_hide_10.png")]
+			private var chips_hide_10:Class;
+			
+			private var arr:Array = ["",chips_01,chips_02,chips_03,chips_04,chips_05,chips_06,chips_07,chips_08,chips_09,chips_10];
+			private var arr_hide:Array = ["",chips_hide_01,chips_hide_02,chips_hide_03,chips_hide_04,chips_hide_05,chips_hide_06,chips_hide_07,
+				chips_hide_08,chips_hide_09,chips_hide_10];
+			
+			private var _isShow:Boolean = false;
+			private var _srcIndex:int = 1;
+			
+			[Bindable]
+			public function get srcIndex():int
+			{
+				return _srcIndex;
+			}
+
+			public function set srcIndex(value:int):void
+			{
+				_srcIndex = value;
+			}
+
+			[Bindable]
+			public function get isShow():Boolean
+			{
+				return _isShow;
+			}
+
+			public function set isShow(value:Boolean):void
+			{
+				_isShow = value;
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Image source="{isShow?arr[srcIndex]:arr_hide[srcIndex] }" buttonMode="true"/>
+	
+</s:Group>

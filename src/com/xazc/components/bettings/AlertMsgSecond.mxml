@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="450" height="200" 
+				   cornerRadius="5" borderVisible="false"
+				   backgroundColor="0x000000" backgroundAlpha="0.5"
+				   creationComplete="initFocus()">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.SystemEvent;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Application;
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			public var okBtnBoolean:Boolean=false;
+			private var _keyBoardFlag:Boolean=false;
+			
+			[Bindable]
+			private var _message:String;
+			
+			[Bindable]
+			private var _cancleBtnShow:Boolean;
+			
+			
+			
+			[Bindable]
+			private var _titleMsg:String;
+			
+			private var _timer:Timer;
+			
+			private var _isShow:Boolean = false;
+			
+			public function get keyBoardFlag():Boolean
+			{
+				return _keyBoardFlag;
+			}
+			
+			public function set keyBoardFlag(value:Boolean):void
+			{
+				_keyBoardFlag = value;
+			}
+			
+			public function initFocus():void
+			{
+				okBtn.setFocus();
+			}
+			
+			public function show(msg:String = "", titleValue:String = "", cancleFlg:Boolean = false, timerStart:Boolean = false, model:Boolean = true):void
+			{
+				if(timerStart)
+				{
+					_timer = new Timer(5000, 1);
+					_timer.addEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+					_timer.start();
+				}
+				_isShow = true;
+				_cancleBtnShow = cancleFlg;
+				_titleMsg = titleValue;
+				_message = msg;
+				PopUpManager.removePopUp(this);
+				PopUpManager.addPopUp(this, FlexGlobals.topLevelApplication.contentGroup, model);
+				PopUpManager.centerPopUp(this);
+				//				this.setFocus();
+				okBtn.setFocus();
+			}
+			
+			protected function onClick():void
+			{
+				if(_cancleBtnShow)
+					dispatchEvent(new SystemEvent(SystemEvent.ALERT_SUCSSES_BTN_CLICK));
+				if(okBtnBoolean){
+					dispatchEvent(new SystemEvent(SystemEvent.ALERT_SUCSSES_BTN_CLICK));
+				}
+				canleHandler();
+			}
+			
+			protected function timerCompleteHandler(e:TimerEvent):void
+			{
+				_timer.stop();
+				_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+				_timer = null;
+				canleHandler();
+			}
+			
+			protected function canleHandler():void
+			{
+				if(_isShow)
+					PopUpManager.removePopUp(this);
+				_isShow = false;
+			}
+			private function keySetDownHandler(e:KeyboardEvent):void{
+				if(keyBoardFlag){
+					if(e.keyCode==13){
+						canleHandler();
+					}	
+				}
+			}
+			
+			
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				rotateEffect.play();
+			}
+			/**
+			 *发送关闭窗口时间 
+			 **/
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				if(_cancleBtnShow)
+					dispatchEvent(new SystemEvent(SystemEvent.ALERT_SUCSSES_BTN_CLICK));
+				if(okBtnBoolean){
+					dispatchEvent(new SystemEvent(SystemEvent.ALERT_SUCSSES_BTN_CLICK));
+				}
+				canleHandler();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Rotate id="rotateEffect"  autoCenterTransform="true"
+				  duration="500"  angleFrom="0" angleTo="360"
+				  target="{imgClose}" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	<s:BorderContainer borderVisible="false"  cornerRadius="5" top="10" left="10" right="10" bottom="10" backgroundColor="#ffffff" >
+		<s:BorderContainer width="100%" height="43" skinClass="css.skin1.universal.PopUpWindowTitleSkin" >
+			<mx:Label id="title" verticalCenter="0" left="20" text="{_titleMsg}" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			<s:Image id="imgClose" x="390" y="8" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)" />
+		</s:BorderContainer>
+		<s:VGroup width="100%" height="128" top="48" gap="20" horizontalAlign="center" verticalAlign="middle">
+			<s:HGroup horizontalAlign="center" verticalAlign="middle">
+				<s:Image smooth="true" source="css/skin1/universal/images/warringLogo2.png"/>
+				<s:Label text="{_message}" textAlign="left" styleName="personalCenterDetailLabelStyle_1"/>
+			</s:HGroup>
+			<s:HGroup horizontalAlign="center" gap="50" verticalAlign="middle">
+				<s:Button id="cancle" label="取  消" click="canleHandler()" styleName="popUpPersonalCenterBlueButtonStyle_large"
+						  visible="{_cancleBtnShow}" includeInLayout="{_cancleBtnShow}" buttonMode="true"/>
+				<s:Button id="okBtn" label="确  定" click="onClick()" styleName="alertSubmitButtonStyle" 
+						  keyDown="keySetDownHandler(event)" buttonMode="true" width="120" height="32"/> 
+			</s:HGroup>
+		</s:VGroup>
+	</s:BorderContainer>
+</s:BorderContainer>

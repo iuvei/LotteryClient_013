@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="945"  height="590"
+		 xmlns:bank="com.xazc.pop.center.bank.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			private var arr:Array=[];
+			
+			
+			private var  tempUrl:String = "";
+			private var tempDates:String = "";
+			/**
+			 * 第三方在线支付使用 
+			 */
+			public function setUrlAndDates(tempurl:String,values:String,moneyStr:String,bankType):void
+			{
+				zaixian_1.enabled = true;
+				
+				tempUrl =tempurl; 
+				tempDates = values;
+				input_money.text=moneyStr;
+				
+				if(CurrentBusinessInfo.onlineTypeNamesObj["online_"+ bankType +"_name"]){
+					bankTypeStr.text = CurrentBusinessInfo.onlineTypeNamesObj["online_"+ bankType +"_name"];
+				}
+			}
+			/**
+			 * my18 支付宝2使用 
+			 */
+			public function setUrlAndDates_alipay2(valueObj:Object,bankType:String = "157"):void
+			{
+				zaixian_1.enabled = true;
+				
+				tempUrl =((valueObj.PayBank).toString()).split(",")[1];
+				input_money.text=valueObj.PayMoney;
+				
+				tempDates = 'jiage$'+valueObj.PayMoney+'$lianxi$'+valueObj.PayFuYan;
+				
+				if(CurrentBusinessInfo.onlineTypeNamesObj["online_"+ bankType +"_name"]){
+					bankTypeStr.text = CurrentBusinessInfo.onlineTypeNamesObj["online_"+ bankType +"_name"];
+				}
+			}
+			/**
+			 *返回 
+			 **/
+			protected function back(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("backBankRecharItem1Event"));
+			}
+			/**
+			 *确认充值 
+			 **/
+			private function submit():void{
+				
+				zaixian_1.enabled = false;
+				
+				var request:URLRequest = new URLRequest(); 
+				request.url =tempUrl; 
+				//request.method="post";
+				request.method= URLRequestMethod.GET;
+				var param:URLVariables=new URLVariables();
+				var mvalue:Array=tempDates.split("$");
+				for(var i:int= 0;i<mvalue.length;i+=2){
+					param[mvalue[i]] = mvalue[i+1];
+				}
+				request.data=param;
+				navigateToURL(request,"_bank"); 
+				wait.visible=true;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+		[Event(name="backBankRecharItem1Event",type="flash.events.Event")]
+	</fx:Metadata>
+	<s:VGroup width="100%" gap="20" top="20">
+		<s:Spacer />
+		<s:HGroup width="100%">
+			<s:Spacer width="10%"/>
+			<mx:Label  styleName="personalCenterDetailLabelStyle_3" text="{resourceManager.getString('PersonalCenterPage','please_Ensure_Recharge_Moudle_And_Money')}"/>
+		</s:HGroup>
+		<s:HGroup width="100%">
+			<s:Spacer width="10%"/>
+			<mx:Label   styleName="personalCenterDetailLabelStyle_1" text="{resourceManager.getString('PersonalCenterPage','recharge_Moudle_1')}："/>
+			<mx:TextInput editable="false" id="bankTypeStr"  text="{resourceManager.getString('PersonalCenterPage','online_Payment')}" styleName="personalCenterDetailTextInputStyle"/>
+		</s:HGroup>
+		<s:HGroup width="100%">
+			<s:Spacer width="10%"/>
+			<mx:Label   styleName="personalCenterDetailLabelStyle_1" text="{resourceManager.getString('PersonalCenterPage','recharge_Money')}："/>
+			<mx:TextInput editable="false"  id="input_money"  styleName="personalCenterDetailTextInputStyle"/>
+			<mx:Label text="{CurrentUserInfo.moneyType}" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="100%"  verticalAlign="middle">
+			<s:Spacer width="10%"/>
+			<s:Button id="zaixian_1" styleName="personalSubmitButtonStyle" buttonMode="true" label="{resourceManager.getString('PersonalCenterPage','ensure_Recharge')}" click="submit()"/>
+			<s:Button styleName="personalSubmitButtonStyle" buttonMode="true" label="{resourceManager.getString('PersonalCenterPage','goback')}" click="back(event)"/>
+		</s:HGroup>
+		<s:Spacer height="30%"/>
+		<s:HGroup width="100%">
+			<s:Spacer width="10%"/>
+			<!--<mx:Label styleName="personalCenterDetailLabelStyle_1_mx" text="{resourceManager.getString('PersonalCenterPage','recharge_Tips_9')}" bottom="50"/>-->
+		</s:HGroup>
+	</s:VGroup>
+	
+	<s:HGroup verticalAlign="middle" horizontalAlign="center" width="100%" height="100%">
+		<s:Group id="group" width="530" height="360" />
+	</s:HGroup>
+	
+	<s:HGroup verticalAlign="middle" horizontalAlign="center" width="100%" height="100%">
+		<bank:PopUpWaitingItem width="530" height="360" id="wait" visible="false"/>
+	</s:HGroup>
+</s:Group>

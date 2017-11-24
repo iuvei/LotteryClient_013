@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="650" height="550" xmlns:common="com.xazc.pop.center.common.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.components.TextInput;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:135},
+				{title:"b",w:135},
+				{title:"c",w:135},
+				{title:"d",w:135},
+			]);
+			
+			private var values:ArrayCollection=new ArrayCollection([
+				{column:"ActivePersonNum",w:135},
+				{column:"BetMoneyMin",w:135},
+				{column:"LossMoneyMin",w:135},
+				{column:"DividendRatio",w:135},
+			]);
+			
+			private var save_downID:String;
+			private var save_state:String;
+			protected function init(event:FlexEvent):void
+			{
+				
+			}
+			
+			protected function init_view():void
+			{
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=30;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = "活跃人数";
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = "消费额";
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = "亏损额";
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = "分红比例";
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+				}
+				vg_title.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,0);
+				
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=30;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = "活跃人数";
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = "消费额";
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = "亏损额";
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = "分红比例";
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+				}
+				vg_2_title.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg_2.addElementAt(promptGrid,0);
+				
+			}
+			public function setData():void
+			{
+				init_view();
+				
+				//获取我  待确认契约 分红契约
+				var target:Object = new Object();
+				target.UserID = CurrentUserInfo.myUserID;
+				target.IsState = "0";
+				var service:ServerToolImpl =new ServerToolImpl();
+				service.getContractDetails(target,getContractDetailsReturn);
+			}
+			//获取我的日工资数据
+			private var messages:Array=[];//保留查询数据
+			private  function getContractDetailsReturn(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				trace(e.result.toString());
+				if(obj.SystemState==64)
+				{
+					messages=obj.ContractContentModels as Array;
+					if(messages.length==0){
+						createGridOneRow();
+						createGridOneRow2();
+						return;
+					}
+					
+					var arr_1:Array = new Array();
+					var arr_2:Array = new Array();
+					for(var i:int=0;i<messages.length;i++)
+					{
+						if(messages[i].IsHistoryData == "0"){
+							arr_1.push(messages[i]);
+						}else{
+							arr_2.push(messages[i]);
+						}
+					}
+					updateViewPropertysValue(arr_1);
+					updateViewPropertysValue2(arr_2);
+					
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show("查询失败！",
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text="无数据！";
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow2():void{
+				var gt:Grid=vg_2.getChildAt(0) as Grid;
+				var grid:Grid=vg_2.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text="无数据！";
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			
+			private function updateViewPropertysValue(list:Array):void{
+				var grid:Grid=vg.getChildAt(0) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				for(var i:int=0;i<list.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=30;
+					grid.addChild(row);
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=values.getItemAt(j).w;
+						var lb:Label=new Label();
+						lb.styleName="personalCenterDetailLabelStyle_1";
+						lb.width=values.getItemAt(j).w-5;
+						item.addChild(lb);
+						var strColumn:String=values.getItemAt(j).column;
+						if(strColumn=="DividendRatio"){
+							lb.text= Number((Number(list[i][strColumn])*100).toFixed(6)) + "%";
+						}else{
+							lb.text=list[i][strColumn];
+						}
+					}
+				}
+			}
+			private function updateViewPropertysValue2(list:Array):void{
+				var grid:Grid=vg_2.getChildAt(0) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				for(var i:int=0;i<list.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=30;
+					grid.addChild(row);
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=values.getItemAt(j).w;
+						var lb:Label=new Label();
+						lb.styleName="personalCenterDetailLabelStyle_1";
+						lb.width=values.getItemAt(j).w-5;
+						item.addChild(lb);
+						var strColumn:String=values.getItemAt(j).column;
+						if(strColumn=="DividendRatio"){
+							lb.text= Number((Number(list[i][strColumn])*100).toFixed(6)) + "%";
+						}else{
+							lb.text=list[i][strColumn];
+						}
+					}
+				}
+			}
+			
+			protected function agreement_btn_clickHandler(event:MouseEvent):void
+			{
+				//同意契约
+				var target:Object = new Object();
+				target.UserID = CurrentUserInfo.myUserID;
+				target.UserName = CurrentUserInfo.userName;
+				var service:ServerToolImpl =new ServerToolImpl();
+				service.agreeContract(target,agreeContractReturn);
+			}
+			private  function agreeContractReturn(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				trace(e.result.toString());
+				if(obj.SystemState==64)
+				{
+					
+					if(obj.Result )
+					{
+						PopUpManager.removePopUp(this);
+						Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.UPDATE_DIVIDENDCONTRACT_LIST));//刷新列表以及页面数据
+						
+						alert.show("契约签订成功！",
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					}else{
+						alert.show("契约签订失败！",
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+					
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show("同意契约失败！",
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:BitmapImage id="img" width="650" height="550"  source="@Embed('css/skin1/universal/images/alert_bg.png',
+				   scaleGridLeft='100', scaleGridRight='110', scaleGridTop='100', scaleGridBottom='110')"/>
+	
+	<s:Label x="35" y="48" width="580" height="19" text="分红契约" textAlign="center" color="0xffffff" styleName="contract_styleName"/>
+	<s:Image id="imgClose" x="590" y="45" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+			 rollOut="imgClose_rollOutHandler(event)"
+			 rollOver="imgClose_rollOverHandler(event)"/>
+	
+	
+	<s:VGroup left="50" right="50" top="80" bottom="45" gap="0">
+		<s:HGroup height="30" verticalAlign="middle">
+			<s:Label text="修改前分红契约" styleName="contract_styleName" />
+		</s:HGroup>
+		<s:Group width="540" height="125" >
+			<s:Rect width="538" height="30">
+				<s:fill><s:LinearGradient ><s:GradientEntry color="0xfff0c5" alpha="1"/></s:LinearGradient></s:fill>
+				<s:stroke><s:SolidColorStroke color="0x000000" alpha="0"/></s:stroke>
+			</s:Rect>
+			
+			<s:VGroup gap="-1">
+				<s:VGroup gap="-1"  width="100%" id="vg_title">
+				</s:VGroup>
+				<s:Scroller width="550" maxHeight="90" styleName="personalCenterScrollerStyle_1"  horizontalScrollPolicy="off">
+					<s:VGroup id="vg" width="540" gap="-1"/>
+				</s:Scroller>
+			</s:VGroup>
+		</s:Group>
+		
+		<s:HGroup height="30" verticalAlign="middle" gap="2">
+		</s:HGroup>
+		
+		<s:HGroup height="30" verticalAlign="middle" gap="2">
+			<s:Label text="修改后分红契约" styleName="contract_styleName"  />
+		</s:HGroup>
+		<s:HGroup height="30" verticalAlign="middle" gap="2">
+			<s:Label text="上级已修改您的契约，同意后生效，请确认！" styleName="contract_styleName"  />
+		</s:HGroup>
+		<s:Group width="540" height="125">
+			<s:Rect width="538" height="30">
+				<s:fill><s:LinearGradient ><s:GradientEntry color="0xfff0c5" alpha="1"/></s:LinearGradient></s:fill>
+				<s:stroke><s:SolidColorStroke color="0x000000" alpha="0"/></s:stroke>
+			</s:Rect>
+			
+			<s:VGroup gap="-1">
+				<s:VGroup gap="-1"  width="100%" id="vg_2_title">
+				</s:VGroup>
+				<s:Scroller width="550" maxHeight="90" styleName="personalCenterScrollerStyle_1"  horizontalScrollPolicy="off">
+					<s:VGroup id="vg_2" width="540" gap="-1"/>
+				</s:Scroller>
+			</s:VGroup>
+		</s:Group>
+		
+		<s:HGroup width="540" height="60" horizontalAlign="center" verticalAlign="middle">
+			<common:PopUpTabButtonItem id="agreement_btn" labelTitle="同    意" click="agreement_btn_clickHandler(event)" />
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+</s:Group>

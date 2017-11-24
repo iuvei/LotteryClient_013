@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="100%" 
+		 horizontalAlign="center" gap="55" verticalAlign="middle">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.single.CurrentBusinessInfo;
+			protected function help_clickHandler(event:MouseEvent):void
+			{
+				navigateToURL(new URLRequest(CurrentBusinessInfo.serverUrl_net+"/"+CurrentBusinessInfo.MerchantProjectName+"/help/helpCenter.html"),"_blank");
+			}
+			protected function help2_clickHandler(event:MouseEvent):void
+			{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_MAIN,{num:4,addIndex:0,menuIndex:0}));
+			}
+			protected function down_clickHandler(num:Number):void
+			{
+				var request:URLRequest = new URLRequest(); 
+				var tempUrl:String = '';
+				switch(num)
+				{
+					case 1:{tempUrl = 'http://www.google.cn/chrome/browser/desktop/index.html';break;}
+					case 2:{tempUrl = 'http://www.firefox.com.cn/download/';break;}
+					case 3:{tempUrl = 'http://se.360.cn/';break;}
+					case 4:{tempUrl = 'http://ie.microsoft.com/';break;}
+				}
+				request.url=tempUrl;
+				navigateToURL(request,"_bank");
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_01.png')" />
+	<s:VGroup>
+		<s:HGroup gap="52">
+			<s:VGroup>
+				<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_02_01_01.png')" />
+				<s:Label text="关于恒运娱乐 | 常见问题 | 条款与规则" color="0xa38f4b" buttonMode="true" click="help_clickHandler(event)"/>
+				<s:HGroup gap="0">
+					<s:Label text="博彩责任 | 免责声明 "  color="0xa38f4b"  buttonMode="true" click="help_clickHandler(event)"/>
+					<s:Label text="| 优惠活动 | "  color="0xa38f4b"  buttonMode="true" click="help2_clickHandler(event)"/>
+					<s:Label text="18+条款"  color="0xa38f4b"  buttonMode="true"/>
+				</s:HGroup>
+				
+			</s:VGroup>
+			<s:VGroup>
+				<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_02_02_02_01.png')" />
+				<s:Label text="如何注册     如何存款    如何取款"  color="0xa38f4b"  buttonMode="true" click="help_clickHandler(event)"/>
+				<s:Label text="账号问题     安全问题    平台问题"  color="0xa38f4b"  buttonMode="true" click="help_clickHandler(event)"/>
+				<s:Spacer height="1"/>
+				<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_02_02_02_02.png')" />
+				<s:HGroup gap="10">
+					<s:Image source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_liu_01.png')"  buttonMode="true" click="down_clickHandler(1)"/>
+					<s:Image source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_liu_02.png')"  buttonMode="true" click="down_clickHandler(2)"/>
+					<s:Image source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_liu_03.png')"  buttonMode="true" click="down_clickHandler(3)"/>
+					<s:Image source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_liu_04.png')"  buttonMode="true" click="down_clickHandler(4)"/>
+				</s:HGroup>
+			</s:VGroup>
+		</s:HGroup>
+		<s:BitmapImage source="@Embed('css/skin1/assets/lotteryindex/lottery_index_help_02_02.png')" />
+	</s:VGroup>
+</s:HGroup>

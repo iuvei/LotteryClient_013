@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  width="464" height="295"
+					  creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.SystemEvent;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Application;
+			
+			public var okBtnBoolean:Boolean=false;
+			
+			
+			[Bindable]
+			private var _cancleBtnShow:Boolean;
+			
+			[Bindable]
+			private var AwardMoney:Number = 0;
+			private var _timer:Timer;
+			private var _isShow:Boolean = false;
+			[Bindable]
+			private var nowLessTimes:int = 4;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				showTimes.text = AwardMoney.toString();
+			}
+			
+			public function show(msg:Number = NaN, titleValue:String = "", cancleFlg:Boolean = false, timerStart:Boolean = true, model:Boolean = true):void
+			{
+				if(timerStart)
+				{
+					_timer = new Timer(1000);
+//					_timer.addEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+					_timer.addEventListener(TimerEvent.TIMER, onTimer);
+					_timer.start();
+				}
+				AwardMoney = msg;
+				_isShow = true;
+				_cancleBtnShow = cancleFlg;
+				PopUpManager.removePopUp(this);
+				this.setStyle("modalTransparencyColor","0x00000");
+				this.setStyle("modalTransparency",0.5);
+				PopUpManager.addPopUp(this, FlexGlobals.topLevelApplication.contentGroup, model);
+				PopUpManager.centerPopUp(this);
+				this.setFocus();
+			}
+			
+			protected function canleHandler():void
+			{
+				if(_isShow)
+					PopUpManager.removePopUp(this);
+				_isShow = false;
+			}
+			
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				canleHandler();
+			}
+			
+			protected function onTimer(event:TimerEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(nowLessTimes>1)
+				{
+					nowLessTimes--;
+				}
+				else
+				{
+					_timer.stop();
+					_timer.removeEventListener(TimerEvent.TIMER, onTimer);
+					_timer = null;
+					canleHandler();
+				}
+			}
+			
+			protected function timerCompleteHandler(e:TimerEvent):void
+			{
+				_timer.stop();
+				_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+				_timer = null;
+				canleHandler();
+			}
+		]]>
+	</fx:Script>
+	<s:Group id="failureGroup" width="100%" height="100%" visible="{(AwardMoney > 0)?false:true}" includeInLayout="{(AwardMoney>0)?false:true}">
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+			<s:Image source="css/skin1/universal/images/gongxizhongjiang_06.png"/>
+		</s:HGroup>
+		<s:Image id="closeImage2" buttonMode="true" right="0" top="0"  smooth="true" source="css/skin1/universal/images/close1.png"  rollOver="closeImage2.alpha = 0.8" rollOut="closeImage2.alpha = 1.0" click="imgClose_clickHandler(event)"/>
+		<s:Label text="{nowLessTimes.toString()}s" color="0xffcc00" fontSize="18" right="32" top="0" />
+	</s:Group>
+	<s:Group id="successGroup" width="100%" height="100%" visible="{(AwardMoney > 0)?true:false}" includeInLayout="{(AwardMoney>0)?true:false}">
+		<s:Image top="0" source="css/skin1/universal/images/gongxizhongjiang_03.png"/>
+		<s:Image right="0" top="0"  id="closeImage1" buttonMode="true" smooth="true" source="css/skin1/universal/images/close1.png" rollOver="closeImage1.alpha = 0.8" rollOut="closeImage1.alpha = 1.0" click="imgClose_clickHandler(event)"/>
+		<s:Label text="{nowLessTimes.toString()}s" color="0xffcc00" fontSize="18" right="38" top="0"/>
+		<s:HGroup width="100%" height="100%" verticalAlign="middle" gap="0" paddingLeft="163" paddingTop="26">
+			<s:HGroup>
+				<s:Label text="总计：" fontSize="18" fontFamily="Microsoft YaHei,微软雅黑" color="0xffffff"/>
+			</s:HGroup>
+			<s:HGroup>
+				<s:Label text="1" fontSize="24" fontFamily="Microsoft YaHei,微软雅黑" color="0xffff00" id="showTimes"/>
+			</s:HGroup>
+			<s:Spacer width="16"/>
+			<s:HGroup>
+				<s:Label text="元" fontSize="18" fontFamily="Microsoft YaHei,微软雅黑" color="0xffffff"/>
+			</s:HGroup>
+		</s:HGroup>
+	</s:Group>
+</s:SkinnableContainer>

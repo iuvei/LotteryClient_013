@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="645" height="440"
+		 creationComplete="init(event)" xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.Util;
+			
+			import flashx.textLayout.factory.TruncationOptions;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			protected function init(event:FlexEvent):void
+			{
+				
+			}
+			private var str_myId_xiajiID_xiajiName:String;
+			public function setData(str:String):void
+			{
+				str_myId_xiajiID_xiajiName = str;
+				//前台获取自己和下级的日工资3契约
+				var target:Object = new Object();
+				target.UserID = str.split("#")[0];
+				target.SubordinateUserid = str.split("#")[1];
+				SubordinateName.text = str.split("#")[2];//设置下级名字
+				var service:ServerToolImpl =new ServerToolImpl();
+				service.getMyDownDayWagesThree(target,getMyDownDayWagesThreeReturn);
+			}
+			//前台获取自己和下级的日工资3契约
+			private  function getMyDownDayWagesThreeReturn(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				trace(e.result.toString());
+				if(obj.SystemState==64)
+				{
+					//<!--  配置一览表 -->
+					
+					var InitDayWagesRules_infoArr:Array = obj.InitDayWagesRules as Array;
+					for(var i:int=0;i<InitDayWagesRules_infoArr.length;i++)
+					{
+						var hgroup:HGroup = new HGroup();
+						hgroup.gap = 0;
+						hgroup.height = 25;
+						hgroup.verticalAlign = "middle";
+						var lab:Label = new Label();
+						lab.width = 180;
+						lab.height = 25;
+						lab.setStyle("textAlign","center");
+						lab.setStyle("verticalAlign","middle");
+						lab.text = InitDayWagesRules_infoArr[i].DayWageStandard;
+						hgroup.addElement(lab);
+						var lab_1:Label = new Label();
+						lab_1.width = 180;
+						lab_1.height = 25;
+						lab_1.setStyle("textAlign","center");
+						lab_1.setStyle("verticalAlign","middle");
+						lab_1.text = InitDayWagesRules_infoArr[i].DaySales;
+						hgroup.addElement(lab_1);
+						var lab_2:Label = new Label();
+						lab_2.width = 180;
+						lab_2.height = 25;
+						lab_2.setStyle("textAlign","center");
+						lab_2.setStyle("verticalAlign","middle");
+						lab_2.text = InitDayWagesRules_infoArr[i].ActiveNumber;
+						hgroup.addElement(lab_2);
+						vg.addElement(hgroup);
+					}
+					
+					//我的契约信息；
+					var my_infoArr:Array = obj.MyDayWagesThree as Array;
+					if(my_infoArr.length<1){return;}
+					my_DayWageStandard.text = my_infoArr[0].DayWageStandard;
+					//下级契约信息；
+					if(obj.SubordinateDayWagesThree != "")//当前日工资；
+					{
+						SuperiorUserDayWages.text = obj.SubordinateDayWagesThree[0].DayWageStandard;
+					}
+					if(obj.SuperiorDayWageStandard != "")//待确认日工资；
+					{
+						SuperiorDayWageStandard.text = obj.SuperiorDayWageStandard;
+						daiqueren_group.visible = true;
+						daiqueren_group.includeInLayout = true;
+					}else{
+						select_goup.visible = true;
+						select_goup.includeInLayout = true;
+						save_group.visible = true;
+						save_group.includeInLayout = true;
+						
+						if(obj.SubordinateDayWagesThree != "")//当前日工资；
+						{
+							//当前日工资 比例；   obj.SubordinateDayWagesThree[0].DayWagesProportion   *  1000
+							var index:int = obj.SubordinateDayWagesThree[0].DayWagesProportion   *  1000;
+							
+							var newArr:ArrayCollection = new ArrayCollection();
+							for(var m:int=0;m<dateTypeArr.length;m++)
+							{
+								for(var j:int=1;j<index+1;j++)
+								{
+									if(dateTypeArr[m].value != j){
+										newArr.addItem(dateTypeArr[m]);
+									}
+								}
+							}
+							dateTypeArr = new ArrayCollection();
+							dateTypeArr = newArr;
+						}
+						
+					}
+					
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_member_error1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function save_btn_clickHandler(event:MouseEvent):void
+			{
+				if(!checkPropertys()){
+					return;
+				}
+				var obj:Object = new Object();
+				obj.UserName = str_myId_xiajiID_xiajiName.split("#")[2];
+				obj.ID = dateTypeArr[dateType.selectedIndex].value;
+				//修改日工资契约
+				var service:ServerToolImpl =new ServerToolImpl();
+				service.modifyDayWagesThree(obj,modifyDayWagesThreeReturn);
+			}
+			//修改日工资契约
+			private  function modifyDayWagesThreeReturn(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				trace(e.result.toString());
+				if(obj.SystemState==64)
+				{
+					if(obj.Result==true)
+					{
+						alert.show("修改成功!",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						PopUpManager.removePopUp(this);
+					}else{
+						alert.show("修改失败!",resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						PopUpManager.removePopUp(this);
+					}
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					alert.show("修改日工资失败!",
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			
+			private function checkPropertys():Boolean{
+				var alert:AlertMsgCenter = new AlertMsgCenter();
+				if(dateType.selectedIndex < 1){
+					alert.show("请选择日工资！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;}
+				
+				return true;
+			}
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			[Bindable]
+			private var dateTypeArr:ArrayCollection=new ArrayCollection([
+				{label:"请选择新的日工资",value:-1},{label:"每天【0.1%】的日工资",value:1},{label:"每天【0.2%】的日工资",value:2},
+				{label:"每天【0.3%】的日工资",value:3},{label:"每天【0.4%】的日工资",value:4},{label:"每天【0.5%】的日工资",value:5},
+				{label:"每天【0.6%】的日工资",value:6},{label:"每天【0.7%】的日工资",value:7},{label:"每天【0.8%】的日工资",value:8},
+				{label:"每天【0.9%】的日工资",value:9},{label:"每天【1.0%】的日工资",value:10},{label:"每天【1.1%】的日工资",value:11},
+				{label:"每天【1.2%】的日工资",value:12},{label:"每天【1.3%】的日工资",value:13},{label:"每天【1.4%】的日工资",value:14},
+				{label:"每天【1.5%】的日工资",value:15},{label:"每天【1.6%】的日工资",value:16},{label:"每天【1.7%】的日工资",value:17},
+				{label:"每天【1.8%】的日工资",value:18},{label:"每天【1.9%】的日工资",value:19},{label:"每天【2.0%】的日工资",value:20}
+			]);
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:BitmapImage id="img" width="645" height="440"  source="@Embed('css/skin1/universal/images/alert_bg.png',
+				   scaleGridLeft='100', scaleGridRight='110', scaleGridTop='100', scaleGridBottom='110')"/>
+	
+	
+	
+	<s:Label x="35" y="48" width="575" height="19" text="日工资契约" textAlign="center" color="0xffffff" styleName="contract_styleName"/>
+	<s:Image id="imgClose" x="585" y="45" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+			 rollOut="imgClose_rollOutHandler(event)"
+			 rollOver="imgClose_rollOverHandler(event)"/>
+	
+	<s:VGroup left="50" right="50" top="75" bottom="36" gap="5">
+		<s:VGroup width="100%" gap="0">
+			<s:HGroup height="30" verticalAlign="middle">
+				<s:Label text="我的日工资契约：" styleName="contract_styleName"  />
+				<s:Label id="my_DayWageStandard" styleName="contract_styleName"  />
+			</s:HGroup>
+			<s:VGroup height="100%" gap="0">
+				<s:HGroup height="30" verticalAlign="middle">
+					<s:Label text="用户名：" styleName="contract_styleName"/>
+					<s:Label text="0" styleName="contract_styleName" id="SubordinateName"/>
+					<s:Spacer width="20"/>
+					<s:Label text="当前日工资：" styleName="contract_styleName"/>
+					<s:Label text="0" styleName="contract_styleName" id="SuperiorUserDayWages"/>
+				</s:HGroup>
+				<s:HGroup height="30" verticalAlign="middle" visible="false" includeInLayout="false" id="daiqueren_group">
+					<s:Label text="待确认日工资：" styleName="contract_styleName"/>
+					<s:Label text="0" styleName="contract_styleName" id="SuperiorDayWageStandard"/>
+				</s:HGroup>
+			</s:VGroup>
+			<s:HGroup height="40" verticalAlign="middle" id="select_goup" visible="false" includeInLayout="false">
+				<s:ComboBox  width="170" initialize="dateType.textInput.editable = false" id="dateType" styleName="personalCenterDetailComboBoxStyle" 
+							 dataProvider="{dateTypeArr}" selectedIndex="0"/>
+			</s:HGroup>
+			
+			<!--  配置一览表 -->
+			<s:VGroup  gap="-1">
+				<s:Group >
+					<s:Rect width="180" height="30">
+						<s:fill><s:LinearGradient ><s:GradientEntry color="0xfff0c5" alpha="1"/></s:LinearGradient></s:fill>
+						<s:stroke><s:SolidColorStroke color="0x000000" alpha="1"/></s:stroke>
+					</s:Rect>
+					<s:Rect x="180" width="180" height="30">
+						<s:fill><s:LinearGradient ><s:GradientEntry color="0xfff0c5" alpha="1"/></s:LinearGradient></s:fill>
+						<s:stroke><s:SolidColorStroke color="0x000000" alpha="1"/></s:stroke>
+					</s:Rect>
+					<s:Rect x="360" width="180" height="30">
+						<s:fill><s:LinearGradient ><s:GradientEntry color="0xfff0c5" alpha="1"/></s:LinearGradient></s:fill>
+						<s:stroke><s:SolidColorStroke color="0x000000" alpha="1"/></s:stroke>
+					</s:Rect>
+					<s:HGroup height="30" verticalAlign="middle" gap="0">
+						<s:Label text="日工资标准" styleName="contract_styleName" width="180" textAlign="center"/>
+						<s:Label text="销量" styleName="contract_styleName" width="180" textAlign="center" />
+						<s:Label text="活跃人数" styleName="contract_styleName" width="180" textAlign="center" />
+					</s:HGroup>
+				</s:Group>
+				<s:Group >
+					<s:Rect width="540" height="130">
+						<s:fill><s:LinearGradient ><s:GradientEntry color="0xfff0c5" alpha="0"/></s:LinearGradient></s:fill>
+						<s:stroke><s:SolidColorStroke color="0x000000" alpha="1"/></s:stroke>
+					</s:Rect>
+					<s:Scroller width="540" height="130" styleName="personalCenterScrollerStyle_1"  buttonMode="true" horizontalScrollPolicy="off">
+						<s:VGroup width="100%" height="100%" id="vg">
+						</s:VGroup>
+					</s:Scroller>
+				</s:Group>
+			</s:VGroup>
+			<s:HGroup  height="30" verticalAlign="middle">
+				<s:Label text="当日投注量大于500元为活跃用户." styleName="personalCenterDetailLabelStyle_4"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:HGroup width="100%" height="30" horizontalAlign="center" verticalAlign="middle" id="save_group" visible="false" includeInLayout="false" >
+			<common:PopUpTabButtonItem id="save_btn" labelTitle="保	存" click="save_btn_clickHandler(event)"/>
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+</s:Group>

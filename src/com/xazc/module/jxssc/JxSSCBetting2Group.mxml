@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="creationCompleteHandler(event)" 
+		  xmlns:ssc="com.xazc.components.ssc.*" gap="0" 
+		  xmlns:bettings="com.xazc.components.bettings.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			private var game_id:String = "23";
+			
+			public var lotteryID:String = "";
+			
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			private var selectedHZNum:Array = [];
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlayContainer = playContainer1;
+				for (var i:int = 1; i < 18; i++)
+				{
+					var tog:ToggleButton = new ToggleButton();
+					tog.label = "" + i;
+					tog.styleName = "numberSelectSkinStyle_large";
+					addBets.addElement(tog);
+					tog.addEventListener(MouseEvent.CLICK, addBetsClickHandler);
+				}
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+			}
+			
+			private function addBetsClickHandler(e:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = e.target as ToggleButton;
+				if(TogBtn.selected == true){
+					selectedHZNum.push(TogBtn.label);
+				}else{
+					selectedHZNum.splice(selectedHZNum.indexOf(TogBtn.label),1);
+				}
+				betsNumberClickHandler(null);
+			}
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				if(playType == 1 || playType == 3)
+				{
+					zhushu= zu2.selectedNum.length*(zu2.selectedNum.length-1)/2;
+					bettingInfo.tzcontent = zu2.selectedNum.toString();
+				}
+				else if(playType == 2 || playType == 4)
+				{
+					
+					var zhus:int = 0;
+					var dd:int=0;
+					for(var i3s:int=0;i3s<selectedHZNum.length;i3s++){
+						var nums:int = 0;
+						for(var j3s:int=0;j3s<10;j3s++){
+							for(var k3s:int = 0;k3s<10;k3s++){
+								if(j3s!=k3s){
+									if(j3s+k3s==selectedHZNum[i3s]){
+										nums=nums+1;
+									}
+								}
+							}
+						}
+						zhus+=nums;
+					}
+					dd=zhus/2;
+					zhushu=dd;
+					bettingInfo.tzcontent = selectedHZNum.toString();
+				}
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			private function clearAll(e:BetsClickEvent = null):void
+			{
+				clearZu2SelectedNumbers();
+				clearHeZSelectedNumber();
+			}
+			
+			private function clearZu2SelectedNumbers():void
+			{
+				zu2.clearAllSelectedNumHandler();
+			}
+			
+			private function clearHeZSelectedNumber():void
+			{
+				for (var i:int = 0; i < 17; i++)
+				{
+					var tog:ToggleButton = addBets.getElementAt(i) as ToggleButton
+					tog.selected = false;
+				}
+				selectedHZNum = [];
+			}
+			
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				target.selected = true;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				switch(targetID)
+				{
+					case "play_23":
+						playType = 1;
+						showPlayContainer(playContainer1);
+						break;
+					case "play_24":
+						playType = 2;
+						showPlayContainer(playContainer2);
+						break;
+					case "play_09":
+						playType = 3;
+						showPlayContainer(playContainer1);
+						break;
+					case "play_25":
+						playType = 4;
+						showPlayContainer(playContainer2);
+						break;
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" paddingLeft="30" verticalAlign="middle" paddingTop="-2">
+		<s:Label text="玩法选择：" color="0x429dc6" fontSize="14" fontFamily="Microsoft YaHei,微软雅黑"/>
+		<s:Spacer width="10"/>
+		<s:HGroup verticalAlign="middle" gap="1">
+			<s:Label text="前二"  fontSize="14" fontFamily="Microsoft YaHei,微软雅黑" paddingRight="5"/>
+			<s:ToggleButton id="play_23" label="组选" styleName="standardButtonSkinStyle" 
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_24" label="和值" styleName="standardButtonSkinStyle" 
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+			<s:Spacer width="10"/>
+			<s:Label text="后二"  fontSize="14" fontFamily="Microsoft YaHei,微软雅黑" paddingRight="5"/>
+			<s:ToggleButton id="play_09" label="组选" styleName="standardButtonSkinStyle" 
+							selected="{playType == 3}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_25" label="和值" styleName="standardButtonSkinStyle" 
+							selected="{playType == 4}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	<s:VGroup id="playContainer1" width="100%" horizontalAlign="center" verticalAlign="middle">
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="30" paddingRight="30" paddingTop="5">
+			<bettings:LineLeftRadiusItem width="50%" height="2" left="20" top="3"/>
+			<mx:Label text="至少选择2个号码" styleName="labelStyles2" />
+			<bettings:LineRightRadiusItem width="50%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<ssc:SSCNumberSelected id="zu2" bettingRowName="号码" selectedNumStyle="numberSelectSkinStyle_large" paddingTop="50"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer2" width="100%" visible="false" includeInLayout="false" horizontalAlign="center" verticalAlign="middle">
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="150" paddingRight="150" paddingTop="5">
+			<bettings:LineLeftRadiusItem width="50%" height="2" left="20" top="3"/>
+			<mx:Label text="至少选择1个号码" styleName="labelStyles2" />
+			<bettings:LineRightRadiusItem width="50%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<s:TileGroup id="addBets" requestedColumnCount="15" verticalGap="12" left="100" paddingTop="40">
+		</s:TileGroup>
+	</s:VGroup>
+</s:VGroup>

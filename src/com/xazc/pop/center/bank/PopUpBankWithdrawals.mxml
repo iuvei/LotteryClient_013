@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"  
+				   xmlns:s="library://ns.adobe.com/flex/spark"  width="100%" height="100%"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"  creationComplete="init();" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.UserDetailVo;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.PopKeyBoardManager;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			private var bankCodes:ArrayCollection=new ArrayCollection([
+				{label:"中国工商银行",code:"icbc"},
+				{label:"中国农业银行",code:"abc"},
+				{label:"中国建设银行",code:"ccb"},
+				{label:"招商银行",code:"cmb"},
+				{label:"交通银行",code:"comm"},
+				{label:"中国民生银行",code:"cmbc"},
+				{label:"中国银行",code:"boc"},
+				{label:"北京银行",code:"bob"},
+				{label:"上海银行",code:"bos"},
+				{label:"平安银行",code:"sdb"},
+				{label:"兴业银行",code:"cib"},
+				{label:"中国光大银行",code:"ceb"},
+				{label:"广发银行",code:"gdb"},
+				{label:"广州银行",code:"gzb"},
+				{label:"华夏银行",code:"hxb"},
+				{label:"浙商银行",code:"czb"},
+				{label:"杭州银行",code:"hzb"},
+				{label:"东莞银行",code:"bod"},
+				{label:"渤海银行",code:"cbhb"},
+				{label:"浦发银行",code:"spdb"},
+				{label:"中信银行",code:"citic"},
+				{label:"中国邮政银行",code:"psbc"},
+			]);
+			
+			public var markID:String="1020300";
+			public static var markID:String="1020300";
+			[Bindable]
+			public var labelTitleText:String="提款";
+			
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			/**服务对象*/
+			private var service:ServerToolImpl;
+			//是否判断时间；
+			private var isJudeTime:Boolean = false;
+			
+			/**
+			 *初始化 
+			 **/
+			private function init():void{
+				if(int(CurrentUserInfo.DrawEndTime == int(CurrentUserInfo.DrawBeginTime)))
+				{
+					//表示24 小时都可提现；
+					isJudeTime = false;
+					time_message.text = "注意：我们会在第一时间处理您的提款要求,提款实时处理时间为：24小时可提款";
+				}else{
+					isJudeTime = true;
+					var beginLable:String = time2Str(CurrentUserInfo.DrawEndTime);
+					var endLable:String = time2Str(CurrentUserInfo.DrawBeginTime);
+					time_message.text = "注意：我们会在第一时间处理您的提款要求,提款实时处理时间为："+beginLable+"-"+endLable;
+				}
+				
+				initPropertys();
+				getAllPlatformMoney();
+			}
+			
+			private function time2Str(drawTime:int):String
+			{
+				if((drawTime)>=0 && (drawTime) < 6){
+					return "凌晨"+drawTime+":00";
+				}else if((drawTime)>=6 && (drawTime) < 12){
+					return "上午"+drawTime+":00";
+				}else if((drawTime)>=12 && (drawTime) < 18){
+					return "下午"+drawTime+":00";
+				}else if((drawTime)>=18 && (drawTime) <= 24){
+					return "晚上"+drawTime+":00";
+				}else{
+					return"";
+				}
+			}
+
+			/**
+			 *初始化页面属性 
+			 **/
+			public function initPropertys():void{
+				for(var i:int=0;i<bankCodes.length;i++){
+					if(bankCodes.getItemAt(i).code==PersonCenterInfo.userInfoDetail.BankCode){
+//						lb_bankcode.text=bankCodes.getItemAt(i).label;
+						if(bankCodes.getItemAt(i).code == "icbc"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','icbc');}
+						else if(bankCodes.getItemAt(i).code == "abc"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','abc');}
+						else if(bankCodes.getItemAt(i).code == "ccb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','ccb');}
+						else if(bankCodes.getItemAt(i).code == "cmb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','cmb');}
+						else if(bankCodes.getItemAt(i).code == "comm"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','comm');}
+						else if(bankCodes.getItemAt(i).code == "cmbc"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','cmbc');}
+						else if(bankCodes.getItemAt(i).code == "boc"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','boc');}
+						else if(bankCodes.getItemAt(i).code == "bob"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','bob');}
+						else if(bankCodes.getItemAt(i).code == "bos"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','bos');}
+						else if(bankCodes.getItemAt(i).code == "sdb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','sdb');}
+						else if(bankCodes.getItemAt(i).code == "cib"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','cib');}
+						else if(bankCodes.getItemAt(i).code == "ceb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','ceb');}
+						else if(bankCodes.getItemAt(i).code == "gdb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','gdb');}
+						else if(bankCodes.getItemAt(i).code == "gzb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','gzb');}
+						else if(bankCodes.getItemAt(i).code == "hxb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','hxb');}
+						else if(bankCodes.getItemAt(i).code == "czb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','czb');}
+						else if(bankCodes.getItemAt(i).code == "hzb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','hzb');}
+						else if(bankCodes.getItemAt(i).code == "bod"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','bod');}
+						else if(bankCodes.getItemAt(i).code == "cbhb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','cbhb');}
+						else if(bankCodes.getItemAt(i).code == "spdb"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','spdb');}
+						else if(bankCodes.getItemAt(i).code == "psbc"){lb_bankcode.text = resourceManager.getString('PersonalCenterPage','psbc');}
+						else{lb_bankcode.text = resourceManager.getString('PersonalCenterPage','ecitic');}
+						break;
+					}
+				}
+				input_name.text="";
+				input_psw.text="";
+				input_rmb.text="";
+				btn_submit.enabled=true;
+			}
+			
+			/**
+			 *检查 
+			 **/
+			private function checkParamters():Boolean{
+				
+				if(isJudeTime)
+				{
+					if( CurrentUserInfo.DrawBeginTime <= (new Date().hours) && (new Date().hours) < CurrentUserInfo.DrawEndTime )
+					{
+						alert.show("当前时间段不支持提款！", resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				}
+				
+				if(input_name.text==""){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_check1'),
+											resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(input_rmb.text==""||input_rmb.text=="."){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_check2'),
+											resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(input_psw.text==""){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_check3'),
+											resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(Number(input_rmb.text) > CurrentUserInfo.DrawMaxMoney ||Number(input_rmb.text) < CurrentUserInfo.DrawMinMoney){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_check4'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(Number(input_rmb.text)>Number(label_umoney.text)){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_check5'),
+											resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				
+				return true;
+			}
+			
+			/**
+			 *查询平台余额 
+			 **/
+			public function getAllPlatformMoney():void
+			{
+				//更新余额
+				Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+				
+				//label_umoney.text = CurrentUserInfo.userCPBalance;
+				/* if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object = new Object();
+				service.getAllPlatformMoney(obj,getAllPlatformMoneyReturn); */
+				
+			}
+			private function getAllPlatformMoneyReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString(),null);
+				trace(e.result.toString());
+				if(arr.hasOwnProperty("SystemState")){
+					if(arr.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(arr.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+															resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+					}
+				}
+				if(arr.Result==1){
+					label_umoney.text=arr.UMoney;
+					
+//					label_lockmoney.text=arr.LockMoney;	
+					/* var context:Array=arr.Context as Array;
+					for(var i:int=0;i<context.length;i++){
+						if(context[i].ProjectCode=="lotp"){
+							var str:String=context[i].Balance;
+							if(str.length>10){
+								label_lotp.text=str.substring(0,10)+"\n"+str.substring(10,str.length);
+							}else{
+								label_lotp.text=str;	
+							}
+						}						
+					} */
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_accoutError'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			/**
+			 *提交 
+			 **/
+			private function submit():void{
+				if(CurrentUserInfo.isTestName){
+					alert.show("试玩账号，无法提款！",
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return;
+				}
+				
+				if(!checkParamters())
+					return;
+				btn_submit.enabled=false;
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.addDrawingsInfo({"UserRealName":input_name.text,"DrawingsMoney":input_rmb.text,"PayPassWord":input_psw.text},addDrawingInfoHandler);
+			}
+			private function addDrawingInfoHandler(e:ResultEvent):void{
+				btn_submit.enabled=true;
+				var obj:Object=Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				//Result=-1 用户名错误。 Result = -2 资金密码错误 Result = -3 支付宝错误，Result = -4 连接失败 Result = -5 取款成功
+				if(obj.hasOwnProperty("SystemState")){
+					if(obj.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(obj.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+						return;
+					}
+				}
+				if(obj.Result==-1||obj.Result==-2){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_state1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result==-3){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_state2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result==-4){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_state3'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result==-5){//取款成功
+					initPropertys();
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_state4'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					getAllPlatformMoney();
+				}else if(obj.Result==-6){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_state5'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result== 9){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_state6'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result== -7){
+					alert.show('当前用户已被冻结暂时不允许提款操作!',
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result== -8){
+					alert.show('超过提款次数,暂时不能提款!',
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result== -9){
+					alert.show('提款超出上限！',
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else if(obj.Result== 10){
+					alert.show('您还没有完成与下级的分红契约，无法提款！',
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_withdrawals_state7'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				/* if(obj.SystemState==64){
+					alert.show("提款成功","提示信息");
+					initPropertys();
+					getAllPlatformMoney();
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show("账号已在异地登录，您被踢出下线！","提示信息");
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show("真实姓名或者提款密码有误","提示信息");
+				} */
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function input_money_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var str:String=input_rmb.text.substring(input_rmb.text.indexOf("."),input_rmb.text.length);
+				var value:String=input_rmb.text;
+				var len:int=value.length-str.length+3;
+				if(input_rmb.text.indexOf(".")>0 && str.length>3){
+					input_rmb.text=value.substring(0,len);
+				}
+				if(input_rmb.text.split('.').length>2){
+					input_rmb.text = input_rmb.text.replace('.','');
+				}
+			}
+			protected function img_clickHandler(event:MouseEvent):void
+			{
+				if(!Util.getInstance().backPop)
+					PopKeyBoardManager.show(input_psw);
+				else
+					PopKeyBoardManager.clear();
+				Util.getInstance().backPop = !Util.getInstance().backPop;
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<s:VGroup  width="100%" gap="10" verticalAlign="top" top="15"  bottom="0">
+		<s:HGroup width="50%">
+			<s:Spacer width="40"/>
+			<mx:Label text="{CurrentUserInfo.userName}" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','recharge_Tips_10')}："  styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label id="label_umoney" text="{Number(CurrentUserInfo.userCPBalance)}"  styleName="personalCenterDetailLabelStyle_4"/>
+			<mx:Label text="{CurrentUserInfo.moneyType}"  styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','put_Card_Bank')}：" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label id="lb_bankcode" text="" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','bank_Card_Number')}："  styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="**************{PersonCenterInfo.userInfoDetail.CardNumber.substring(PersonCenterInfo.userInfoDetail.CardNumber.length-4,PersonCenterInfo.userInfoDetail.CardNumber.length)}" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','cash_Name')}：" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput id="input_name"  styleName="personalCenterDetailTextInputStyle" />
+		</s:HGroup>
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','cash_Money')}："  styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput id="input_rmb"  styleName="personalCenterDetailTextInputStyle" restrict="0-9." change="input_money_changeHandler(event)"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','money_Type')}" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="{'范围为' + CurrentUserInfo.DrawMinMoney + '~' + CurrentUserInfo.DrawMaxMoney +'元'}" styleName="personalCenterDetailLabelStyle_4"/>
+		</s:HGroup>
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="40"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','money_Password')}："  styleName="personalCenterDetailLabelStyle_1"/>
+			<s:Group id="groupBank" click="img_clickHandler(event)" buttonMode="true">
+				<mx:TextInput id="input_psw" restrict="0-9A-Za-z_"  styleName="personalCenterDetailTextInputStyle" displayAsPassword="true" enabled="false"/>
+				<s:HGroup id="HGroupBank" width="{input_psw.width-4}" height="{input_psw.height}" horizontalAlign="right"  verticalAlign="middle">
+					<s:Image id="imgInput_psw" source="css/skin1/assets/keyboard.png"/>
+				</s:HGroup>
+			</s:Group>
+		</s:HGroup>
+		<s:HGroup width="70%" verticalAlign="middle" horizontalAlign="left">
+			<s:Spacer width="117"/>
+			<s:Button id="btn_submit" styleName="personalSubmitButtonStyle" label="{resourceManager.getString('PersonalCenterPage','ensure')}" click="submit()" buttonMode="true"/>
+		</s:HGroup>
+		<s:Group>
+			<!--<mx:Label styleName="personalCenterDetailLabelStyle_4" left="40" top="31" text="{resourceManager.getString('PersonalCenterPage','recharge_Tips_11')}"/>-->
+			<mx:Label styleName="personalCenterDetailLabelStyle_4" left="40" top="31" id="time_message"/>
+		</s:Group>
+		
+		
+		
+		<!--<s:HGroup width="100%" height="10%" horizontalAlign="center" verticalAlign="bottom">
+			<s:Button id="btn_submit" styleName="personalSubmitButtonStyle" label="{resourceManager.getString('PersonalCenterPage','ensure')}" click="submit()" buttonMode="true"/>
+		</s:HGroup>-->
+		<!--<s:Group width="100%">
+			<mx:HRule  left="10" right="10" strokeColor="0x435b67" height="1" horizontalCenter="0"/>
+			<mx:Label styleName="personalCenterDetailLabelStyle_3" left="30" top="11" text="最低提款100RMB,最高为5000RMB,请务必保证您提供的银行卡号，存折号，信用卡号正确。"/>
+			<mx:Label styleName="personalCenterDetailLabelStyle_4" left="30" top="31" text="我们会在第一时间处理您的提款要求,提款实时处理时间为：上午9:00-凌晨2:00"/>
+		</s:Group> -->
+	</s:VGroup>
+</s:Group>

@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   implements="mx.managers.IFocusManagerContainer"
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="995" height="625"  
+				   borderAlpha="0" creationComplete="bordercontainer1_creationCompleteHandler(event)"
+				   backgroundAlpha="0"
+				   xmlns:common="com.xazc.pop.center.common.*" 
+				   xmlns:record="com.xazc.pop.center.record.*" xmlns:load="com.xazc.components.load.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.pop.center.activity.PopUpActivityMainView;
+			import com.xazc.pop.center.bank.PopUpBankMainView;
+			import com.xazc.pop.center.contractManagement.PopUpContractManagementMainView;
+			import com.xazc.pop.center.contractManagement_Type3.PopUpContractManagementMainView3;
+			import com.xazc.pop.center.gameRecords.PopUpGameRecordMainView;
+			import com.xazc.pop.center.messageCenter.PopUpMessageCenterMainView;
+			import com.xazc.pop.center.notice.PopUpNoticeMainView;
+			import com.xazc.pop.center.personal.PopUpPersonalMainView;
+			import com.xazc.pop.center.proxy.PopUpProxyMainView;
+			import com.xazc.pop.center.record.PopUpMyRecordMainView;
+			import com.xazc.pop.center.transfer.PopUpTransferMainView;
+			import com.xazc.single.CommonMethodClass;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var p_1:PopUpBankMainView ;//充值提款
+			private var p_2:PopUpMyRecordMainView ;//我的记录
+			private var p_3:PopUpPersonalMainView ;//我的资料
+			private var p_4:PopUpProxyMainView ;//代理管理
+			private var p_5:PopUpNoticeMainView;//系统公告
+			private var p_6:PopUpActivityMainView;//优惠活动
+			private var p_7:PopUpTransferMainView;//转账
+			private var p_8:PopUpGameRecordMainView;//游戏记录
+			private var p_9:PopUpContractManagementMainView3;//契约管理
+			private var p_10:PopUpMessageCenterMainView;//消息中心
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			private var _winTtile:String="";//窗口标题
+			[Bindable]
+			public function get winTtile():String
+			{
+				return _winTtile;
+			}
+			
+			public function set winTtile(value:String):void
+			{
+				_winTtile = value;
+			}
+			private var _addIndex:int=3;//选择模块下标
+			[Bindable]
+			private var titleX:int = 813;
+			[Bindable]
+			public function get addIndex():int
+			{
+				return _addIndex;
+			}
+			
+			public function set addIndex(value:int):void
+			{
+				_addIndex = value;
+				if(_addIndex == 6)
+					titleX = 947;
+				else
+					titleX = 813;
+			}
+			private var _menuIndex:int=1;//选择菜单
+			[Bindable]
+			public function get menuIndex():int
+			{
+				return _menuIndex;
+			}
+			
+			public function set menuIndex(value:int):void
+			{
+				_menuIndex = value;
+			}
+			
+			/**
+			 *添加具体窗口项 
+			 **/
+			public function init():void
+			{
+				//获取最新的支付方式！
+				getUserPayment();
+			}
+			
+			protected function menu_clickHandler(event:MouseEvent):void
+			{
+				var index:int = (event.currentTarget as PopUpTabMenuButtonItem).id.split("_")[1];
+				
+				if(!judeIsgoto())
+				{
+					return;
+				}
+				
+				switch(index)
+				{
+					case 1://我的资料
+						addIndex=3;
+						menuIndex=1;
+						break;
+					case 2://账户明细
+						addIndex=2;
+						menuIndex=1;
+						break;
+					case 3://充值提款
+						addIndex=1;
+						menuIndex=1;
+						break;
+					case 4://代理管理
+						addIndex=4;
+						menuIndex=1;
+						break;
+					case 8://游戏记录
+						addIndex=8;
+						menuIndex=1;
+						break;
+					case 9://契约管理
+						addIndex=9;
+						if(CurrentUserInfo.IsContract){menuIndex=3;};
+						if(CurrentUserInfo.IsDayWages){menuIndex=1;};
+						break;
+					case 10://消息中心
+						addIndex=10;
+						menuIndex=1;
+						break;
+				}
+				init();
+			}
+			
+			private function setMenu(index:int):void
+			{
+				menu_1.selected = false;
+				menu_2.selected = false;
+				menu_3.selected = false;
+				menu_4.selected = false;
+				menu_8.selected = false;
+				menu_9.selected = false;
+				menu_10.selected = false;
+				switch(index)
+				{
+					case 1://我的资料
+						menu_1.selected = true;
+						break;
+					case 2://账户明细
+						menu_2.selected = true;
+						break;
+					case 3://充值提款
+						menu_3.selected = true;
+						break;
+					case 4://代理管理
+						menu_4.selected = true;
+						break;
+					case 8://游戏记录
+						menu_8.selected = true;
+						break;
+					case 9://契约管理
+						menu_9.selected = true;
+						break;
+					case 10://消息中心
+						menu_10.selected = true;
+						break;
+				}
+			}
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			private function judeIsgoto():Boolean
+			{
+				if(PersonCenterInfo.userInfoDetail.BankCode=="" ||PersonCenterInfo.userInfoDetail.CardNumber=="" || PersonCenterInfo.userInfoDetail.UserRealName==""){
+					addIndex=3;
+					menuIndex=2;
+					init();
+					//请先完善您的银行资料！
+					alert.show(resourceManager.getString("AlertMessage","message_005"),resourceManager.getString("AlertMessage","message_004"));
+					return false;
+				}
+//				if(!PersonCenterInfo.IsSecurityState){
+//					addIndex=3;
+//					menuIndex=6;
+//					init();
+//					//请先完善您的 密保！
+//					alert.show("请先设置密保！",resourceManager.getString("AlertMessage","message_004")); 
+//					return false;
+//				}
+				if(!PersonCenterInfo.IsPayPsw){
+					addIndex=3;
+					menuIndex=4;
+					init();
+					//请先完善您的资金密码！
+					alert.show(resourceManager.getString("AlertMessage","message_006"),resourceManager.getString("AlertMessage","message_004")); 
+					return false;
+				}
+				return true;
+			}
+			
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				Util.getInstance().addEventListener(CustomEvent.UPDATE_DIVIDENDCONTRACT_LIST,updateListHandler);//刷新列表以及页面数据
+			}
+			public function updateListHandler(event:CustomEvent):void
+			{
+				addIndex = 9;
+				menuIndex = 3;
+				init();
+			}
+			
+			
+			private var service:ServerTool;
+			private function getUserPayment():void
+			{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.getUserGroupPayment(new Object(),selectUserDetailHandler);
+			}
+			/**
+			 *查询用户信息回调 
+			 **/
+			private function selectUserDetailHandler(e:ResultEvent):void
+			{
+				loading.suspend();
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64)
+				{
+					//保存个人信息；
+					CommonMethodClass.commom_payInfo(obj);
+					
+					init_new();
+					
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}
+			}
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			public function init_new():void
+			{
+				if(bc != null )
+				{
+					bc.removeAllElements();
+				}
+				if(!this["p_"+addIndex]){
+					if(addIndex==1){
+						this["p_"+addIndex]=new PopUpBankMainView();//我的银行    充值 提现  充值记录  提现记录
+						setMenu(3)
+					}
+					if(addIndex==2){
+						this["p_"+addIndex]=new PopUpMyRecordMainView();//账户明细  我的记录
+						setMenu(2)
+					}
+					if(addIndex==3){
+						this["p_"+addIndex]=new PopUpPersonalMainView();//我的资料
+						setMenu(1)
+					}
+					if(addIndex==4){
+						this["p_"+addIndex]=new PopUpProxyMainView();//代理管理
+						setMenu(4)
+					}
+					if(addIndex==8){
+						this["p_"+addIndex]=new PopUpGameRecordMainView();//游戏记录
+						setMenu(8)
+					}
+					
+					if(addIndex==5){
+						this["p_"+addIndex]=new PopUpNoticeMainView();//系统公告
+					}
+					if(addIndex==6){
+						this["p_"+addIndex]=new PopUpActivityMainView();//活动
+						this["p_"+addIndex].init();
+					}
+					if(addIndex==7){
+						this["p_"+addIndex]=new PopUpTransferMainView();//转账
+					}
+					
+					if(addIndex==9){
+						this["p_"+addIndex]=new PopUpContractManagementMainView3();//契约管理
+						setMenu(9)
+					}
+					if(addIndex==10){
+						this["p_"+addIndex]=new PopUpMessageCenterMainView();//消息中心
+						setMenu(10)
+					}
+				}
+				if(4==addIndex){
+					if(PersonCenterInfo.userInfoDetail.StopAddChild){
+						menuIndex = 2;
+					}
+				}
+				if(8==addIndex){
+					menuIndex = 2;
+				}
+				bc.addElement(this["p_"+addIndex]);
+				this["p_"+addIndex].menu_clickHandler(menuIndex);
+				this["p_"+addIndex]=null;
+				loading.suspend();
+			}
+		]]>
+	</fx:Script> 
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<!-- 绘制背景 -->
+	<s:Rect  width="100%" height="100%">
+		<s:fill>
+			<s:LinearGradient >
+				<s:GradientEntry color="0x000000" alpha="0.5"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:BorderContainer backgroundColor="0xececec" borderColor="#ffffff" borderAlpha="0.2" left="20" right="20" top="25" bottom="20">
+		<!-- 内容 -->
+		<s:Group id="bc" top="46" width="100%" height="100%"/>
+		<s:VGroup  width="100%" height="100%"  gap="0" >
+			<!-- 菜单导航 -->
+			<s:Group width="100%">
+				<s:Rect  width="100%" height="46">
+					<s:fill>
+						<s:LinearGradient rotation="90">
+							<s:GradientEntry color="0x444444" alpha="1"/>
+							<s:GradientEntry color="0x1d1d1d" alpha="1"/>
+						</s:LinearGradient>
+					</s:fill>
+				</s:Rect>
+				<s:HGroup width="100%" gap="-1" >
+					<common:PopUpTabMenuButtonItem id="menu_1" labelTitle="我的账户" click="menu_clickHandler(event)"/>
+					<common:PopUpTabMenuButtonItem id="menu_3" labelTitle="充值提款" click="menu_clickHandler(event)"/>
+					<common:PopUpTabMenuButtonItem id="menu_2" labelTitle="账户明细" click="menu_clickHandler(event)"/>
+					<common:PopUpTabMenuButtonItem id="menu_8" labelTitle="游戏记录" click="menu_clickHandler(event)"/>
+					<common:PopUpTabMenuButtonItem id="menu_4" labelTitle="代理管理" click="menu_clickHandler(event)" visible="{PersonCenterInfo.userInfoDetail.IsAgent?true:false}" includeInLayout="{PersonCenterInfo.userInfoDetail.IsAgent?true:false}"/>
+					<common:PopUpTabMenuButtonItem id="menu_9" labelTitle="契约管理" click="menu_clickHandler(event)" visible="{CurrentUserInfo.IsContract==true||CurrentUserInfo.IsDayWages==true?true:false}" includeInLayout="{CurrentUserInfo.IsContract||CurrentUserInfo.IsDayWages==true==true?true:false}"/>
+					<common:PopUpTabMenuButtonItem id="menu_10" labelTitle="消息中心" click="menu_clickHandler(event)"/>
+				</s:HGroup>
+			</s:Group>
+			<!-- 内容 -->
+			<!--<s:Group id="bc" width="100%" height="100%"/>-->
+		</s:VGroup>
+	</s:BorderContainer>
+	
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="420" height="50" horizontalCenter="0" verticalCenter="0"  id="loading"  promptLanguage="{resourceManager.getString('HomePage','loading_Prompt_6')}" />
+</s:BorderContainer>

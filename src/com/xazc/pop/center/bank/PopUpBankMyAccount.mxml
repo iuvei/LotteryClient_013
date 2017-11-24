@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   creationComplete="createGridInitProperties()"
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+			public var markID:String="1020100";
+			public static var markID:String="1020100";
+			[Bindable]
+			public var labelTitleText:String="我的账户";
+			
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			
+			private var service:ServerToolImpl;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			private var myRegexp:RegExp=/^(([1-9]\d{0,9})|0)(\.\d{1,2})?$/;
+			
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:356},{title:"b",w:356}
+			]);
+			private var titles1:ArrayCollection=new ArrayCollection([
+				{title:"a",w:178},{title:"b",w:178},{title:"c",w:178},{title:"d",w:178}
+			]);
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					//					if(i==0 || i==1){
+					gridItem.colSpan=2;
+					//					}
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = resourceManager.getString('PersonalCenterPage','moneyCenter');
+					}else{
+						label.text = resourceManager.getString('PersonalCenterPage','lottery');
+					}
+					label.styleName="personalCenterDetailLabelStyle_1";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					count +=titles.getItemAt(i).w;
+				}
+				titleGrid.addChild(titlerow);
+				//
+				var row1:GridRow=new GridRow();
+				for(var j:int=0;j<titles1.length;j++){
+					row1.height=35;
+					var item1:GridItem=new GridItem();
+					item1.width=titles1.getItemAt(j).w;
+					var label1:Label=new Label();
+					if(titles1.getItemAt(j).title == "a" || titles1.getItemAt(j).title == "c"){
+						label1.text = resourceManager.getString('PersonalCenterPage','usableMoney');
+					}else{
+						label1.text = resourceManager.getString('PersonalCenterPage','lockMoney');
+					}
+					label1.styleName="personalCenterDetailLabelStyle_1";
+					item1.addChild(label1);
+					row1.addChild(item1);
+				}
+				titleGrid.addChild(row1);
+				vg.addElementAt(titleGrid,0);
+				
+				
+				//获取平台余额
+				this.getAllPlatformMoney();
+				//获取转账平台列表
+				this.getTransProjects();
+			}
+			/**
+			 *查询平台余额 
+			 **/
+			public function getAllPlatformMoney():void
+			{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object = new Object();
+				service.getAllPlatformMoney(obj,getAllPlatformMoneyReturn);
+				
+			}
+			private function getAllPlatformMoneyReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString(),null);
+				if(arr.hasOwnProperty("SystemState")){
+					if(arr.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(arr.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				trace(e.result.toString());
+				//				label_lotp.text=Number(CurrentUserInfo.userCPBalance).toFixed(2);
+				//				label_lotp_unmoney.text=Number(CurrentUserInfo.userCPLockedBalance).toFixed(2);
+				if(arr.Result==1){
+					label_umoney.text=Number(arr.UMoney)+'';
+					label_lockmoney.text=Number(arr.LockMoney)+'';	
+					return;
+					//一下取彩票余额暂时作废
+					var context:Array=arr.Context as Array;
+					for(var i:int=0;i<context.length;i++){
+						if(context[i].ProjectCode=="lotp"){
+							var str:String=context[i].Balance;
+							var num:Number=Number(str);
+							if(num){
+								label_lotp.text=Number(str)+'';	
+							}else{
+								label_lotp.text=str;
+							}
+						}						
+					}
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_accoutError'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			/**
+			 *查询转账平台 
+			 **/
+			public function getTransProjects():void
+			{
+				initBlockPropertys();
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				var obj:Object = new Object();
+				service.getTransProjects(obj,getTransProjectsReturn);
+			}
+			private function getTransProjectsReturn(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString(),null); 
+				if(arr.hasOwnProperty("SystemState")){
+					if(arr.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(arr.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				trace(e.result.toString());
+				cb_1.dataProvider=new ArrayCollection(arr.Context as Array);
+			}
+			/**
+			 *选择下拉框联动 
+			 **/
+			protected function cb_1_changeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				var obj:Object=cb_1.selectedItem;
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.getTransProjects({"ProjectCode":obj.ProjectCode},getTransProjectsReturnHandler);
+			}
+			private function getTransProjectsReturnHandler(e:ResultEvent):void{
+				var obj:Object=JSON.parse(e.result.toString(),null);
+				if(obj.hasOwnProperty("SystemState")){
+					if(obj.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(obj.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				trace(e.result.toString());
+				cb_2.dataProvider=new ArrayCollection(obj.Context as Array);
+				cb_2.selectedIndex=0;
+			}
+			/**
+			 *转账 
+			 **/
+			private function userTransfer():void{
+				if(!checkParameters())
+					return;
+				btn_submit.enabled=false;
+				if(service){
+					service=new ServerToolImpl();
+				}
+				service.userTransfer({"ProjectCode":cb_1.selectedItem.ProjectCode,"TargetProjectCode":cb_2.selectedItem.ProjectCode,"TransferMoney":input_transferMoney.text,"TransferPwd":input_transferPsw.text},userTransferResultHandler);
+			}
+			private function userTransferResultHandler(e:ResultEvent):void{
+				input_transferMoney.text="";
+				input_transferPsw.text="";
+				btn_submit.enabled=true;
+				trace(e.result.toString());
+				var obj:Object=JSON.parse(e.result.toString(),null);
+				if(obj.hasOwnProperty("SystemState")){
+					if(obj.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(obj.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+					}
+				}
+				if(obj.Result==1){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_myaccout_state1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					getAllPlatformMoney();
+					Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_myaccout_state2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			/**
+			 *检查验证 
+			 **/
+			private function checkParameters():Boolean{
+				if(cb_1.selectedItem==null || cb_2.selectedItem==null){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_myaccout_check1'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(input_transferMoney.text==""){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_myaccout_check2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				if(cb_1.selectedItem.ProjectCode=="lotp"){
+					if(Number(label_lotp.text)<Number(input_transferMoney.text) || !Number(label_lotp.text)){
+						alert.show(cb_1.selectedItem.ProjectName+resourceManager.getString('PersonalCenterPrompt','alert_myaccout_check3'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				}
+				if(cb_1.selectedItem.ProjectCode=="center"){
+					if(Number(label_umoney.text)<Number(input_transferMoney.text) || !Number(label_umoney.text)){
+						alert.show(cb_1.selectedItem.ProjectName+resourceManager.getString('PersonalCenterPrompt','alert_myaccout_check3'),
+							resourceManager.getString('PersonalCenterPrompt','alert_title'));
+						return false;
+					}
+				}
+				if(input_transferPsw.text==""){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_myaccout_check4'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return false;
+				}
+				return true;
+			}
+			/**
+			 *初始化页面属性 
+			 **/
+			private function initBlockPropertys():void{
+				cb_1.dataProvider=null;
+				cb_2.dataProvider=null;
+				cb_1.textInput.text="";
+				cb_2.textInput.text="";
+				input_transferMoney.text="";
+				input_transferPsw.text="";
+				btn_submit.enabled=true;
+			}
+			
+			protected function input_transferMoney_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var str:String= input_transferMoney.text.substring( input_transferMoney.text.indexOf("."), input_transferMoney.text.length);
+				var value:String= input_transferMoney.text;
+				var len:int=value.length-str.length+3;
+				if( input_transferMoney.text.indexOf(".")>0 && str.length>3){
+					input_transferMoney.text=value.substring(0,len);
+				}
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!--<mx:Label left="20" top="15" text="{labelTitleText}" styleName="personalCenterLabelStyle"/>-->
+	<mx:Label text="我的账户" top="10" styleName="personalCenterDetailLabelStyle_3"/>
+	<s:VGroup id="vg" gap="-1" top="40" horizontalAlign="left" horizontalCenter="0" >
+		<s:HGroup width="712" gap="-1" horizontalAlign="center">
+			<s:Group height="70" width="179">
+				<s:Rect id="border1" width="100%" height="100%">
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<mx:Label id="label_umoney"  styleName="personalCenterDetailLabelStyle_1" verticalCenter="0" horizontalCenter="0"/>
+			</s:Group>
+			<s:Group height="70" width="179">
+				<s:Rect id="border2" width="100%" height="100%">
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc" />
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<mx:Label id="label_lockmoney" styleName="personalCenterDetailLabelStyle_1" verticalCenter="0" horizontalCenter="0"/>
+			</s:Group>
+			<s:Group height="70" width="179">
+				<s:Rect id="border6" width="100%" height="100%">
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc" />
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<mx:Label id="label_lotp" text="{Number(CurrentUserInfo.userCPBalance)+''}" styleName="personalCenterDetailLabelStyle_1" width="170" verticalCenter="0" horizontalCenter="0"/>
+			</s:Group>
+			<s:Group height="70" width="179">
+				<s:Rect id="border7" width="100%" height="100%">
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc" />
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<mx:Label id="label_lotp_unmoney" text="{Number(CurrentUserInfo.userCPLockedBalance)+''}" styleName="personalCenterDetailLabelStyle_1" width="170" verticalCenter="0" horizontalCenter="0"/>
+			</s:Group>
+		</s:HGroup>
+	</s:VGroup>
+	
+	<mx:Label left="0" top="200" text="{resourceManager.getString('PersonalCenterPage','transferAccounts')}" styleName="personalCenterDetailLabelStyle_3"/>
+	<s:VGroup width="100%"  top="230" horizontalCenter="0"  gap="20" horizontalAlign="left">
+		<s:HGroup width="100%" height="10%" verticalAlign="middle" horizontalAlign="left">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','transferAccounts_From')}：" width="10%" textAlign="left" styleName="personalCenterDetailLabelStyle_1"/>
+			<s:ComboBox initialize="cb_1.textInput.editable = false"  id="cb_1" styleName="personalCenterDetailComboBoxStyle" prompt="---{resourceManager.getString('PersonalCenterPage','please_Select')}---"  labelField="ProjectName" change="cb_1_changeHandler(event)"/>
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','transferAccounts_To')}："  width="10%" styleName="personalCenterDetailLabelStyle_1" />
+			<s:ComboBox initialize="cb_2.textInput.editable = false"  id="cb_2" styleName="personalCenterDetailComboBoxStyle" prompt="---{resourceManager.getString('PersonalCenterPage','please_Select')}---" labelField="ProjectName"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="10%" verticalAlign="middle" horizontalAlign="left">
+			<mx:Label  text="{resourceManager.getString('PersonalCenterPage','transferAccounts_Money')}：" width="10%" textAlign="left"  styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput id="input_transferMoney"  styleName="personalCenterDetailTextInputStyle" restrict="0-9." change="input_transferMoney_changeHandler(event)"/>
+			<mx:Label  text="{CurrentUserInfo.moneyType}"  styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="10%" verticalAlign="middle" horizontalAlign="left">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','cash_Password')}：" width="10%" textAlign="left"  styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:TextInput  id="input_transferPsw"  styleName="personalCenterDetailTextInputStyle" displayAsPassword="true"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="10%" verticalAlign="middle" horizontalAlign="left">
+			<mx:Label text="{resourceManager.getString('PersonalCenterPage','transferAccounts_Tips')}"  styleName="personalCenterDetailLabelStyle_4"/>
+		</s:HGroup>
+		<s:HGroup width="100%" horizontalAlign="center" height="50%" verticalAlign="middle">
+			<s:Button id="btn_submit" label="{resourceManager.getString('PersonalCenterPage','ensure')}"  styleName="personalSubmitButtonStyle" click="userTransfer()" buttonMode="true"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

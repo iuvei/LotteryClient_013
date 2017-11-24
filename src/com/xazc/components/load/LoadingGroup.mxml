@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:loading="com.xazc.components.loading.*" xmlns:local="*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			private var _promptLanguage:String="";//状态语提示
+			
+			private var _currentAlpha:Number=0.3333;
+			
+			[Bindable]
+			public function get currentAlpha():Number
+			{
+				return _currentAlpha;
+			}
+
+			public function set currentAlpha(value:Number):void
+			{
+				_currentAlpha = value;
+			}
+
+			[Bindable]
+			public function get promptLanguage():String
+			{
+				return _promptLanguage;
+			}
+
+			public function set promptLanguage(value:String):void
+			{
+				_promptLanguage = value;
+			}
+
+			
+			/**
+			 *封装状态提示语 
+			 * @parma index 分级  (主模块，子模块等)
+			 * @parma name  模块名称
+			 **/
+			public function splicePromptLanguage(i:int,name:String):void{
+				switch(i)
+				{
+					case 1:
+					{
+						promptLanguage=name+resourceManager.getString('HomePage','loading_Prompt_1');
+						break;
+					}
+					case 2:
+					{
+						promptLanguage=name+resourceManager.getString('HomePage','loading_Prompt_2');
+						break;
+					}
+					case 3:
+					{
+						promptLanguage=resourceManager.getString('HomePage','loading_Prompt_3');
+						break;
+					}
+					case 4:
+					{
+						promptLanguage=resourceManager.getString('HomePage','loading_Prompt_4');
+						break;
+					}
+					case 5:
+					{
+						promptLanguage=resourceManager.getString('HomePage','loading_Prompt_7');
+						break;
+					}
+					default:
+					{
+						promptLanguage=resourceManager.getString('HomePage','loading_Prompt_5');
+						break;
+					}
+				}
+			}
+		
+			
+			/**
+			 * 挂起
+			 */
+			public function suspend():void
+			{
+				spinner.stop();
+				spinner.visible=false;
+				this.visible=false;
+				
+			}
+			
+			/**
+			 * 恢复
+			 */
+			public function resume():void
+			{
+				spinner.gotoAndPlay(1);
+				spinner.visible=true;
+				this.visible=true;
+				
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("HomePage")]
+	</fx:Metadata>
+	<local:mcProgressBar id="spinner" horizontalCenter="34" verticalCenter="34"/>
+</s:Group>

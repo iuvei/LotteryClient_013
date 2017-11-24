@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		backgroundAlpha="0" 
+		horizontalScrollPolicy="off"
+		verticalScrollPolicy="off"
+		width="100%" height="100%"
+		xmlns:load="com.xazc.components.load.*"
+		xmlns:index="com.xazc.view.index.*"
+		>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.single.CurrentLotteryInfo;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			public var virtual_lotteryID:String="";
+			
+			public function add(object:IVisualElement):void{
+				changeBg();
+				vb.addElement(object);
+			}
+			public function remove():void{
+				vb.removeAllChildren();
+			}
+			
+			public var lotteryType:Number = 0;
+			
+			[Embed(source="css/img/bg.jpg")]
+			[Bindable]
+			private var bgImage:Class;
+			
+			private function changeBg():void
+			{
+				//根据不同彩种修改背景，透明度等参数
+//				if("50"!=CurrentLotteryInfo.lotteryId){
+//					lotteryLoadBorderContainer.setStyle("borderAlpha",0.5);
+//					lotteryLoadBorderContainer.setStyle("backgroundAlpha",0.42);
+//					//bg.source = bgImage;
+//				}else{
+//					lotteryLoadBorderContainer.setStyle("borderAlpha",0);
+//					lotteryLoadBorderContainer.setStyle("backgroundAlpha",0);
+//					//bg.source = bgImage2;
+//				}
+				if(CurrentLotteryInfo.lotteryId == "50")
+				{
+					lotteryLoadBorderContainer.width = 1031;
+					lotteryLoadBorderContainer.height = 1493;
+					vb.setStyle("top",-10);
+					lotteryLoadBorderContainer.setStyle("borderAlpha",0.0);
+					lotteryLoadBorderContainer.setStyle("borderColor",'#ffffff');
+					lotteryLoadBorderContainer.setStyle("backgroundAlpha",0.0);
+					lotteryLoadBorderContainer.setStyle("backgroundColor",'#000000');
+				}
+				else if(CurrentLotteryInfo.lotteryId == "21"||CurrentLotteryInfo.lotteryId == "87"||CurrentLotteryInfo.lotteryId == "88"||CurrentLotteryInfo.lotteryId == "89")
+				{
+					lotteryLoadBorderContainer.width = 1300;
+					lotteryLoadBorderContainer.height = 830;
+					vb.setStyle("top",10);
+					lotteryLoadBorderContainer.setStyle("borderAlpha",0.5);
+					lotteryLoadBorderContainer.setStyle("borderColor",'#ffffff');
+					lotteryLoadBorderContainer.setStyle("backgroundAlpha",0.2);
+					lotteryLoadBorderContainer.setStyle("backgroundColor",'#000000');
+				}
+				else if(CurrentLotteryInfo.lotteryId == "12" && virtual_lotteryID == "12#")
+				{
+					lotteryLoadBorderContainer.width = 1377;
+					lotteryLoadBorderContainer.height = 800;
+					vb.setStyle("top",10);
+					lotteryLoadBorderContainer.setStyle("borderAlpha",0.5);
+					lotteryLoadBorderContainer.setStyle("borderColor",'#ffffff');
+					lotteryLoadBorderContainer.setStyle("backgroundAlpha",0.2);
+					lotteryLoadBorderContainer.setStyle("backgroundColor",'#000000');
+				}
+				else
+				{
+					lotteryLoadBorderContainer.width = 1000;
+					lotteryLoadBorderContainer.height = 865;
+					vb.setStyle("top",20);
+					lotteryLoadBorderContainer.setStyle("borderAlpha",0.5);
+					lotteryLoadBorderContainer.setStyle("borderColor",'#ffffff');
+					lotteryLoadBorderContainer.setStyle("backgroundAlpha",0.42);
+					lotteryLoadBorderContainer.setStyle("backgroundColor",'#000000');
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group width="100%" height="100%">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="#0e0e11" />
+			</s:fill>
+		</s:Rect>
+		<s:BitmapImage id="bg" source="{bgImage}"  width="100%" smooth="true"/>
+	</s:Group>
+	<s:VGroup width="100%" height="100%" horizontalAlign="center" top="45">
+		<s:BorderContainer id="lotteryLoadBorderContainer"  width="1000" height="865"  borderAlpha=".5" borderColor="0xffffff" backgroundAlpha="0.42" backgroundColor="0x000000">
+			<mx:VBox id="vb"  left="20" top="20" right="20" bottom="20" horizontalAlign="center" verticalAlign="middle" />
+		</s:BorderContainer>
+		<s:Spacer height="20" />
+	</s:VGroup>
+	<load:LoadingGroup id="lottery_loading" width="100%" height="865" visible="false"/>
+</mx:Canvas>

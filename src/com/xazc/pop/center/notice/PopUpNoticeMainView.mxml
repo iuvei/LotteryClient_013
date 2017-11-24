@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:bank="com.xazc.center.bank.*"
+		 width="855" height="470" 
+		 creationComplete="init()"
+		 xmlns:common="com.xazc.pop.center.common.*" xmlns:notice="com.xazc.pop.center.notice.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD  JJ:NN:SS"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.pop.center.record.PopUpBankRechargerRecords;
+			import com.xazc.pop.center.record.PopUpBankWithdrawalsRecords;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=12;//当页行数
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			private var newList:ArrayCollection=new ArrayCollection();
+			
+			private var noticeItem:PopUpNoticeItem;
+			
+			[Bindable]
+			private var indexPage:int;//当前第几页；
+			[Bindable]
+			private var totalPage:int;//总共几页；
+			
+			/**
+			 *  点击按钮的时候
+			 * 
+			 */
+			public function menu_clickHandler(index:int):void
+			{
+				return;
+				for(var i:int=1;i<2;i++){
+					if(index==i){
+						this["menu_"+i].selected=true;
+					}else{
+						this["menu_"+i].selected=false;
+					}
+				}
+				nc.visible=false;
+			}
+			/**
+			 *查询公告 
+			 **/
+			private function init():void{
+				var server1:ServerToolImpl = new ServerToolImpl();
+				//server1.getNewsInfo({}, resultNewInfoHandler);
+				this.getNews();
+			}
+			private function getNews():void
+			{
+				var servern:ServerToolImpl = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.CurrentPageIndex = this.currentPage-1;
+				obj.CurrentPageSize = this.currentPageSize;
+				servern.getNewsInfoFlex(obj, getNewsInfoFlexHandler);
+			
+			}
+			
+			private function getNewsInfoFlexHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var object:Object=JSON.parse(e.result.toString());
+				if(object.SystemState==64)
+				{
+					var arr:Array=object.ModelList;
+					var f_arr:Array=arr;
+					if(f_arr.length==0){
+						bc1.visible=false;
+						bc2.visible=false;
+						noMessage.visible=true;
+						return;
+					}
+					//封装信息
+					newList = new ArrayCollection();
+					for(var i:int=0;i<f_arr.length;i++){
+						var obj:Object=new Object();
+						obj.title=f_arr[i].NewsTittle;
+						obj.MerchantNews_ID=f_arr[i].MerchantNews_ID;
+						obj.time=df.format(f_arr[i].InsertTime);
+						obj.insertTime=df1.format(f_arr[i].InsertTime);
+						newList.addItem(obj);
+					}
+//					page.setPage(currentPage,object.PageCount,object.DataCount);
+					
+					indexPage = currentPage;
+					totalPage = object.PageCount;
+					if(totalPage > 1)
+					{
+						pegeSelected.visible = true;
+					}
+					createDataList();
+				}else if(object.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+											resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					//					alert.show("暂无公告！","提示信息");
+					bc1.visible=false;
+					bc2.visible=false;
+					noMessage.visible=true;
+					return;
+				}
+			}
+			
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			/**
+			 *翻页 
+			 **/
+			protected function changePage_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				currentPage=int(event.body);
+				this.getNews();
+			}
+			
+			
+			private function createDataList():void{
+				vg.removeAllElements();
+				for(var i:int=0;i<newList.length;i++){
+					var item:PopUpNoticeItem=new PopUpNoticeItem();
+					item.addEventListener("selectedNoticeItem",selectedNoticeItemHandler);
+					vg.addElement(item);
+					item.objectItem=newList.getItemAt(i);
+					if(i==0){
+						item.dispatchEvent(new Event("selectedNoticeItem"));
+					}
+				}
+			}
+			/**
+			 *选中回调函数 
+			 **/
+			private function selectedNoticeItemHandler(e:Event):void{
+				var item:PopUpNoticeItem=e.currentTarget as PopUpNoticeItem;
+				if(noticeItem){
+					noticeItem.defaultStyle();
+				}
+				noticeItem=item;
+				noticeItem.selectedStyle();
+				this.getNewsDetail(item.objectItem);
+			}
+			private function getNewsDetail(object:Object):void{
+			
+				var serverw:ServerToolImpl = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.newsID = object.MerchantNews_ID;
+				//Alert.show(object.MerchantNews_ID);
+				serverw.getNewsDetail(obj, getNewsDetailHandler);
+			}
+			
+			private function getNewsDetailHandler(e:Event):void{
+				trace(URLLoader(e.target).data);
+				//Alert.show(e.result.toString());
+				var object:Object=JSON.parse(URLLoader(e.target).data);
+				
+				var temp:Object = new Object();
+				temp.title = object.NewsTittle;
+				temp.insertTime = object.InsertTime;
+				temp.content = object.NewsContent;
+				temp.addUser = object.AddUser;
+				nc.objectItem=temp;
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				if((indexPage - 1) >= 1)
+				{
+					currentPage = (indexPage - 1);
+					this.getNews();
+				}
+			}
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				if((indexPage + 1) <= totalPage)
+				{
+					currentPage = (indexPage + 1);
+					this.getNews();
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<!-- 列表 -->
+	<s:BorderContainer id="bc1" width="250" height="468" borderVisible="false" backgroundColor="0xf3f3f3">
+		<s:VGroup width="100%" height="100%" gap="27">
+			<s:VGroup id="vg" width="250" height="430" gap="0"/>
+		</s:VGroup>
+	</s:BorderContainer>
+	
+	<s:BorderContainer x="-1" y="434" width="250" backgroundColor="0xf0f0f0" borderColor="#b2b2b2" borderVisible="false" backgroundAlpha="0">
+		<s:HGroup id="pegeSelected" visible="false" x="0" y="9" width="250" horizontalAlign="center" verticalAlign="middle">
+			<s:Spacer width="3" />
+			<s:Label text="上一页" textAlign="left" click="button1_clickHandler(event)" buttonMode="true"/>
+			<s:Spacer width="20" />
+			<!--<s:Label text="{indexPage}" width="100%" textAlign="center" color="0xcd7474"/>-->
+			<s:Label text="{'第' + indexPage + '页，共' + totalPage + '页'}" textAlign="center"/>
+			<s:Spacer width="20" />
+			<s:Label text="下一页" textAlign="right" click="button2_clickHandler(event)" buttonMode="true"/>
+			<s:Spacer width="3" />
+		</s:HGroup>
+	</s:BorderContainer>
+	
+	<!-- 具体内容 --> 
+	<s:BorderContainer id="bc2" left="280" right="20" top="10"  bottom="5" borderColor="#ffffff" backgroundAlpha="0" >
+		<notice:PopUpNoticeContent id="nc"  width="100%" height="100%" />
+	</s:BorderContainer>
+	
+	<!-- 画一个直线 -->
+	<s:Line top="80" left="250" width="602" height="1" >
+		<s:stroke> 
+			<s:SolidColorStroke color="0xcdd6dd" weight="1"/> 
+		</s:stroke> 
+	</s:Line>
+	<s:Line left="250" width="1" height="467" >
+		<s:stroke> 
+			<s:SolidColorStroke color="0xcdd6dd" weight="1"/> 
+		</s:stroke> 
+	</s:Line>
+	
+	
+	<!-- 无公告 -->
+	<s:Group id="noMessage" visible="false" width="100%" height="100%" >
+		<s:Rect  width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient >
+					<s:GradientEntry color="0xffffff" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<mx:Label  styleName="personalCenterDetailLabelStyle_1" verticalCenter="0" horizontalCenter="0" 
+				   text="{resourceManager.getString('PersonalCenterPrompt','alert_notice_prompt')}" fontSize="20"/>
+	</s:Group>
+</s:Group>

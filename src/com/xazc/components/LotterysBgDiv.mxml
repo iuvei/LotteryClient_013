@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 horizontalAlign="center" verticalAlign="middle" width="100%" height="100%"
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			
+			
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%"  horizontalAlign="center" verticalAlign="middle"  gap="10">
+		<mx:Image source="css/skin1/universal/images/cutDownBG_1.png"/>
+		<s:Image source="css/skin1/universal/images/last_2.jpg"/>
+		<s:Image source="css/skin1/universal/images/details.jpg" />
+	</s:HGroup>
+	<s:Image  source="css/skin1/universal/images/small_bg.jpg"/>
+</s:VGroup>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				width="100%" height="34"
+				autoDrawBackground="false">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.AppendNumbersItemVO;
+			import com.xazc.event.BetEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.events.FlexEvent;
+			
+			private var _countMoney:Number = 0;
+			
+			[Bindable]
+			private var showKey:Boolean = false;
+			protected function changeDouble_changeHandler(event:Event):void
+			{
+				if (changeDouble.text == null || changeDouble.text == "") {
+					changeDouble.text = "1";
+				}
+				else if (parseInt(changeDouble.text) <= 0) {
+					changeDouble.text = "1";
+				}
+				else if(parseInt(changeDouble.text) > 9999)
+				{
+					changeDouble.text = "9999";
+				}
+				betsOrNo.selected = true; 
+				update();
+			}
+			
+			protected function beishu_keyUpHandler(event:KeyboardEvent):void
+			{
+				if(""==this.changeDouble.text){
+					this.changeDouble.text = "1";
+				}
+				else if((Number(changeDouble.text))>9999){
+					changeDouble.text = '9999';
+				}
+				betsOrNo.selected = true; 
+				update();
+			}
+			
+			protected function onFocusIn(event:FocusEvent):void
+			{
+				event.stopImmediatePropagation();
+			}
+			
+			protected function betsOrNo_clickHandler(event:MouseEvent):void
+			{
+				if(!betsOrNo.selected)
+					changeDouble.text = "";
+				else
+					changeDouble.text = "1";
+				update();
+			}
+			
+			private function update():void
+			{
+				var betsMoneyText:Number = parseInt(changeDouble.text) * _countMoney;
+				
+				betsMoney.text = (isNaN(betsMoneyText) ? 0 : Math.round(betsMoneyText * 10000) / 10000) + ""+CurrentUserInfo.moneyType;
+				
+				var item:AppendNumbersItemVO = new AppendNumbersItemVO();
+				item.rowNum = parseInt(rowNum.text);
+				item.selected = betsOrNo.selected;
+				item.changeDouble = changeDouble.text;
+				item.countMoney = _countMoney;
+				
+				item.betsMoney = (isNaN(betsMoneyText) ? 0 : Math.round(betsMoneyText * 10000) / 10000);
+				dispatchEvent(new BetEvent(BetEvent.BETS_ITEM_INFO_CHANGE, item));
+			}
+			
+			override public function set data(value:Object):void
+			{
+				showKey = (value.rowNum % 2 == 1)?true:false;
+				rowNum.text = value.rowNum;
+				betsOrNo.selected = value.selected;
+				betsOrNo.label = value.issue;
+				changeDouble.text = value.changeDouble;
+				betsMoney.text = (isNaN(parseInt(value.betsMoney)) ? "0" : value.betsMoney +"")+CurrentUserInfo.moneyType;
+				_countMoney = value.countMoney;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:Rect width="100%" height="100%" visible="{showKey}" includeInLayout="{showKey}">
+		<s:fill>
+			<s:SolidColor color="0xf3f3f3"/>
+		</s:fill>
+	</s:Rect>
+	<s:Rect width="100%" height="100%" visible="{!showKey}" includeInLayout="{!showKey}">
+		<s:fill>
+			<s:SolidColor color="0xFFFFFF"/>
+		</s:fill>
+	</s:Rect>
+	<s:HGroup width="100%" verticalAlign="middle"  height="100%" >
+		<mx:Grid styleName="zhuiGrid">
+			<mx:GridRow  height="34" width="100%" verticalAlign="middle">
+				<mx:GridItem width="31" height="100%" styleName="zhuiGridItem">
+					<s:Label id="rowNum" text="{data.rowNum}" styleName="labelStyles7"/>
+				</mx:GridItem>
+				<mx:GridItem width="127" height="100%" styleName="zhuiGridItem">
+						<s:CheckBox id="betsOrNo" selected="{data.selected}" label="{data.issue}"
+									click="betsOrNo_clickHandler(event)" styleName="zhuihaoCheckBoxStyle"/>
+				</mx:GridItem>
+				<mx:GridItem width="157" height="100%" styleName="zhuiGridItem">
+					<s:Label text="{resourceManager.getString('LotteryTips','times')}" textAlign="right" verticalAlign="middle" width="40" styleName="labelStyles7"/>
+					<s:TextInput id="changeDouble" change="changeDouble_changeHandler(event)" focusIn="onFocusIn(event)" 
+								 text="{data.changeDouble}" textAlign="center" keyUp="beishu_keyUpHandler(event)"
+								 skinClass="css.skin1.PopUpTitleTextInputSkin"
+								 restrict="0-9" maxChars="4"/>
+					<s:Label text="{resourceManager.getString('LotteryTips','double')}" width="30" textAlign="left" styleName="labelStyles7"/>
+				</mx:GridItem>
+				<mx:GridItem width="146" height="100%" styleName="zhuiGridItem">
+					<s:Label  id="betsMoney" text="{data.betsMoney + CurrentUserInfo.moneyType}" styleName="labelStyles7"/>
+				</mx:GridItem>
+			</mx:GridRow>
+		</mx:Grid>
+	</s:HGroup>
+</s:ItemRenderer>

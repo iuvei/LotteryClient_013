@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:bank="com.xazc.center.bank.*"
+		 width="100%" height="100%"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 xmlns:common="com.xazc.pop.center.common.*"
+		 xmlns:notice="com.xazc.pop.center.notice.*" xmlns:activity="com.xazc.pop.center.activity.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.pop.center.common.PopUpActivityTabButtonItem;
+			import com.xazc.pop.center.notice.PopUpNoticeItem;
+			import com.xazc.single.CurrentBusinessInfo;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.addEventListener(caipiaoHuoDong.SELECT_THIS_CENTERMENU_ITEM,selectHander);//主菜单选中
+				
+				init();
+			}
+			//主菜单选中
+			private function selectHander(event:CustomEvent):void
+			{
+				var item_id:String = (event.body as String);
+				
+				switch(item_id)
+				{
+					case "1":
+						content.removeAllElements();
+						var obj_1:content_1 = new content_1();
+						content.addElement(obj_1);
+						break;
+					case "2":
+						content.removeAllElements();
+						var obj_2:content_2 = new content_2();
+						content.addElement(obj_2);
+						break;
+					case "3":
+						var alert:AlertMsgCenter = new AlertMsgCenter();
+						alert.show("敬请期待……","提示信息");
+//						content.removeAllElements();
+//						var obj_3:content_3 = new content_3();
+//						content.addElement(obj_3);
+						break;
+				}
+			}
+			public function init():void
+			{
+				var obj:content_2 = new content_2();
+				content.removeAllElements();
+				content.addElement(obj);
+				content_bg.height += 20;
+				menulist.init();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:BitmapImage x="-7" y="-9" height="{menulist.height + 180}" source="@Embed('css/skin1/images/activityImages/activityMenuBg.png',
+				   scaleGridLeft='20', scaleGridRight='50', scaleGridTop='85', scaleGridBottom='90')"/> 
+	
+	<s:BitmapImage x="190" y="-12" id="content_bg" height="{content.height + 75}"  source="@Embed('css/skin1/images/activityImages/activityContentBg.png',
+				   scaleGridLeft='20', scaleGridRight='50', scaleGridTop='20', scaleGridBottom='50')"/>  
+	
+	<!-- 列表 -->
+	<activity:caipiaoHuoDong id="menulist" x="12" y="77"/>
+	
+	<s:VGroup  x="200" width="810" horizontalAlign="center">
+		<s:Spacer height="10"/>
+		
+		<s:Group id="content" />
+		
+		<s:Spacer height="35"/>
+	</s:VGroup>
+	
+</s:Group>

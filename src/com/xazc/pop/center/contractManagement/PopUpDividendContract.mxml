@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="createGridInitProperties()" 
+		 xmlns:load="com.xazc.components.load.*" width="900" height="455"
+		 xmlns:common="com.xazc.pop.center.common.*" xmlns:member="com.xazc.pop.center.proxy.member.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import flashx.textLayout.formats.TextAlign;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.core.FlexGlobals;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			private var service:ServerTool;
+			
+			private var myPattern1:RegExp=/-|:| /g; 
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=10;//当页行数
+			
+			
+			[Bindable]
+			private var totalPage:String="";
+			[Bindable]
+			private var totalRecords:String="";
+			[Bindable]
+			private var betsSumMoney:Number=0;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:225},
+				{title:"b",w:225},
+				{title:"c",w:225},
+				{title:"d",w:225},
+			]);
+			
+			private var values:ArrayCollection=new ArrayCollection([
+				{column:"UserName",w:225},
+				{column:"Rebate",w:225},
+				{column:"State",w:225},
+				{column:"Operate",w:225}
+			]);
+			
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=35;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					var label:Label=new Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = resourceManager.getString('PersonalCenterPage','userName');
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = "返点";
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = "状态";
+					}else if(titles.getItemAt(i).title == "d"){
+						label.text = "操作";
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:Label=new Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				//获取日工资数据列表
+				this.getmyteam();
+				
+			}
+			private function getmyteam():void
+			{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				//获取日工资数据列表
+				var obj:Object=filterSelectCondition();
+				service.getContractList(obj,getContractListReturn);
+				
+			}
+			
+			private  function getContractListReturn(e:ResultEvent):void
+			{
+				loading.suspend();
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				trace(e.result.toString());
+				if(obj.SystemState==64){
+					var a:Array=obj.ContractManagerModels as Array;
+					if(a.length==0){
+						createGridOneRow();
+						return;
+					}
+					page.setPage(currentPage,obj.PageCount,obj.DataCount);	
+					totalPage=obj.PageCount;
+					totalRecords=obj.DataCount;
+					g_page.visible=true;
+					g_page.includeInLayout=true;
+					show(obj,obj.ContractManagerModels as Array)
+				}else if(obj.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);return;
+				}else{
+					if(obj.SystemState==32){
+						createGridOneRow();
+						return;
+					}
+					alert.show("查询失败！",
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+				
+			}
+			//下级用户个数
+			private var currentChildNum:int = 10;
+			
+			private function show(obj:Object,arr:Array):void
+			{
+				currentChildNum = arr.length;
+				var lastMessages:Array = arr;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				for(var i:int=0;i<lastMessages.length;i++){
+					var row:GridRow=new GridRow();
+					row.height=30;
+					grid.addChild(row);
+					for(var j:int=0;j<values.length;j++){
+						var item:GridItem=new GridItem();
+						row.addChild(item);
+						item.width=values.getItemAt(j).w;
+						var lb:Label=new Label();
+						lb.width=values.getItemAt(j).w-5;
+						lb.styleName="personalCenterDetailLabelStyle_1";
+						item.addChild(lb);
+						var strColumn:String=values.getItemAt(j).column;
+						var strvalue:String="";
+						if(strColumn=="State"){ //签约状态  1已签约  2未签约  0待确认
+							if( lastMessages[i][strColumn] == "1"){
+								lb.text="已签约";
+							}else if( lastMessages[i][strColumn] == "-1"){
+								lb.text="未签约";
+							}else if( lastMessages[i][strColumn] == "0"){
+								lb.text="待确认";
+							}
+						}else if(strColumn=="Operate"){
+							if( lastMessages[i]["State"] == "1"){
+								lb.text="修改契约";
+							}else if( lastMessages[i]["State"] == "0"){
+								lb.text="修改契约";
+							}else if( lastMessages[i]["State"] == "-1"){
+								lb.text="签订契约";
+							}
+							lb.width = 70;
+							item.addChild(lb);
+							lb.setStyle("color","0x34c22d");
+							lb.name = CurrentUserInfo.myUserID + "#" + lastMessages[i].UserID + "#" + lastMessages[i].UserName;
+							lb.buttonMode=true;
+							lb.useHandCursor=true;
+							lb.mouseChildren=false;
+							lb.addEventListener(MouseEvent.CLICK,labelMouseClickHandler);
+							
+							
+							if( obj.LockState == 1  &&  lastMessages[i]["State"] >= 0 )
+							{
+								lb = new Label();
+								lb.width = 70;
+								item.addChild(lb);
+								lb.text="分红结算";
+								lb.styleName="personalCenterDetailLabelStyle_1";
+								lb.setStyle("color","0x34c22d");
+								lb.name = CurrentUserInfo.myUserID + "#" + lastMessages[i].UserID + "#" + lastMessages[i].UserName;
+								lb.buttonMode=true;
+								lb.useHandCursor=true;
+								lb.mouseChildren=false;
+								lb.addEventListener(MouseEvent.CLICK,Settlement_ClickHandler);
+							}
+						}else{
+							lb.text=lastMessages[i][strColumn];
+						}
+					}
+				}
+			}
+			
+			
+			//分红修改
+			private function labelMouseClickHandler(e:MouseEvent):void
+			{
+				var popUpDividendContractDetails:PopUpDividendContractDetails= new PopUpDividendContractDetails();
+				popUpDividendContractDetails.x=(FlexGlobals.topLevelApplication.width-popUpDividendContractDetails.width)/2;
+				popUpDividendContractDetails.y=(FlexGlobals.topLevelApplication.height-popUpDividendContractDetails.height)/2;
+				popUpDividendContractDetails.setData((e.target as mx.controls.Label).name);
+				PopUpManager.addPopUp(popUpDividendContractDetails,this,true);
+			}
+			
+			//分红结算
+			private function Settlement_ClickHandler(e:MouseEvent):void
+			{
+				var popUpDividendContractSettlement:PopUpDividendContractSettlement= new PopUpDividendContractSettlement();
+				popUpDividendContractSettlement.x=(FlexGlobals.topLevelApplication.width-popUpDividendContractSettlement.width)/2;
+				popUpDividendContractSettlement.y=(FlexGlobals.topLevelApplication.height-popUpDividendContractSettlement.height)/2;
+				popUpDividendContractSettlement.setData((e.target as mx.controls.Label).name);
+				PopUpManager.addPopUp(popUpDividendContractSettlement,this,true);
+			}
+			
+			
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				g_page.visible=false;
+				g_page.includeInLayout=false;
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.width=gt.width;
+				row.addChild(item);
+				var label:Label=new Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			
+			/**
+			 *过滤封装查询条件
+			 **/
+			private function filterSelectCondition():Object{
+				var obj:Object=new Object();
+				obj.UserName=username.text;
+				obj.CurrentPageIndex=currentPage-1;
+				obj.CurrentPageSize=currentPageSize;
+				return obj;
+			}
+			
+			protected function page_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				var page:int=int(event.body);
+				currentPage=page;
+				getmyteam();
+			}
+			/**
+			 *查询操作 
+			 **/
+			protected function submit(event:MouseEvent):void
+			{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=1;
+				getmyteam();
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function my_DayWageContractDetails_clickHandler(event:MouseEvent):void
+			{
+				var popUpDividendContractDetails_my:PopUpDividendContractDetails_my = new PopUpDividendContractDetails_my();
+				popUpDividendContractDetails_my.x=(FlexGlobals.topLevelApplication.width-popUpDividendContractDetails_my.width)/2;
+				popUpDividendContractDetails_my.y=(FlexGlobals.topLevelApplication.height-popUpDividendContractDetails_my.height)/2;
+				PopUpManager.addPopUp(popUpDividendContractDetails_my,this,true);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<!-- 过滤条件 -->
+	<s:HGroup  id="vg_main" top="10" verticalAlign="middle" width="100%" gap="0">
+		<mx:Label text="{resourceManager.getString('PersonalCenterPage','userName')}：" styleName="personalCenterDetailLabelStyle_1"  />
+		<mx:TextInput width="120" styleName="personalCenterDetailTextInputStyle" id="username" maxChars="20" />
+		<s:Spacer width="20" />
+		<s:Button label="{resourceManager.getString('PersonalCenterPage','ensure')}" styleName="personalLookButtonStyle"
+				  click="submit(event)" buttonMode="true" verticalCenter="0"/>	
+		<s:Spacer y="15" width="445" height="2"/>
+		<common:PopUpTabButtonItem id="my_DayWageContractDetails" labelTitle="我的契约" click="my_DayWageContractDetails_clickHandler(event)"/>
+	</s:HGroup>
+	<!--具体内容-->
+	<s:Group id="g_content" top="{vg_main.height+20}">
+		<s:Rect id="fill" width="100%" height="100%">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xffffff" alpha="0"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect id="fill1" width="100%" height="35">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x6a6969" alpha="1"/>
+					<s:GradientEntry color="0x595858" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:VGroup gap="-1" height="100%" id="vg">
+			<s:Group height="70"   width="100%" id="g_page" includeInLayout="false" visible="false">
+				<s:Rect x="0" id="border" width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient >
+							<s:GradientEntry color="0xcfcece" alpha="1"/>
+						</s:LinearGradient>
+					</s:fill>
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<s:VGroup  left="10" right="10" height="100%" verticalAlign="middle">
+					<s:HGroup horizontalAlign="right" verticalAlign="middle" height="30%" width="100%">
+						<common:PopUpChangePageComponent width="100%" height="100%" id="page" ChangePageIndex="page_ChangePageIndexHandler(event)"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:Group>
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading"/>
+</s:Group>

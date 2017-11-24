@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="100%" creationComplete="init(event)">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var imgClass:Class;//图片
+			
+			[Bindable]
+			public var typeTitle:String="";//标题
+			
+			[Bindable]
+			public var tgType:int=1;//等于1 TileGroup显示2列
+			
+			[Bindable]
+			public var ruleFlag:Boolean=true;//是否显示分割线
+
+			public var listLottery:Array;//分类彩种
+			public var lotterys:Array;//全部彩种
+
+			private function init(event:FlexEvent):void
+			{
+				for(var i:int=0;i<lotterys.length;i++){
+					for(var j:int=0;j<listLottery.length;j++){
+						if(lotterys[i]==listLottery[j].label){
+							var link:Label=new Label();
+							link.id="lottery_"+i;
+							if(tgType==1){
+								link.width=90;	
+							}else{
+								link.width=60;
+							}
+							link.text=resourceManager.getString("LotteryPlayNames","lottery_"+lotterys[i]);
+							link.name=lotterys[i]+"|"+1;
+							link.setStyle("color","#ffffff");
+							link.setStyle("fontSize",13);
+							//link.setStyle("fontWeight","bold");
+							link.mouseChildren=false;
+							link.buttonMode=true;
+							link.useHandCursor=true;
+							link.addEventListener(MouseEvent.CLICK,clickHandler);
+							link.addEventListener(MouseEvent.ROLL_OVER,rollOverHandler1);
+							link.addEventListener(MouseEvent.ROLL_OUT,rollOutHandler1);
+							tg_1.addElement(link);
+						}
+					}
+				}
+			}
+			private function clickHandler(e:MouseEvent):void{
+				var link:Label=e.currentTarget as Label;
+				var str:Array=link.name.split("|");
+				Sendnotification.instance.dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE,{lotteryID:str[0],mark:str[0]}));
+			} 
+			private function rollOverHandler1(e:MouseEvent):void{
+				var link:Label=e.currentTarget as Label;
+				link.setStyle("color","#f5f377");
+			}
+			private function rollOutHandler1(e:MouseEvent):void{
+				var link:Label=e.currentTarget as Label;
+				link.setStyle("color","#ffffff");
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup left="10" top="5" bottom="10" >
+		<s:HGroup >
+			<s:Image source="{imgClass}"/>
+			<mx:Label  fontSize="15" fontFamily="Microsoft YaHei,微软雅黑"   color="0xffffff" text="{typeTitle}"/>
+		</s:HGroup>
+		<s:TileGroup id="tg_1" requestedColumnCount="{tgType==1?2:3}" horizontalAlign="center"/>
+	</s:VGroup>
+	<mx:HRule left="5" width="194" bottom="0"  height="1" strokeColor="0x213949" visible="{ruleFlag}"  includeInLayout="{ruleFlag}"/>
+</s:Group>

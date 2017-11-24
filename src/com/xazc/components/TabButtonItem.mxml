@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   height="35"
+		   buttonMode="true" mouseChildren="false"
+		   mouseOver="mouseOverHandler(event)"
+		   mouseOut="mouseOutHandler(event)"
+		   cornerRadius="10">
+	
+	<mx:Label text="{label}" fontFamily="Microsoft YaHei,微软雅黑" fontSize="14" color="0xffffff" horizontalCenter="0" verticalCenter="0"  />
+	
+	<mx:Script>
+		<![CDATA[
+			
+			private var _selected:Boolean = false;
+			//Microsoft YaHei,微软雅黑
+			protected function mouseOverHandler(event:MouseEvent):void
+			{
+				changeBg(true);	
+			}
+			
+			protected function mouseOutHandler(event:MouseEvent):void
+			{
+				if(!_selected) {
+					changeBg(false);
+				}
+			}
+			
+			public function get selected():Boolean
+			{
+				return _selected ;
+			}
+			public function set selected(val:Boolean):void
+			{
+				_selected = val;
+				changeBg(val);
+			}
+			
+			private function changeBg(flag:Boolean):void
+			{
+				if(flag) {
+					this.setStyle("backgroundColor", 0xffffff);
+					this.setStyle("backgroundAlpha", 0.2);
+				}else {
+					this.setStyle("backgroundColor", 0xffffff);
+					this.setStyle("backgroundAlpha", 0.1);
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	
+</mx:Canvas>

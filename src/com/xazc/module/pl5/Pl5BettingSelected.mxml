@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" 
+		  xmlns:ssc="com.xazc.components.ssc.*" gap="0"
+		  creationComplete="creationCompleteHandler(event)" 
+		  xmlns:bettings="com.xazc.components.bettings.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			
+			
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var game_id:String = "01";
+			
+			public var lotteryID:String = "";
+			
+			private var bettingInfo:Cathectic;
+			
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			public var zhushu:Number = 0;
+			//类型
+			private var sntuo:int = 0;
+			
+			private var selectedHZNum:Array = [];
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlayContainer = playContainer1;
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				bettingInfo.sntuo = sntuo;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, cleanSelectedNumbers);
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+			}
+			
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				var targetID:String = target.id;
+				game_id = lotteryID + "01";
+				bettingInfo.game_id = game_id;
+				cleanSelectedNumbers(null);
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				switch(targetID)
+				{
+					case "play_02":
+						playType = 1;
+						sntuo = 0;
+						play_02.selected = true;
+						showPlayContainer(playContainer1);
+						this.gameType.text = "每位各选1个或者多个号码，选号与开奖号码按位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','pl5_game_tip_emp_1')
+						break;
+					case "play_03":
+						playType = 2;
+						sntuo = 3;
+						play_03.selected = true;
+						showPlayContainer(playContainer2);
+						this.gameType.text = "任选5个号码组成一注，选号与开奖号按位一致即中奖。";
+						this.gameType_emp.toolTip = resourceManager.getString('LotteryTips','pl5_game_tip_emp_2')
+						break;
+				}
+			}
+			
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				var tenThousnadSelectedNum:int = tenThousand.selectedNum.length;
+				var thousnadSelectedNum:int = thousand.selectedNum.length;
+				var hundredSelectedNum:int = hundred.selectedNum.length;
+				var tenSelectedNum:int = ten.selectedNum.length;
+				var oneSelectedNum:int = one.selectedNum.length;
+				zhushu = tenThousnadSelectedNum * thousnadSelectedNum * hundredSelectedNum * tenSelectedNum * oneSelectedNum;
+				bettingInfo.tzcontent = tenThousand.selectedNum + "|" + thousand.selectedNum + "|" + hundred.selectedNum + "|" + ten.selectedNum + "|" + one.selectedNum;
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = this.sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			private function cleanSelectedNumbers(event:BetsClickEvent):void
+			{
+				//清空投注数据（标准）
+				tenThousand.clearAllSelectedNumHandler();
+				thousand.clearAllSelectedNumHandler();
+				hundred.clearAllSelectedNumHandler();
+				ten.clearAllSelectedNumHandler();
+				one.clearAllSelectedNumHandler();
+				//清空投注数据（胆拖）
+				textarea.text = "";
+			}
+			
+			/**
+			 * 鼠标移除粘贴框时验证
+			 * 
+			 */
+			protected function textarea1_mouseOutHandler(event:MouseEvent):void
+			{
+				var arrs:Array=new Array();
+				error=false; numbersArr=new Array(); 
+				if(textarea.text != ""){
+					textarea.text = textarea.text.split(/\D/).join("\n");
+					var arr:Array = textarea.text.split("\n");
+					for(var ia:int = 0; ia < arr.length; ia++){
+						if(arr[ia] != ""){
+							arrs.push(arr[ia]);
+						}
+					}
+					textarea.text = "";
+					
+					check_digit(arrs,5);
+					
+					if(!error)
+					{
+						for(var z:int=0;z<arrs.length;z++)
+						{
+							numbersArr.push(arrs[z]);
+						}
+						var haomaStickStr:String = "";
+						for(var i3:int=0;i3<numbersArr.length;i3++){
+							haomaStickStr+=numbersArr[i3].toString().split("").join("|")+" ";					
+						} 
+						bettingInfo.tzcontent = haomaStickStr.substring(0,haomaStickStr.length-1);
+						bettingInfo.tzzs = numbersArr.length;;
+						bettingInfo.sntuo = sntuo;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+					else
+					{
+						bettingInfo.tzzs = 0;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+				}
+			}
+			
+			/**
+			 * 检查错误（位数检查）
+			 */
+			public function check_digit(arrs:Array,lengths:int):void{
+				for(var i:int=0; i < arrs.length; i++){
+					if(arrs[i]!="")
+					{
+						if(arrs[i].length!=lengths)
+						{
+							textarea.text += arrs[i] + "\       格式不正确\n";
+							error = true;
+						}
+						else
+						{
+							textarea.text += arrs[i]+"\n";
+							error == true ? error : error=false;
+						}
+					}
+				}
+			}
+			
+			//控制显示模块
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle" gap="4" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton id="play_02" selected="{playType == 1}"  click="playClickHandler(event)" label="{resourceManager.getString('LotteryTips','straight_Selected_1')}" styleName="standardButtonSkinStyle" />
+			<s:ToggleButton id="play_03" selected="{playType == 2}"  click="playClickHandler(event)" label="{resourceManager.getString('LotteryTips','stick_Selected_1')}" styleName="standardButtonSkinStyle" />
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="每位各选1个或者多个号码，选号与开奖号码按位一致即中奖。" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','pl5_game_tip_emp_1')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	
+	<s:VGroup id="playContainer1" width="100%" height="310" paddingLeft="15" verticalAlign="middle" gap="16">
+		<ssc:SSCNumberSelected id="tenThousand" bettingRowName="{resourceManager.getString('LotteryTips','ten_Thousand')}"/>
+		<ssc:SSCNumberSelected id="thousand" bettingRowName="{resourceManager.getString('LotteryTips','thousand')}"/>
+		<ssc:SSCNumberSelected id="hundred" bettingRowName="{resourceManager.getString('LotteryTips','hundred')}"/>
+		<ssc:SSCNumberSelected id="ten" bettingRowName="{resourceManager.getString('LotteryTips','ten')}"/>
+		<ssc:SSCNumberSelected id="one" bettingRowName="{resourceManager.getString('LotteryTips','single')}"/>
+	</s:VGroup>
+	<s:HGroup id="playContainer2" width="100%" height="310" paddingLeft="15" verticalAlign="middle" gap="58" visible="false" includeInLayout="false">
+		<mx:TextArea  id="textarea" width="620" height="250" color="#000000" 
+					  contentBackgroundColor="0xffffff" borderColor="0xffffff"  
+					  rollOut="textarea1_mouseOutHandler(event)"/>
+		<s:VGroup gap="18" height="250" verticalAlign="top">
+			<s:Label text="{resourceManager.getString('LotteryTips','fomal_Description')}" styleName="stickYellowTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','lottery_12_5Starts_Straight_Selected')}：12345" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_1')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_2')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_3')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','ssc_Stick_Tips_4')}" styleName="stickWriteTextStyle"/>
+		</s:VGroup>
+	</s:HGroup>
+</s:VGroup>

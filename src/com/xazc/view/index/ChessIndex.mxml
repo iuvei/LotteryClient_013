@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:chessindex="com.xazc.view.index.chessindex.*"
+		 width="100%" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Group width="100%" height="690">
+		<s:BitmapImage source="css/skin1/assets/chessindex/chessbg.jpg" width="100%"  smooth="true"/>
+		<s:VGroup width="100%"  horizontalAlign="center" paddingTop="55" gap="25">
+			<s:Image source="css/skin1/assets/chessindex/chess_logo.png"/>
+			<s:Group width="1000">
+				<s:Image source="css/skin1/assets/chessindex/gamesbg.png"/>
+				<s:HGroup gap="15" width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+					<chessindex:ChessIndexItem chessIndexType="1" chessIndexName="百人牛牛" chessIndexImages="css/skin1/assets/chessindex/chess_index_05.jpg" chessIndexImages2="css/skin1/assets/chessindex/chess_jqqd_03.jpg"/>
+					<chessindex:ChessIndexItem chessIndexType="2" chessIndexName="骰宝" chessIndexImages="css/skin1/assets/chessindex/chess_index_01.jpg" chessIndexImages2="css/skin1/assets/chessindex/chess_jqqd_01.jpg"/>
+					<chessindex:ChessIndexItem chessIndexType="3" chessIndexName="百家乐" chessIndexImages="css/skin1/assets/chessindex/chess_index_02.jpg" chessIndexImages2="css/skin1/assets/chessindex/chess_jqqd_02.jpg"/>
+				</s:HGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:Group>
+	
+</mx:VBox>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable" initialize="skinnablecontainer1_initializeHandler(event)"
+					  height="184" width="338"  styleName="resultListBgStyle">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.manager.TimerManager;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.Util;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			private var tempLottery:String = "0";
+			
+			[Bindable]
+			private var zstState:Boolean = true;
+			
+			[Bindable]
+			private var lotteryName:String = "";
+			
+			public function init():void
+			{
+			}
+			protected function skinnablecontainer1_initializeHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				Util.getInstance().addEventListener(CustomEvent.CHANGE_RESULT_LISTS,getKaijiangMessageback);
+			}
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+				Util.getInstance().removeEventListener(CustomEvent.CHANGE_RESULT_LISTS,getKaijiangMessageback);
+			}
+			private function getKaijiangMessageback(event:CustomEvent):void
+			{
+				// TODO Auto Generated method stub
+				getKaijiangMessage(event.body as ResultEvent);
+			}
+			private var resultListsObj:Object;
+			
+			public function getKaijiangMessage(e:ResultEvent):void
+			{
+				var arr:Object = JSON.parse(e.result.toString());
+				resultListsObj = arr;
+				trace(e.result.toString());
+				
+				this.showMoreResults(10);
+			}
+			
+			public function showMoreResults(k:int):void
+			{
+				listVg.removeAllElements();
+				var arr:Object = resultListsObj;
+				
+				var titleGrid:Grid=new Grid();
+				titleGrid.styleName = "myGridStyle";
+				var tempNum:int = 0;
+				if(k == 3){
+					if((arr as Array).length<3){
+						tempNum = (arr as Array).length;
+					}else{
+						tempNum = 3;
+					}
+				}else{
+					if((arr as Array).length<10){
+						tempNum = (arr as Array).length;
+					}else{
+						tempNum = 10;
+					}
+				}
+				for(var j:int = 0;j < tempNum; j++){
+					var titlerow:GridRow=new GridRow();
+					titlerow.styleName = "myGridRowStyle";
+					titlerow.height=25;
+					for(var i:int= 0;i< 2;i++){
+						var gridItem:GridItem=new GridItem();
+						gridItem.styleName = "myGridItemStyle";
+						var label:Label=new Label();
+						if(0==i){
+							gridItem.width = 80;
+							label.text=arr[j].CzPeriod;
+						}else if(1==i){
+							gridItem.width = 240;
+							label.text=arr[j].CzNum.toString();
+						}
+						label.setStyle("color","0xFFFFFF");
+						label.setStyle("fontSize",16);
+						label.setStyle("fontFamily","Microsoft YaHei,微软雅黑");
+						gridItem.addChild(label);
+						titlerow.addChild(gridItem);
+					}
+					titleGrid.addChild(titlerow);
+					titleGrid.setStyle("verticalGap",0)
+				}
+				listVg.addElementAt(titleGrid,0);
+			}
+			
+			
+			
+			public function objItem(value:Object):void
+			{
+				if(value.CzType=="9"){
+					var index:int = (value.CzNum as String).lastIndexOf(",");
+					var tempStr:String = (value.CzNum as String).substring(0,index)+"#"+(value.CzNum as String).substring(index+1);
+					value.CzNum = tempStr;
+				}else if(value.CzType=="24"||value.CzType=="23"){
+					var index1:int = (value.CzNum as String).lastIndexOf(",");
+					var tempStr1:String = (value.CzNum as String).substring(0,index1)+"|"+(value.CzNum as String).substring(index1+1);
+					value.CzNum = tempStr1;
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+		[Event(name="addResultObjectEvent",type="mx.events.DynamicEvent")]
+		[Event(name="lookResultDetailEvent",type="mx.events.DynamicEvent")]
+	</fx:Metadata>
+	<s:VGroup width="100%" height="100%" horizontalAlign="left" gap="0">
+		<s:HGroup width="100%"  horizontalAlign="center" verticalAlign="middle">
+			<s:Label text="历史开奖号码" fontSize="21" color="0xffffff"/>
+		</s:HGroup>
+		<s:Spacer height="4"/>
+		<s:Line left="0" width="100%"  right="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0xFFFFFF" weight="1" alpha="0.6" caps="square"/>
+			</s:stroke>
+		</s:Line>
+		<s:HGroup width="100%" height="29"  horizontalAlign="left" verticalAlign="middle" gap="15">
+			<s:Label text="期号" width="80" fontSize="16" color="0xffffff"  textAlign="center"/>
+			<s:Label text="开奖号码" width="240" fontSize="16" color="0xffffff" textAlign="center"/>
+		</s:HGroup>
+		<s:Line left="0" width="100%" right="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0xFFFFFF" weight="1" alpha="0.6" caps="square"/>
+			</s:stroke>
+		</s:Line>
+		<s:Spacer height="6"/>
+		<s:Scroller left="0"  width="100%" height="118"  horizontalScrollPolicy="off" skinClass="css.skin1.scroll.ResultListScrollerSkin">
+			<s:VGroup id="listVg" width="100%" height="100%" gap="0">
+				
+			</s:VGroup>
+		</s:Scroller>
+	</s:VGroup>
+</s:SkinnableContainer>

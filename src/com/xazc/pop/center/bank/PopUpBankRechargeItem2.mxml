@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark"  creationComplete="initPropertys()" gap="5"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"  width="100%" height="100%" horizontalAlign="center">
+	<fx:Declarations>
+		<s:Sequence id="seqeffect" duration="500">
+			<!--<s:Move yFrom="260" yTo="210" />-->
+			<s:Fade alphaFrom="0" alphaTo="1"/>
+			<s:Pause duration="100"/>
+			<!--<s:Move yFrom="{(400-label_succ.height)/2}" yTo="0"/>-->
+			<s:Fade alphaFrom="1" alphaTo="0"/>
+		</s:Sequence>
+		<s:RadioButtonGroup id="cmbcBank"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.MyTimer;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			
+			[Bindable]
+			private var shi:String="1";
+			[Bindable]
+			private var fen:String="59";
+			[Bindable]
+			private var miao:String="59";
+			
+			private var isAlipayType:Boolean = false;
+			
+			[Bindable]
+			private var object:Object=new Object();
+			
+			private var timer:MyTimer;
+			
+			private const singleLabelStyle:String = 
+				"<font color='#FFFFFF' size='13'>{0}</font>  " +
+				"<font color='#f5f377' size='13'>{1}</font>  "   +
+				"<font color='#FFFFFF' size='13'>{2}</font>  " +
+				"<font color='#f5f377' size='13'>{3}</font>  \n" ;
+			[Bindable]
+			private var CMBCbankUrls:ArrayCollection=new ArrayCollection([
+				{label:"中国工商银行",url:"https://mybank.icbc.com.cn/icbc/perbank/index.jsp"},
+				{label:"中国农业银行",url:"http://www.abchina.com/cn/wydl/grwydl/default.htm"},
+				{label:"中国建设银行",url:"https://ibsbjstar.ccb.com.cn/app/V5/CN/STY1/login.jsp"},
+				{label:"交通银行",url:"https://pbank.95559.com.cn/personbank/logon.jsp"},
+				{label:"招商银行",url:"https://pbsz.ebank.cmbchina.com/CmbBank_GenShell/UI/GenShellPC/Login/Login.aspx"},
+				{label:"中国银行",url:"http://www.boc.cn/"},
+				{label:"光大银行",url:"http://www.cebbank.com/"},
+				{label:"上海浦东发展银行",url:"http://ebank.spdb.com.cn/"},
+				{label:"邮政银行",url:"http://www.psbc.com/portal/zh_CN/index.html"},
+				{label:"上海银行",url:"http://www.bankofshanghai.com/servlet/ServletGate?cur_page=DummyPage&op=MNU_Forward&statistics=1131&target=IndexPage"},
+				{label:"华夏银行",url:"http://www.hxb.com.cn/chinese/index.html"},
+				{label:"兴业银行",url:"http://www.cib.com.cn/netbank/cn/index.html"},
+				{label:"广发银行",url:"http://www.cgbchina.com.cn/"},
+				{label:"平安银行",url:"http://bank.pingan.com/"},
+				{label:"北京银行",url:"http://www.bankofbeijing.com.cn/"},
+				{label:"中信银行",url:"http://bank.ecitic.com/"},
+				{label:"渤海银行",url:"http://www.cbhb.com.cn/bhbank/S101/index.htm"},
+				{label:"东莞银行",url:"http://www.dongguanbank.cn/Site/Home/CN"},
+				{label:"杭州银行",url:"http://www.hzbank.com.cn/"},
+				{label:"浙商银行",url:"https://e.czbank.com/APPINSPECT/index.jsp"},
+			]);
+			/**
+			 *初始化页面信息 
+			 **/
+			public function initPropertys():void{
+				for(var i:int=1;i<5;i++){
+					this["input_"+i].text="";
+				}
+				hg_timer.visible=false;
+				hg_timer2.visible=false;
+				timer=new MyTimer(1,59,60);
+				timer.setTimerHandler(updateTimer);
+			}
+			/**
+			 *初始化说明 
+			 **/
+			private function initSM():void{
+				var sm1:String=singleLabelStyle;
+				
+				var sm2:String=singleLabelStyle;
+				var sm3:String=singleLabelStyle;
+				var sm4:String=singleLabelStyle;
+				var sm5:String=singleLabelStyle;
+			}
+			/**
+			 *更新时间 
+			 **/
+			private function updateTimer(e:TimerEvent):void{
+				miao= timer.leftSeconds+"";
+				fen=timer.leftMinutes+"";
+				shi=timer.leftHours+"";
+//				trace(shi+"-"+fen+"-"+miao);
+				if('0'==miao&&'0'==fen&&'0'==shi){
+					Sendnotification.instance.dispatchEvent(new Event("waitingItemCloseEvent"));
+				}
+			}
+			/**
+			 *赋值 
+			 **/
+			private var save_data:Object = new Object();
+			public function setViewPropertyValues(obj:Object):void{
+				save_data = obj;
+				//初始化页面
+				initPropertys();
+				
+				object=obj;
+				input_1.text=obj.PayBankName;
+				//var tempBankArr:Array =(obj.PayBank as String).replace(","," ");
+				
+				//input_2.text=(obj.PayBank as String).replace(","," ");
+				var temp:Array = (obj.PayBank as String).split(",");
+				if(temp.length>1){
+					if(""!=temp[1]){
+						input_2.text=temp[0];
+						input_6.text=temp[1];
+						localBank.visible = true;
+						localBank.includeInLayout = true;
+					}else{
+						localBank.visible = false;
+						localBank.includeInLayout = false;
+						input_2.text=temp[0];
+					}
+				}else{
+					input_2.text=obj.PayBank;
+				}
+				
+				input_3.text=obj.PayBankAccount;
+				input_4.text=obj.PayMoney;
+				input_jine.text=obj.PayMoney;
+				input_5.text =obj.Postscript;
+				//input_5.text =CurrentUserInfo.userName;
+				//跳出页面（支付宝特殊逻辑）
+				if(obj.type == "154"){
+					isAlipayType = true;			
+				}else{
+					isAlipayType = false;	
+				}
+				//为招行充值时显示不同的充值方式
+				if(obj.type == "152"){//招行      支付宝转账，工行转账，建行转账，农行转账，交行转账，招行汇款；
+					//通用
+					this.sumbitAll.visible = false;	
+					this.sumbitAll.includeInLayout = false;
+					//招行汇款
+					this.sumbitCMB.visible = true;	
+					this.sumbitCMB.includeInLayout = true;
+					this.help_cmb_1.visible = true;
+					this.help_cmb_1.includeInLayout = true;
+					this.help_cmb_2.visible = true;
+					this.help_cmb_2.includeInLayout = true;
+					this.charge_1.visible = true;
+					this.charge_1.includeInLayout = true;
+					this.charge_5.visible = true;
+					this.charge_5.includeInLayout = true;
+					
+					//民生银行汇款
+					this.sumbitCMBC.visible = false;	
+					this.sumbitCMBC.includeInLayout = false;
+					this.sumbitCMBC_s.visible =  false;
+					this.sumbitCMBC_s.includeInLayout =  false;
+					this.help_cmbc_1.visible = false;
+					this.help_cmbc_1.includeInLayout = false;
+					
+				}else if(obj.type == "151"){//工行       支付宝转账，工行转账，建行转账，农行转账；
+					//通用
+					this.sumbitAll.visible = false;	
+					this.sumbitAll.includeInLayout = false;
+					//工行汇款
+					this.sumbitCMB.visible = true;	
+					this.sumbitCMB.includeInLayout = true;
+					this.charge_1.visible = false;
+					this.charge_1.includeInLayout = false;
+					this.charge_5.visible = false;
+					this.charge_5.includeInLayout = false;
+					
+					//民生银行汇款
+					this.sumbitCMBC.visible = false;	
+					this.sumbitCMBC.includeInLayout = false;
+					this.sumbitCMBC_s.visible =  false;
+					this.sumbitCMBC_s.includeInLayout =  false;
+					this.help_cmbc_1.visible = false;
+					this.help_cmbc_1.includeInLayout = false;
+					
+					
+				}else if(obj.type == "156"){//民生
+					//通用
+					this.sumbitAll.visible = false;	
+					this.sumbitAll.includeInLayout = false;
+					//招行汇款
+					this.sumbitCMB.visible = false;	
+					this.sumbitCMB.includeInLayout = false;
+					this.help_cmb_1.visible = false;
+					this.help_cmb_1.includeInLayout = false;
+					this.help_cmb_2.visible = false;
+					this.help_cmb_2.includeInLayout = false;
+					//民生银行汇款
+					this.sumbitCMBC.visible = true;	
+					this.sumbitCMBC.includeInLayout = true;
+					this.sumbitCMBC_s.visible =  true;
+					this.sumbitCMBC_s.includeInLayout =  true;
+					this.help_cmbc_1.visible = true;
+					this.help_cmbc_1.includeInLayout = true;
+					
+					
+				}else{//通用
+					this.sumbitAll.visible = true;	
+					this.sumbitAll.includeInLayout = true;
+					//招行汇款
+					this.sumbitCMB.visible = false;	
+					this.sumbitCMB.includeInLayout = false;
+					this.help_cmb_1.visible = false;
+					this.help_cmb_1.includeInLayout = false;
+					this.help_cmb_2.visible = false;
+					this.help_cmb_2.includeInLayout = false;
+					//民生银行汇款
+					this.sumbitCMBC.visible = false;	
+					this.sumbitCMBC.includeInLayout = false;
+					this.sumbitCMBC_s.visible =  false;
+					this.sumbitCMBC_s.includeInLayout =  false;
+					this.help_cmbc_1.visible = false;
+					this.help_cmbc_1.includeInLayout = false;
+				}
+			}
+			/**
+			 *复制 
+			 **/
+			private function  fuzhi(index:int):void{
+				if(index==1){
+					System.setClipboard(input_1.text);
+					seqeffect.play([label_succ_1]);
+				}
+				if(index==2){
+					System.setClipboard(input_2.text);
+					seqeffect.play([label_succ_2]);
+				}
+				if(index==3){
+					System.setClipboard(input_3.text);
+					seqeffect.play([label_succ_3]);
+				}
+				if(index==4){
+					System.setClipboard(input_4.text);
+					seqeffect.play([label_succ_4]);
+				}
+				if(index==5){
+					System.setClipboard(input_5.text);
+					seqeffect.play([label_succ_5]);
+				}
+				if(index==6){
+					System.setClipboard(input_6.text);
+					seqeffect.play([label_succ_6]);
+				}
+				//注释复制成功提示
+				/* alert.show(resourceManager.getString('PersonalCenterPrompt','alert_copy'),
+										resourceManager.getString('PersonalCenterPrompt','alert_title')); */
+			}
+			/**
+			 *跳转页面
+			 **/
+			private function submit(type:int=1):void{
+				/**
+				 * 说明：正常的逻辑type的值为1，表示正常充值流程，页面为钱包中心返回链接
+				 * 其他type类型为招行汇款跨行转账跳转银行页面
+				 */
+				var request:URLRequest = new URLRequest(); 
+				if(1==type){
+					request.url =object.BankUrl; 
+				}else if(2==type){
+					request.url ='https://mybank.icbc.com.cn/icbc/perbank/index.jsp';//工行
+				}else if(3==type){
+					request.url ='https://ibsbjstar.ccb.com.cn/app/V5/CN/STY1/login.jsp';//建行
+				}else if(4==type){
+					request.url ='http://www.abchina.com/cn/wydl/grwydl/default.htm';//农行
+				}else if(5==type){
+					request.url ='https://pbank.95559.com.cn/personbank/logon.jsp';//交行
+				}else if(6==type){
+					request.url ='https://auth.alipay.com/login/index.htm';//支付宝转账
+				}else{
+					request.url =object.BankUrl; 
+				}
+				if(object.MethodWay){
+					//request.method=object.MethodWay;
+					request.method= URLRequestMethod.GET;
+				}
+				if(isAlipayType){
+					request.method= URLRequestMethod.GET;
+					//request.method= URLRequestMethod.POST
+				}
+				if(isAlipayType){
+					var param:URLVariables=new URLVariables();
+					param["optEmails"] = object.PayBankAccount;//收款人
+					
+					param["amounts"] =object.PayMoney;//收款金额
+					
+					param["title"] =object.Postscript;//附言
+					
+					param["smsNos"] ='';
+					
+					param["realname"] ='';
+					
+					param["_input_charset"] ='utf8';
+					
+					param["memo"] =CurrentUserInfo.userName;//备注
+					//设置修改中文提交表单显示
+					System.useCodePage=true;
+					request.data=param;
+				}
+				navigateToURL(request,"_bank");
+				timer.start();
+				hg_timer.visible=true;
+				hg_timer2.visible=true;
+				System.useCodePage=false;
+			}
+			/**
+			 *结束定时器 
+			 **/
+			public function closeTimer():void{
+				if(timer){
+					timer.stop();
+				}
+			
+			}
+			/**
+			 * 民生银行汇款提交跳转 
+			 */
+			public function submitCMBC():void
+			{
+				var request:URLRequest = new URLRequest(); 
+				
+				if(2==cmbcBank.selectedValue){//支付宝转账
+					request.url ='https://auth.alipay.com/login/index.htm';//支付宝转账
+				}else if(0==cmbcBank.selectedValue){//民生汇款
+					request.url =object.BankUrl; 
+				}else{//跨行汇款
+					request.url =otherBanks.selectedItem.url;
+				}
+				if(object.MethodWay){
+					//request.method=object.MethodWay;
+					request.method= URLRequestMethod.GET;
+				}
+				navigateToURL(request,"_bank");
+				timer.start();
+				hg_timer.visible=true;
+				hg_timer2.visible=true;
+			}
+			
+			/**
+			 *  跳转到帮助中心显示该支付方式的帮助说明
+			 */
+			protected function rechargeDescription_clickHandler(event:MouseEvent):void
+			{
+				/* var request:URLRequest = new URLRequest(); 
+				request.method= URLRequestMethod.GET
+				request.url =CurrentBusinessInfo.serverUrl_net+"/"+CurrentBusinessInfo.MerchantProjectName+"/help/helpCenter.html"; 
+				var param:URLVariables=new URLVariables();
+				param["rechargeType"] = object.type; 
+				request.data=param;
+				navigateToURL(request,"_bank"); */
+				
+				navigateToURL(new URLRequest(CurrentBusinessInfo.serverUrl_net+"/"+CurrentBusinessInfo.MerchantProjectName+"/help/helpCenter.html?rechargeType="+object.type),"_blank");
+			}
+			
+			/**
+			 *检查 
+			 **/
+			private function checkParameters():Boolean{
+				if(input_userName.text ==""){
+					alert.show("请填写持卡人姓名！","提示信息");
+					return false;
+				}
+				else if(input_time.text ==""){
+					alert.show("请填写转账时间！","提示信息");
+					return false;
+				}else{
+					if(input_time.text.length < 4){
+						alert.show("时间格式不正确!","提示信息");
+						return false;
+					}else{
+						return true;
+					}
+				}
+			}
+			
+			protected function SubmitReview_clickHandler(event:MouseEvent):void
+			{
+				if(checkParameters()){
+					var serverTool:ServerTool = new ServerToolImpl();
+					var obj:Object = new Object();
+					
+					obj.OrderNumber = save_data.OrderNumber;
+					obj.PayRealName = input_userName.text;
+					obj.PayCarNumber = "";
+					obj.TransferAmount = input_jine.text;
+					obj.TransferTime = input_time.text;
+					obj.ReceiveName = input_1.text
+					obj.ReceiveBank = input_2.text
+					obj.ReceiveCardNumber = input_3.text
+					
+					serverTool.AddOrderReminder(obj,AddOrderReminderHandler);
+				}
+				
+				//message:{'OrderNumber':'CZH15U2B5PZXSZEP1M2KBOT','PayRealName':'213','PayCarNumber':'',
+				//'TransferAmount':'14','TransferTime':'2634','ReceiveName':'王敏','ReceiveBank':'支付宝',
+				//'ReceiveCardNumber':'6214839570098772'}
+			}
+			private function AddOrderReminderHandler(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState == 64){
+					if(arr.Result == 1){
+						alert.show("提交审核成功！","提示信息",1);
+						SubmitReview_btn.visible = false;
+					}else{
+						alert.show("提交失败！","提示信息",2);
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<s:HGroup width="100%" >
+		<s:VGroup width="60%"  gap="5" >
+			<s:HGroup width="100%" height="25" >
+				<mx:Label text="收款信息" width="75" textAlign="right" styleName="personalCenterDetailLabelStyle_1" fontWeight="bold"/>
+			</s:HGroup>
+			<!--  收款人  -->
+			<s:HGroup width="100%" verticalAlign="middle">
+				<mx:Label width="80"  text="{resourceManager.getString('PersonalCenterPage','receive_Personal')}：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+				<s:HGroup width="44%">
+					<s:TextInput id="input_1" width="160"  styleName="personalCenterDetailTextInputStyle"  editable="false"/>
+				</s:HGroup>
+				<s:Button width="50" height="20" label="{resourceManager.getString('PersonalCenterPage','copy')}" styleName="popUpPersonalCenterBlueButtonStyle_mid" click="fuzhi(1)" buttonMode="true"/>
+				<mx:Label id="label_succ_1" styleName="personalCenterDetailLabelStyle_3"  right="5" top="230" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+			</s:HGroup>
+			<!--  收款银行  -->
+			<s:HGroup width="100%" verticalAlign="middle">
+				<mx:Label width="80"  text="{resourceManager.getString('PersonalCenterPage','receive_Bank')}：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+				<s:HGroup width="44%">
+					<mx:TextInput id="input_2" width="160"  styleName="personalCenterDetailTextInputStyle"    editable="false" />
+				</s:HGroup>
+				<s:Button width="50" height="20" label="{resourceManager.getString('PersonalCenterPage','copy')}" styleName="popUpPersonalCenterBlueButtonStyle_mid" click="fuzhi(2)" buttonMode="true"/>
+				<mx:Label id="label_succ_2" styleName="personalCenterDetailLabelStyle_3"  right="5" top="230" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+			</s:HGroup>
+			<!--  开户行显示（招行汇款） -->
+			<s:HGroup width="100%" verticalAlign="middle" id="localBank"  visible="false" includeInLayout="false">
+				<mx:Label width="80"  text="开户银行：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+				<s:HGroup width="44%" gap="0">
+					<mx:TextInput id="input_6" width="160"  styleName="personalCenterDetailTextInputStyle"   editable="false"/>
+				</s:HGroup>
+				<s:Button width="50" height="20" label="{resourceManager.getString('PersonalCenterPage','copy')}" styleName="popUpPersonalCenterBlueButtonStyle_mid" click="fuzhi(6)" buttonMode="true"/>
+				<mx:Label id="label_succ_6" styleName="personalCenterDetailLabelStyle_3"  right="5" top="230" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+			</s:HGroup>
+			<!--  收款卡号  -->
+			<s:HGroup width="100%" verticalAlign="middle">
+				<mx:Label width="80"  text="{resourceManager.getString('PersonalCenterPage','receive_Account_Number')}：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+				<s:HGroup width="44%">
+					<mx:TextInput id="input_3" width="160"  styleName="personalCenterDetailTextInputStyle"    editable="false" />
+				</s:HGroup>
+				<s:Button width="50" height="20" label="{resourceManager.getString('PersonalCenterPage','copy')}" styleName="popUpPersonalCenterBlueButtonStyle_mid" click="fuzhi(3)" buttonMode="true"/>
+				<mx:Label id="label_succ_3" styleName="personalCenterDetailLabelStyle_3"  right="5" top="230" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+			</s:HGroup>
+			<!--  充值金额  -->
+			<s:HGroup width="100%" verticalAlign="middle"  visible="false" includeInLayout="false">
+				<mx:Label width="80"  text="{resourceManager.getString('PersonalCenterPage','recharge_Money')}：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+				<s:HGroup width="44%" gap="0">
+					<mx:TextInput id="input_4" width="160"  styleName="personalCenterDetailTextInputStyle"   editable="false"/>
+					<mx:Label text="元" styleName="personalCenterDetailLabelStyle_1"/>
+				</s:HGroup>
+				<s:Button width="50" height="20" label="{resourceManager.getString('PersonalCenterPage','copy')}" styleName="popUpPersonalCenterBlueButtonStyle_mid" click="fuzhi(4)" buttonMode="true"/>
+				<mx:Label id="label_succ_4" styleName="personalCenterDetailLabelStyle_3"  right="5" top="230" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+			</s:HGroup>
+			<!-- 附言 -->
+			<s:HGroup width="100%" verticalAlign="middle" id="postscript" visible="false" includeInLayout="false">
+				<mx:Label width="80"  text="{resourceManager.getString('PersonalCenterPage','fuyan')}：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+				<s:HGroup width="44%">
+					<mx:TextInput id="input_5" width="160"  styleName="personalCenterDetailTextInputStyle"    editable="false"/>
+				</s:HGroup>
+				<s:Button width="50" height="20" label="{resourceManager.getString('PersonalCenterPage','copy')}" styleName="popUpPersonalCenterBlueButtonStyle_mid" click="fuzhi(5)" buttonMode="true"/>
+				<mx:Label id="label_succ_5" styleName="personalCenterDetailLabelStyle_3"  right="5" top="230" text="{resourceManager.getString('PersonalCenterPage','copy_Success')}" alpha="0"/>
+			</s:HGroup>
+		</s:VGroup>
+		
+		<s:VGroup width="40%" height="100%" horizontalAlign="center"  verticalAlign="middle" gap="0">
+			<s:Button label="充值帮助"  fontSize="12" id="rechargeDescription" skinClass="css.skin1.universal.PersonalSubmitButtonSkin" click="rechargeDescription_clickHandler(event)"/>
+			<s:HGroup  visible="true" id="hg_timer">
+				<!--<mx:Label  text="{resourceManager.getString('PersonalCenterPage','recharge_Cut_Down')}："  styleName="timerLabelYellowStyle"/>-->
+				<mx:Label text="{shi}:{fen}:{miao}"  styleName="timerLabelYellowStyle" fontSize="30" />
+			</s:HGroup>
+			<s:VGroup  visible="true" id="hg_timer2" horizontalAlign="center" gap="0" paddingTop="-5">
+				<mx:Label  height="20" text="为保障充值成功" styleName="personalCenterDetailLabelStyle_1"/>
+				<mx:Label  height="20" text="请在2小时内完成充值" styleName="personalCenterDetailLabelStyle_1"/>
+			</s:VGroup>
+		</s:VGroup>
+	</s:HGroup>
+	<!--  立即充值（招行、工行）  -->
+	<s:HGroup width="100%" id="sumbitCMB" verticalAlign="middle" height="35" gap="10" >
+		<s:Spacer width="75"/>
+		<s:Button label="支付宝转账" id="charge_6" click="submit(6)" styleName="personalSubmitButtonStyle"  buttonMode="true"/>
+		<s:Button label="招行汇款" id="charge_1" click="submit(1)" styleName="personalSubmitButtonStyle"  buttonMode="true"/>
+		<s:Button label="工行跨行" id="charge_2" click="submit(2)" styleName="personalSubmitButtonStyle"  buttonMode="true"/>
+		<s:Button label="建行跨行" id="charge_3" click="submit(3)" styleName="personalSubmitButtonStyle"  buttonMode="true"/>
+		<s:Button label="农行跨行" id="charge_4" click="submit(4)" styleName="personalSubmitButtonStyle"  buttonMode="true"/>
+		<s:Button label="交行跨行" id="charge_5" click="submit(5)" styleName="personalSubmitButtonStyle"  buttonMode="true"/>
+	</s:HGroup>
+	<!--  立即充值（其他银行）  -->
+	<s:HGroup width="100%" verticalAlign="middle" height="35" gap="0" id="sumbitAll">
+		<s:Spacer width="84"/>
+		<s:Button click="submit(1)" label="{resourceManager.getString('PersonalCenterPage','right_Now_Pay')}" styleName="personalSubmitButtonStyle"  buttonMode="true"/>
+	</s:HGroup>
+	<!--  立即充值（民生银行）  -->
+	<s:HGroup width="100%" id="sumbitCMBC" verticalAlign="middle" height="25" gap="7" horizontalAlign="left" paddingLeft="-16">
+		<mx:Label text="选择充值银行："  styleName="personalCenterDetailLabelStyle_1" />
+		<s:RadioButton id="bank_3" groupName="cmbcBank" selected="true"  label="支付宝转账" value="2"  styleName="personalCenterRadioButtonStyle"  buttonMode="true"/>
+		<s:RadioButton id="bank_1" groupName="cmbcBank" label="中国民生银行" value="0"  styleName="personalCenterRadioButtonStyle"  buttonMode="true"/>
+		<s:HGroup gap="5">
+			<s:RadioButton id="bank_2" groupName="cmbcBank" label="选择其他银行" value="1" styleName="personalCenterRadioButtonStyle"  buttonMode="true"/>
+			<mx:ComboBox id="otherBanks" editable="false"  visible="{cmbcBank.selectedValue==1?true:false}" width="160"  selectedIndex="0" styleName="personalCenterDetailComboBoxStyle"  dataProvider="{CMBCbankUrls}"  labelField="label"/>
+		</s:HGroup>
+	</s:HGroup>
+	<s:HGroup width="100%" id="sumbitCMBC_s" verticalAlign="middle" height="35" gap="0">
+		<s:Spacer y="6" width="84" height="14"/>
+		<s:Button label="{cmbcBank.selectedValue==2?'确认并登录支付宝支付':'确认并登录网银支付'}" click="submitCMBC()" styleName="MinshengButtonStyle"  buttonMode="true"/>
+	</s:HGroup>
+	<!--  充值提示信息   -->
+	<s:VGroup width="100%" id="help_cmb" gap="0" paddingTop="5" paddingLeft="10"  visible="false" includeInLayout="false">
+		<s:HGroup width="100%" gap="0" height="22">
+			<mx:Label text="充值说明："  styleName="personalCenterDetailLabelStyle_1" />
+		</s:HGroup>
+		<s:HGroup width="100%" gap="0" height="22">
+			<mx:Label text="1、收款人和收款卡号会不定期更换，请务必根据平台提供的最新【收款人】【收款卡号】【充值金额】【充值说明】汇款，否则无法到账。" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="100%" gap="0" height="22">
+			<mx:Label text="2、平台填写充值金额必须和银行转账金额一致（不包含手续费），否则充值无法自动到账。" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="100%" gap="0" height="22" id="help_cmbc_1" visible="false" includeInLayout="false">
+			<mx:Label text="3、民生银行支持同行转账和跨行转账，您可以根据实际需要选择充值银行。" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+		<s:HGroup width="100%" gap="0" height="22" id="help_cmb_1" visible="false"  includeInLayout="false">
+			<mx:Label text="3、招行支持同行转账和跨行转账，包括" styleName="personalCenterDetailLabelStyle_1"/>
+			<mx:Label text="招行同行转招行、工行跨行转招行、建行跨行转招行、农行跨行转招行、交行跨行转招行。" styleName="personalCenterDetailLabelStyle_3"/>
+		</s:HGroup>
+		<s:HGroup width="100%" gap="0" height="22" id="help_cmb_2" visible="false"  includeInLayout="false">
+			<mx:Label text="3" visible="false"/>
+			<mx:Label text="您可以根据实际需要点击上方按钮进入对应银行的网银。" styleName="personalCenterDetailLabelStyle_1"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+	<!--  帮助说明跳转和充值提示  -->
+	<s:VGroup width="100%" height="185" gap="3">
+		<s:Spacer height="10" />
+		<s:HGroup width="100%" height="30" gap="8">
+			<mx:Label text="打款信息" width="75" textAlign="right" styleName="personalCenterDetailLabelStyle_1" fontWeight="bold"/>
+			<mx:Label text="完成转账后，请填写下面的打款信息并提交" styleName="personalCenterDetailLabelStyle_3"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="30"  verticalAlign="middle">
+			<mx:Label width="80" text="真实姓名：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+			<s:TextInput id="input_userName" width="160"  styleName="personalCenterDetailTextInputStyle"/>
+			<mx:Label styleName="personalCenterDetailLabelStyle_3" text="* 请填写持卡人姓名"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="30"  verticalAlign="middle">
+			<mx:Label width="80" text="转账金额：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+			<mx:Label id="input_jine" width="160"  styleName="personalCenterDetailTextInputStyle"/>
+			<mx:Label styleName="personalCenterDetailLabelStyle_3" text="* 与转账金额需一致，否则影响上分"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="30"  verticalAlign="middle">
+			<mx:Label width="80" text="转账时间：" styleName="personalCenterDetailLabelStyle_1" textAlign="right"/>
+			<s:TextInput id="input_time" width="160"  styleName="personalCenterDetailTextInputStyle" restrict="0-9" maxChars="4"/>
+			<mx:Label styleName="personalCenterDetailLabelStyle_3" text="* 例如：20点12分请填写2012"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="35" verticalAlign="middle" gap="0">
+			<s:Spacer width="84" height="17"/>
+			<s:Button label="提交审核" styleName="MinshengButtonStyle"  buttonMode="true" id="SubmitReview_btn" click="SubmitReview_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+	<s:HGroup width="100%" height="40" verticalAlign="middle" gap="0">
+		<mx:Label text="温馨提醒：" styleName="personalCenterDetailLabelStyle_1" width="80" textAlign="right"/>
+		<mx:Label text="每次充值时需从充值页面重新获取" styleName="personalCenterDetailLabelStyle_3"/>
+		<mx:Label text="，因客户充值错误所导致的损失由客户自己承担，与平台无关！" styleName="personalCenterDetailLabelStyle_1"/>
+	</s:HGroup>
+		
+</s:VGroup>

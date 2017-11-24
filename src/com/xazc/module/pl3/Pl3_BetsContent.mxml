@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx" 
+					width="100%" creationComplete="group1_creationCompleteHandler(event)"
+					implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+					xmlns:bettings="com.xazc.components.bettings.*" xmlns:pl3="com.xazc.module.pl3.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			//切换变量
+			[Bindable]
+			private var changeType:int = 1;
+			//投注注数
+			[Bindable]
+			private var betCount:Number = 0;
+			//投注总额
+			[Bindable]
+			private var betMoney:Number = 0;
+			//投注内容
+			private var betContent:String = "";
+			//玩法ID
+			private var game_ID:String = "1701";
+			//是否为胆拖
+			private var sntuo:int = 0;
+			//获取一行号码的数组
+			private var getNumbersArray:Array=new Array();
+			//获取第一行号码的数组
+			private var fristNumbersArray:Array=new Array();
+			//获取第二行号码的数组
+			private var secondNumbersArray:Array=new Array();
+			//获取第三行号码的数组
+			private var thirdNumbersArray:Array=new Array();
+			/**
+			 * 初始化 
+			 */
+			public function init():void
+			{
+				betCount = 0;
+				betMoney = 0;
+				betContent = "";
+				getNumbersArray = new Array();
+				fristNumbersArray = new Array();
+				secondNumbersArray = new Array();
+				thirdNumbersArray = new Array();
+			}
+			/**
+			 * 清除号码
+			 */
+			public function clean():void
+			{
+				init();
+				if(game_ID == "1701" || game_ID == "1702" || (game_ID == "1701" && sntuo == 3)){zhiXuan_Content.clean();}
+				if(game_ID == "1703" || game_ID == "1704"){zu3_Content.clean();}
+				if(game_ID == "1705" || game_ID == "1706" || (game_ID == "1705" && sntuo == 3)){zu6_Content.clean();}
+				if(game_ID == "1707"){yiXing_Content.init();}
+				if(game_ID == "1709" || game_ID == "1711" || (game_ID == "1709" && sntuo == 3) || (game_ID == "1711" && sntuo == 3)){erXing_Content.clean();}
+				if(game_ID == "1708" || game_ID == "1715"){buDingWei_Content.clean();}
+			}
+			/**
+			 * 组件初始化完毕 
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				createToggleBtn();
+				addEventListener(CustomEvent.COUNT_ZERO,getNumbersHandler);
+				addEventListener(CustomEvent.GET_NUMBERS,getNumbersHandler);
+				addEventListener(CustomEvent.BAIWEI_NUMBERS,getNumbersHandler);
+				addEventListener(CustomEvent.SHIWEI_NUMBERS,getNumbersHandler);
+				addEventListener(CustomEvent.GEWEI_NUMBERS,getNumbersHandler);
+				addEventListener(CustomEvent.STICK_NUMBERS,getNumbersHandler);
+			}
+			/**
+			 * 监听选号
+			 */
+			public function getNumbersHandler(event:CustomEvent):void
+			{
+				switch(event.type)
+				{
+					case CustomEvent.COUNT_ZERO:
+						init();
+						game_ID = event.body.toString();
+						if(game_ID == "1701" || game_ID == "1702"){sntuo = zhiXuan_Content.sntuo;}
+						if(game_ID == "1703" || game_ID == "1704"){sntuo = zu3_Content.sntuo;}
+						if(game_ID == "1705" || game_ID == "1706"){sntuo = zu6_Content.sntuo;}
+						if(game_ID == "1709" || game_ID == "1711"){sntuo = erXing_Content.sntuo;}
+						break;
+					case CustomEvent.GET_NUMBERS:
+						getNumbersArray = event.body as Array;
+						break;
+					case CustomEvent.BAIWEI_NUMBERS:
+						fristNumbersArray = event.body as Array;
+						break;
+					case CustomEvent.SHIWEI_NUMBERS:
+						secondNumbersArray = event.body as Array;
+						break;
+					case CustomEvent.GEWEI_NUMBERS:
+						thirdNumbersArray = event.body as Array;
+						break;
+					case CustomEvent.STICK_NUMBERS:
+						getNumbersArray = event.body as Array;
+						break;
+					default:
+						break;
+				}
+				betCount = 0;
+				//注数计算
+				calcTotalNums();
+			}
+			/**
+			 * 计算注数 
+			 */
+			public function calcTotalNums():void
+			{
+				if(game_ID == "1701" && sntuo == 0){
+					betCount = fristNumbersArray.length*secondNumbersArray.length*thirdNumbersArray.length;
+					betContent = fristNumbersArray + "|" + secondNumbersArray + "|" + thirdNumbersArray;
+				}else if(game_ID == "1702"){
+					for(var num:int=0; num<getNumbersArray.length; num++){
+						for(var i:int=0; i<10; i++){
+							for(var j:int=0; j<10; j++){
+								for(var k:int=0; k<10; k++){
+									if(i+j+k == getNumbersArray[num]){
+										betCount++;
+									}
+								}
+							}
+						}
+					}
+				}else if((game_ID == "1701"|| game_ID == "1709" || game_ID == "1711") && sntuo == 3){
+					betCount = getNumbersArray.length;
+					var str:String= "";
+					for(var i3:int=0; i3<getNumbersArray.length; i3++){
+						str += getNumbersArray[i3].toString().split("").join("|")+" ";					
+					} 
+					betContent = str.substring(0,str.length - 1);
+				}else if(game_ID == "1705" && sntuo == 3){
+					betCount = getNumbersArray.length;
+					var str1:String= "";
+					for(var i4:int=0; i4<getNumbersArray.length; i4++){
+						str1 += getNumbersArray[i4].toString().split("").join(",")+" ";					
+					} 
+					betContent = str1.substring(0,str1.length - 1);
+				}else if(game_ID == "1703" && sntuo == 0){
+					betCount = getNumbersArray.length*(getNumbersArray.length-1);
+				}else if(game_ID == "1704"){
+					if(getNumbersArray.length > 0){
+						var sumvalue_s:int = 0;
+						var	g1: int = 0;
+						for (var k1:int = 0; k1 < getNumbersArray.length; k1++) {
+							for (var n1: int = 0; n1 < 10; n1++) {
+								for (var n2: int = 0; n2 < 10; n2++) {
+									for (var n3: int = 0; n3 < 10; n3++) {
+										if (!(n1 == n2 && n2 == n3)) {
+											if (n1 == n2 || n2 == n3 || n3 == n1) {
+												if ((n1 + n2 + n3) == getNumbersArray[k1]) {
+													g1 = g1 + 1;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						sumvalue_s += g1/3;
+					}
+					betCount =sumvalue_s;
+				}else if(game_ID == "1705" && sntuo == 0){
+					betCount = getNumbersArray.length*(getNumbersArray.length-1)*(getNumbersArray.length-2)/6;
+				}else if(game_ID == "1706"){
+					if(getNumbersArray.length >= 0){
+						var zhus:int = 0;
+						for(var i1:int=0; i1<getNumbersArray.length; i1++){
+							for(var m1:int=0; m1<10; m1++) {
+								for(var m2:int=0; m2<10; m2++) {
+									if(m1!=m2) {
+										for(var m3:int=0; m3<10; m3++) {
+											if(m1!=m3 && m2!=m3) {
+												if((m1+m2+m3) == getNumbersArray[i1]) {
+													zhus=zhus+1;
+												}
+											}
+										}	
+									}
+								}
+							}
+						}
+						zhus=zhus/6;
+					}
+					betCount = zhus;
+				}else if(game_ID == "1707"){
+					betCount = fristNumbersArray.length + secondNumbersArray.length + thirdNumbersArray.length;
+				}else if((game_ID == "1709" || game_ID == "1711") && sntuo == 0){
+					betCount = fristNumbersArray.length*secondNumbersArray.length;
+					betContent = fristNumbersArray + "|" + secondNumbersArray;
+				}else if(game_ID == "1708"){
+					betCount = getNumbersArray.length;
+				}else if(game_ID == "1715"){
+					betCount = getNumbersArray.length*(getNumbersArray.length-1)/2;
+				}
+				betMoney = betCount*CurrentLotteryInfo.beishu*CurrentLotteryInfo.perPrice/CurrentLotteryInfo.yuanjiaoMoshi;
+			}
+			/**
+			 * 创建切换按钮 
+			 */
+			public var btnArray:Array = new Array();
+			public function createToggleBtn():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=1; i<7; i++){
+					toggleBtn = new ToggleButton();
+					if(i == 6){
+						toggleBtn.styleName = "lastMenuSelectSkinStyle";
+					}
+					else{
+						toggleBtn.styleName = "menuSelectSkinStyle";
+					}
+					//toggleBtn.label = resourceManager.getString('lottery','New3D_220') + i;
+					if(i == 1){
+						toggleBtn.label = resourceManager.getString('LotteryTips','straight_Selected_2');
+						toggleBtn.selected = true;
+					}
+					if(i == 2){toggleBtn.label = resourceManager.getString('LotteryTips','group_3_Selected');}
+					if(i == 3){toggleBtn.label = resourceManager.getString('LotteryTips','group_6_Selected');}
+					if(i == 4){toggleBtn.label = resourceManager.getString('LotteryTips','lottery_12_1Starts');}
+					if(i == 5){toggleBtn.label = resourceManager.getString('LotteryTips','lottery_12_2Starts');}
+					if(i == 6){toggleBtn.label = resourceManager.getString('LotteryTips','unlocation_Selected');}
+					toggleBtn.id = "pl3Play_" + i;
+					btnArray.push(toggleBtn);
+					toggleBtn.addEventListener(MouseEvent.CLICK,changeBetsTypeHandler);
+					toggleBtn_HGroup.addElement(toggleBtn);
+				}
+			}
+			/**
+			 * 切换玩法
+			 */
+			public function changeBetsTypeHandler(event:MouseEvent):void
+			{	
+				sntuo = 0;
+				var toggleBtn:ToggleButton = event.currentTarget as ToggleButton;
+				for(var j:int=0; j<btnArray.length; j++){
+					var togBtn:ToggleButton = btnArray[j] as ToggleButton;
+					if(togBtn == toggleBtn){
+						togBtn.selected = true;
+					}else{
+						togBtn.selected = false;
+					}
+				}
+				clean();
+				switch(toggleBtn.id)
+				{
+					case "pl3Play_1":
+						game_ID = "1701";
+						changeType = 1;
+						zhiXuan_Content.init();
+						break;
+					case "pl3Play_2":
+						game_ID = "1703";
+						changeType = 2;
+						zu3_Content.init();
+						break;
+					case "pl3Play_3":
+						game_ID = "1705";
+						changeType = 3;
+						zu6_Content.init();
+						break;
+					case "pl3Play_4":
+						game_ID = "1707";
+						changeType = 4;
+						yiXing_Content.init();
+						break;
+					case "pl3Play_5":
+						game_ID = "1709";
+						changeType = 5;
+						erXing_Content.init();
+						break;
+					case "pl3Play_6":
+						game_ID = "1708";
+						changeType = 6;
+						buDingWei_Content.init();
+						break;
+					default:
+						break;
+				}
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_ID));
+			}
+			/**
+			 * 删除数组中的“*”
+			 */
+			public function deleteSymbol(array:Array):Array
+			{
+				var str:String = "*";
+				for(var i:int=0; i<array.length; i++){
+					if(array[i] == str){
+						array.splice(array.indexOf(str),1);
+					}
+				}
+				return array;
+			}
+			/**
+			 * 确认投注 
+			 */
+			public function confirm_clickHandler():void
+			{
+				if(betCount <= 0){
+					var alert:AlertMsg = new AlertMsg();
+					alert.show("请选择正确内容进行投注！", "温馨提示");
+					return;
+				}
+				if(game_ID == "1702" || (game_ID == "1703" && sntuo == 0) || game_ID == "1704" || (game_ID == "1705" && sntuo == 0) || game_ID == "1706" || game_ID == "1708" || game_ID == "1715"){
+					betContent = getNumbersArray.toString();
+				}else if(game_ID == "1707"){
+					if(fristNumbersArray.length == 0){fristNumbersArray.push("*");}
+					else if(fristNumbersArray.length > 1){fristNumbersArray = deleteSymbol(fristNumbersArray);}
+					if(secondNumbersArray.length == 0){secondNumbersArray.push("*");}
+					else if(secondNumbersArray.length > 1){secondNumbersArray = deleteSymbol(secondNumbersArray);}
+					if(thirdNumbersArray.length == 0){thirdNumbersArray.push("*");}
+					else if(thirdNumbersArray.length > 1){thirdNumbersArray = deleteSymbol(thirdNumbersArray);}
+					betContent = fristNumbersArray + "|" + secondNumbersArray + "|" + thirdNumbersArray;
+				}
+				
+				
+				if(betMoney<0.02){
+					var alert3:AlertMsg = new AlertMsg();
+					alert3.show("厘模式每单最少投注0.02元！", "温馨提示");
+					return;
+					
+				}
+				
+				
+				var cathectic:Cathectic = new Cathectic();
+				var betArrayCollection:ArrayCollection = new ArrayCollection();
+				cathectic.lottery_type = "17";
+				cathectic.game_id = game_ID;
+				cathectic.sntuo = sntuo;
+				cathectic.tzzs = betCount;
+				cathectic.tzcontent = betContent;
+				betArrayCollection.addItem(cathectic);
+				bettings_Module.sendAllTheTouzhu(betArrayCollection);
+				clean();
+			}
+			/**
+			 * 切换圆角分模式
+			 */
+			public function switchMoneyModel():void
+			{
+				calcTotalNums();
+			}
+			/**
+			 * 资源回收 
+			 */
+			public function recycle():void
+			{
+				removeEventListener(CustomEvent.COUNT_ZERO,getNumbersHandler);
+				removeEventListener(CustomEvent.GET_NUMBERS,getNumbersHandler);
+				removeEventListener(CustomEvent.BAIWEI_NUMBERS,getNumbersHandler);
+				removeEventListener(CustomEvent.SHIWEI_NUMBERS,getNumbersHandler);
+				removeEventListener(CustomEvent.GEWEI_NUMBERS,getNumbersHandler);
+				removeEventListener(CustomEvent.STICK_NUMBERS,getNumbersHandler);
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup width="100%" gap="0">
+		<s:SkinnableContainer id="toggleBtn_HGroup" width="100%" height="44" skinClass="css.skin1.universal.PlayGameSkinnableContainerskin">
+			<s:layout>
+				<s:HorizontalLayout horizontalAlign="left" verticalAlign="middle" gap="0" paddingLeft="16"/>
+			</s:layout>
+		</s:SkinnableContainer> 
+		<pl3:Pl3_ZhiXuan_NumberSetting id="zhiXuan_Content" width="100%"
+									   visible="{changeType == 1 ? true : false}" includeInLayout="{changeType == 1 ? true : false}"/>
+		<pl3:Pl3_Zu3_NumberSetting id="zu3_Content" width="100%"
+								   visible="{changeType == 2 ? true : false}" includeInLayout="{changeType == 2 ? true : false}"/>
+		<pl3:Pl3_Zu6_NumberSetting id="zu6_Content" width="100%"
+								   visible="{changeType == 3 ? true : false}" includeInLayout="{changeType == 3 ? true : false}"/>
+		<pl3:Pl3_Yixing_NumberSetting id="yiXing_Content" width="100%"
+									  visible="{changeType == 4 ? true : false}" includeInLayout="{changeType == 4 ? true : false}"/>
+		<pl3:Pl3_ErXing_NumberSetting id="erXing_Content" width="100%"
+									  visible="{changeType == 5 ? true : false}" includeInLayout="{changeType == 5 ? true : false}"/>
+		<pl3:Pl3_BuDingWei_NumberSetting id="buDingWei_Content" width="100%"
+										 visible="{changeType == 6 ? true : false}" includeInLayout="{changeType == 6 ? true : false}"/>
+	</s:VGroup>
+	
+	<s:HGroup id="hg_content" gap="0" width="100%" horizontalAlign="left" paddingLeft="14" bottom="143">
+		<s:HGroup height="48" verticalAlign="middle">
+			<s:Label text="{resourceManager.getString('LotteryTips','you_Selected')}" styleName="labelStyles2"/>
+			<s:Label id="zhu" text="{betCount}" styleName="labelStyles4" minWidth="40" maxWidth="50" textAlign="center"/>
+			<s:Label text="注，" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup height="48" verticalAlign="middle">
+			<s:Label text="共计" styleName="labelStyles2"/>
+			<s:Label id="money" text="{betMoney}" styleName="labelStyles4" minWidth="40" maxWidth="75" textAlign="center"/>
+			<s:Label text="{CurrentUserInfo.moneyType}" styleName="labelStyles2"/>	
+		</s:HGroup>
+	</s:HGroup>
+	<bettings:BettingBottom  id="bettings_Module" bottom="0">
+	</bettings:BettingBottom>
+</s:Group>

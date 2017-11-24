@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.Button")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[         
+			import spark.components.Group;
+			/* Define the skin elements that should not be colorized. 
+			For button, the graphics are colorized but the label is not. */
+			static private const exclusions:Array = ["labelDisplay"];
+			
+			/** 
+			 * @private
+			 */     
+			
+			/**
+			 * @private
+			 */
+			override protected function initializationComplete():void
+			{
+				super.initializationComplete();
+			}  
+			
+			/**
+			 *  @private
+			 */
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number) : void
+			{
+				var cr:Number = getStyle("cornerRadius");
+				
+				if (cornerRadius != cr)
+				{
+					cornerRadius = cr;
+					//   shadow.radiusX = cornerRadius;
+					//   fill.radiusX = cornerRadius;
+					//   lowlight.radiusX = cornerRadius;
+					//   highlight.radiusX = cornerRadius;
+					//   border.radiusX = cornerRadius;
+				}
+				
+				// if (highlightStroke) highlightStroke.radiusX = cornerRadius;
+				//  if (hldownstroke1) hldownstroke1.radiusX = cornerRadius;
+				//  if (hldownstroke2) hldownstroke2.radiusX = cornerRadius;
+				
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				this.hostComponent.buttonMode = true;
+			}
+			
+			private var cornerRadius:Number = 2;
+			
+		]]>        
+	</fx:Script>
+	<!-- states -->
+	<s:states>
+		<s:State name="disabled" />
+		<s:State name="down" />
+		<s:State name="over" />
+		<s:State name="up" />
+	</s:states>
+	<!-- layer 1: shadow -->
+	<!--- @private -->
+	<s:Rect id="shadow" left="-1" right="-1" top="-1" bottom="-1" radiusX="2">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0x000000" 
+								 color.down="0xFFFFFF"
+								 alpha="0.01"
+								 alpha.down="0" />
+				<s:GradientEntry color="0x000000" 
+								 color.down="0xFFFFFF" 
+								 alpha="0.07"
+								 alpha.down="0.5" />
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:BitmapImage smooth="true" source="{getStyle('getImage')}" horizontalCenter="0" verticalCenter="0"/>
+	<!-- SkinParts
+	name=iconDisplay, type=spark.primitives.BitmapImage, required=false
+	name=labelDisplay, type=spark.core.IDisplayText, required=false
+	-->
+</s:Skin>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true" height="30">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			import com.xazc.single.lotteryNameHelp;
+			
+			import mx.controls.Alert;
+			
+			
+			/**
+			 * 移除单签 
+			 */
+			public static const DELETE_CACHECTIC:String = "deleteCachectic";
+			
+			private var deleteFlag:Boolean=false;
+			
+			private var obj:Object=new Object();
+			
+			override public function set data(value:Object):void{
+				super.data=value;
+				if(!deleteFlag){
+					setCathectic(value as Cathectic);	
+				}
+			}
+			
+			private function setCathectic(value:Cathectic):void
+			{
+				obj=value;
+				obj=value;
+				lotteryTypeDisplay.text = lotteryNameHelp.getWanfa(CurrentLotteryInfo.lotteryId,value.game_id,value.sntuo);
+				lotteryNumbersDisplay.text = Util.getInstance().strFormatConversionForShow(value);
+				lotteryZhushuDisplay.text = value.tzzs.toString()+'注'
+				lotterybeishuDisplay.text = value.tzbshu.toString()+'倍';
+				betBackNum.text = "返点["+value.awreturn.toString()+"]";
+				if(value.tzbmoshi == 1000)
+					betModle.text = resourceManager.getString('LotteryTips','li_Model')+"模式";
+				else if(value.tzbmoshi == 100)
+					betModle.text = resourceManager.getString('LotteryTips','fen_Model')+"模式";
+				else if(value.tzbmoshi == 10)
+					betModle.text = resourceManager.getString('LotteryTips','jiao_Model')+"模式";
+				else if(value.tzbmoshi == 1)
+					betModle.text = resourceManager.getString('LotteryTips','yuan_Model')+"模式";
+				lotteryMoneyDisplay.text =value.tzbshu*value.tzzs*CurrentLotteryInfo.perPrice/value.tzbmoshi+" "+CurrentUserInfo.moneyType;
+			}
+			
+			
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				deleteFlag=true;
+				this.owner.dispatchEvent(new CustomEvent(DELETE_CACHECTIC, data));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%" height="100%" gap="0" verticalAlign="middle">
+		<mx:Label id="lotteryTypeDisplay" width="110" text="" textAlign="left"  styleName="mmcLabelStyles7"/>
+		<mx:Label id="lotteryNumbersDisplay" width="200" text="" textAlign="center" styleName="mmcLabelStyles7"/>
+		<mx:Label id="betBackNum" width="100" text="" textAlign="center" styleName="mmcLabelStyles7"/>
+		<mx:Label id="betModle" width="100" text="" textAlign="center" styleName="mmcLabelStyles7"/>
+		<mx:Label id="lotteryZhushuDisplay" width="100" text="" textAlign="center" styleName="mmcLabelStyles7"/>
+		<mx:Label id="lotterybeishuDisplay" width="100" text="" textAlign="center" styleName="mmcLabelStyles7"/>
+		<mx:Label id="lotteryMoneyDisplay" width="100" text="" textAlign="center" styleName="mmcLabelStyles7"/>
+		<s:HGroup width="60" height="100%" verticalAlign="middle">
+			<s:Button label="" width="44" height="17" click="linkbutton1_clickHandler(event)"  styleName="mmcDeleteButtonStyle"  color="#000000" buttonMode="true"/>
+		</s:HGroup>
+	</s:HGroup>
+</s:ItemRenderer>

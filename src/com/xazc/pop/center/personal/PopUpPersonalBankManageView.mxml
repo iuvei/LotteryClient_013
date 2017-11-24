@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="450" 
+		 xmlns:common="com.xazc.pop.center.common.*" 
+		 xmlns:personal="com.xazc.pop.center.personal.*"
+		 creationComplete="init(event)"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CommonMethodClass;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.PersonCenterInfo;
+			import com.xazc.single.Util;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			/**服务对象*/
+			private var service:ServerToolImpl;//
+			
+			private var alert:AlertMsgCenter = new AlertMsgCenter();
+			
+			private var actid:String="";//活动ID
+			private var selectShowBtnTotals:int=1;
+			
+			
+			
+			protected function init(event:FlexEvent):void
+			{
+				getuserInfo();
+			}
+			private function getuserInfo():void
+			{
+				//查询用户信息
+				var server:ServerToolImpl = new ServerToolImpl();
+				server.getUserDetailNew({}, resultHandler, faultHandler);
+			}
+			
+			/**
+			 *查询用户信息 
+			 **/
+			private function resultHandler(e:ResultEvent):void
+			{
+				var obj:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(obj.SystemState==64)
+				{
+					//保存个人信息；
+					CommonMethodClass.commom_login(obj);
+					//获取银行卡列表
+					update_BankDataList();
+//					//送礼活动
+//					showButton();
+				}
+			}
+			private function faultHandler(e:FaultEvent):void
+			{
+				trace(e.fault);
+			}
+			
+			//获取银行卡列表 
+			private function update_BankDataList():void
+			{
+				service=new ServerToolImpl();
+				service.getBankCardList({"UserID":CurrentUserInfo.myUserID},getBankCardListHandler);
+			}
+			//获取银行卡列表  回调 
+			private function getBankCardListHandler(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				Construct_view(arr.BankCardList);
+			}
+			//构建银行卡列表数据
+			private function Construct_view(obj_arr:Array):void
+			{
+				//判断是否存在银行卡，如果有此显示，否则只有添加银行卡按钮；
+				if(obj_arr.length > 0)
+				{
+					list_group.includeInLayout = true;
+					list_group.visible = true;
+					
+					//构建列表
+					item_group.removeAllElements();
+					for(var i:int=0;i<obj_arr.length;i++)
+					{
+						/*
+						ID     主键
+						BankCode  开户银行
+						CardNumber  银行卡号
+						CreateTime    开户时间
+						Isdefault         是否是默认银行卡(0false,1true)
+						Username      用户名称
+						Province        省
+						City                市
+						BranchName  支行名称
+						*/
+						var item:PopUpPersonalBankinfo_item = new PopUpPersonalBankinfo_item();
+						item.bank_ico = obj_arr[i].BankCode;
+						item.account_name = obj_arr[i].Username;
+						item.card_number = obj_arr[i].CardNumber;
+						item.address = obj_arr[i].BranchName;
+						item.bind_time = obj_arr[i].CreateTime;
+						item.default_use = obj_arr[i].Isdefault;
+						item.card_id = obj_arr[i].ID;
+						item_group.addElement(item);
+						addEventListener("MoveEndEvent",MoveEndEventHandler);
+					}
+				}else{
+					add_card.includeInLayout = true;
+					add_card.visible = true;
+					return;
+				}
+				
+				if(obj_arr.length < 5)//最多添加一张银行卡
+				{
+					add_card.includeInLayout = true;
+					add_card.visible = true;
+				}else{
+					add_card.includeInLayout = false;
+					add_card.visible = false;
+				}
+				//判断资金密码是否存在；
+				//send();
+				
+				//送礼活动
+				showButton();
+			}
+			
+			var obj_DefaultBankCard:Object = new Object();
+			private function MoveEndEventHandler(e:Event):void
+			{
+				obj_DefaultBankCard.BankCardId = (e.target as PopUpPersonalBankinfo_item).card_id;
+				obj_DefaultBankCard.CardNumber = (e.target as PopUpPersonalBankinfo_item).card_number;
+				
+//				var alert_1:AlertMsgCenter = new AlertMsgCenter();
+//				alert_1.show("您确定设置"+obj_DefaultBankCard.CardNumber+"为默认卡？",resourceManager.getString('PersonalCenterPrompt','alert_title'),0);
+//				alert_1.okBtnBoolean = true;
+//				alert_1._cancleBtnShow = true;
+//				alert_1.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,comfirmSetHandler);
+				
+				//设置默认银行卡
+				service=new ServerToolImpl();
+				service.setDefaultBankCard(obj_DefaultBankCard,setDefaultBankCardHandler);
+			}
+			private function comfirmSetHandler(e:SystemEvent):void
+			{
+				//设置默认银行卡
+				service=new ServerToolImpl();
+				service.setDefaultBankCard(obj_DefaultBankCard,setDefaultBankCardHandler);
+			}
+			//设置默认银行卡  回调 
+			private function setDefaultBankCardHandler(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				if(arr.SystemState == 64)
+				{
+					if(arr.Result == "True")
+					{
+						alert.show("设置成功！","提示信息",1);
+					}else{
+						alert.show("设置失败！","提示信息",2);
+					}
+					//获取银行卡列表
+					update_BankDataList();
+				}else{
+					alert.show("设置失败！","提示信息",2);
+				}
+			}
+			
+			protected function add_card_clickHandler(event:MouseEvent):void
+			{
+				var addBankCard:PopUpPersonal_AddBankCard = new PopUpPersonal_AddBankCard();
+				addBankCard.x=(FlexGlobals.topLevelApplication.width-addBankCard.width)/2;
+				addBankCard.y=(FlexGlobals.topLevelApplication.height-addBankCard.height)/2;
+				addBankCard.addEventListener("closeEvent",closeHandler);
+				PopUpManager.addPopUp(addBankCard,this,true);
+			}
+			private function closeHandler(e:DynamicEvent):void
+			{
+				getuserInfo();
+			}
+			
+			/**
+			 *查询是否显示首次登录送礼活动按钮
+			 **/
+			private function showButton():void{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.isShowRegistBtn({},isShowRegistBtnHandler);
+			}
+			private function isShowRegistBtnHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var obj:Object=JSON.parse(e.result.toString());
+				if(obj.hasOwnProperty("SystemState")){
+					if(obj.SystemState==-1){
+						//跳转登录页面
+						Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+						return;
+					}else if(obj.SystemState==-2){
+						var yd:AlertMsgCenter=new AlertMsgCenter();
+						yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),	
+							resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+						yd.okBtnBoolean=true;
+						yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+					}
+				}
+				actid=obj.ActivityNum;
+				if(obj.ShowBtn){
+					btn_lj.includeInLayout = true;
+					btn_lj.visible=true;	
+				}else{
+					btn_lj.includeInLayout = false;
+					btn_lj.visible=false;
+					send();
+				}
+			}
+			
+			/**
+			 *领取奖金 
+			 **/
+			private function distributeActivityAward():void{
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				service.distributeActivityAward({"Actid":actid},distributeActivityAwardHandler);
+			}
+			private function distributeActivityAwardHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var obj:Object=JSON.parse(e.result.toString());
+				if(obj.SystemState==64){
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bank_info_state4')+obj.PayMoney+CurrentUserInfo.moneyType,resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+					alert.okBtnBoolean=true;
+					//					showButton();
+					btn_lj.visible=false;
+					Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+					alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,btnClickHandler);
+					
+				}else if(obj.SystemState==-1){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(obj.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),	
+						resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bank_info_state5'),resourceManager.getString('PersonalCenterPrompt','alert_title'));
+				}
+			}
+			private function btnClickHandler(e:SystemEvent):void{
+				send();	
+			}
+			protected function btn_lj_clickHandler(event:MouseEvent):void
+			{
+				distributeActivityAward();
+			}
+			
+			protected function send():void
+			{
+//				if(!PersonCenterInfo.IsSecurityState){
+//					dispatchEvent(new Event("requestSecurityEvent",true));
+//				}
+				//是否跳转资金密码页面；
+				if(!PersonCenterInfo.IsPayPsw){
+					dispatchEvent(new Event("requestBankPswEvent",true));
+				}
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup left="50" top="15" gap="20">
+		<s:Group  width="100%" >
+			<s:Rect width="850" height="90">
+				<s:fill>
+					<s:SolidColor color="0xf8efd4" />
+				</s:fill> 
+				<s:stroke> 
+					<s:SolidColorStroke color="0xdcc696" weight="1"/> 
+				</s:stroke> 
+			</s:Rect>
+			<s:VGroup x="35" y="0" width="700" height="90" gap="0">
+				<mx:Label styleName="personalCenterDetailTextInputStyle" text="注意事项："/>
+				<mx:Label styleName="personalCenterDetailTextInputStyle" text="1.每个账户最多只能绑定5张银行卡；"/>
+				<mx:Label styleName="personalCenterDetailTextInputStyle" text="2.一个账户绑定的多张银行卡的持卡人姓名必须一致；"/>
+				<mx:Label styleName="personalCenterDetailTextInputStyle" text="3.银行卡只支持添加，不支持变更和解绑，如需变更或者解绑，需联系客服处理。"/>
+			</s:VGroup>
+		</s:Group>
+		
+		<s:Group width="100%" height="265">
+			<s:VGroup width="100%" gap="30">
+				<s:VGroup width="100%" id="list_group" includeInLayout="false" visible="false">
+					<mx:Label styleName="personalCenterDetailTextInputStyle" text="已绑定的银行卡"/>
+					<s:VGroup gap="0">
+						<!--银行卡列表   表头-->
+						<s:Group>
+							<s:Rect width="850" height="30">
+								<s:fill>
+									<s:SolidColor color="0xff0000" alpha="0"/>
+								</s:fill> 
+								<s:stroke> 
+									<s:SolidColorStroke color="0x666666" weight="1"/> 
+								</s:stroke> 
+							</s:Rect>
+							<s:HGroup width="850" height="30" verticalAlign="middle">
+								<mx:Label width="180" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="银行名称"/>
+								<mx:Label width="140" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="开户人姓名"/>
+								<mx:Label width="200" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="银行卡号"/>
+								<mx:Label width="200" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="绑定时间"/>
+								<mx:Label width="100" textAlign="center" styleName="personalCenterDetailTextInputStyle" text="默认使用"/>
+							</s:HGroup>
+						</s:Group>
+						<!--银行卡列表   内容-->
+						<s:VGroup gap="0" id="item_group">
+						</s:VGroup>
+							
+					</s:VGroup>
+				</s:VGroup>
+				<common:PopUpTabButtonItem id="add_card" labelTitle="添加银行卡" click="add_card_clickHandler(event)" includeInLayout="false" visible="false"/>
+				<common:PopUpTabButtonItem id="btn_lj" labelTitle="领取奖金" click="btn_lj_clickHandler(event)" visible="false" includeInLayout="false"/>
+			</s:VGroup>
+		</s:Group>
+			
+	</s:VGroup>
+		
+</s:Group>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			private var _IsVisible:Boolean = false;
+			
+			private var _txt:String = "2";
+			
+			private var _colNum:int = 1;
+			
+			private var color_1:uint = 0x3d3d3d;
+			private var color_2:uint = 0xc31409;
+			
+			
+			[Bindable]
+			public function get colNum():int
+			{
+				return _colNum;
+			}
+
+			public function set colNum(value:int):void
+			{
+				_colNum = value;
+			}
+
+			[Bindable]
+			public function get txt():String
+			{
+				return _txt;
+			}
+			
+			public function set txt(value:String):void
+			{
+				_txt = value;
+			}
+			
+			[Bindable]
+			public function get IsVisible():Boolean
+			{
+				return _IsVisible;
+			}
+			
+			public function set IsVisible(value:Boolean):void
+			{
+				_IsVisible = value;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="35" height="25" horizontalAlign="center" verticalAlign="middle" >
+		<s:Label y="18" width="20" height="16" color="{colNum==1?color_1:color_2}" fontSize="14" fontWeight="normal"
+				 text="{txt}" textAlign="center" verticalAlign="middle"/>
+	</s:HGroup>
+	
+	<s:Image source="css/skin1/images/activictyimages/right.png" visible="{IsVisible}"  smooth="true"/>
+</s:Group>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark"  
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="80" height="32"
+				   borderWeight="2"
+				   borderVisible="false"
+				   backgroundColor="0xcfcece"
+				   buttonMode="true"
+				   mouseChildren="false">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			private var _labelTitle:String="";
+			[Bindable]
+			public function get labelTitle():String
+			{
+				return _labelTitle;
+			}
+
+			public function set labelTitle(value:String):void
+			{
+				_labelTitle = value;
+			}
+			private var _selected:Boolean=false;
+			public function get selected():Boolean
+			{
+				return _selected;
+			}
+
+			public function set selected(value:Boolean):void
+			{
+				_selected = value;
+				changeBg(value);
+			}
+
+			private function changeBg(flag:Boolean):void
+			{
+				if(flag) {
+					this.setStyle("backgroundColor","0x605c5c");
+				}else {
+					this.setStyle("backgroundColor","0xcfcece");
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:Group width="100%" height="100%" id="bg" visible="false">
+		<s:Rect id="fill"  width="100%" height="100%" >
+			<s:fill>
+				<s:LinearGradient >
+					<s:GradientEntry color="0xcc0000" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<mx:Label id="lab" text="{labelTitle}" styleName="personalCenterDetailLabelStyle_1_white" verticalCenter="0" horizontalCenter="0"/>
+</s:BorderContainer>

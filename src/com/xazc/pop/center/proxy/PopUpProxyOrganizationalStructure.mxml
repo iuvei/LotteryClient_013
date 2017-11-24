@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+				   creationComplete="creationCompleteHandler(event)">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			public var markID:String="1040400";
+			public static var markID:String="1040400";
+			[Bindable]
+			public var labelTitleText:String="组织结构";
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			[Bindable]
+			private var proxySource:ArrayCollection;
+			
+			private var ser:ServerToolImpl;
+			
+			private var selectedCategoryID:String = "";
+			
+			private var selectedCategoryItem:Object;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				proxySource = new ArrayCollection();
+				ser = new ServerToolImpl();
+				ser.getAgentTreeInfo({}, resultHandler);
+			}
+			
+			private function resultHandler(e:ResultEvent):void
+			{
+				var data:Object = JSON.parse(e.result.toString());
+				if(data.hasOwnProperty("SystemState") && data.SystemState.toString() == "64")
+				{
+					var dataArr:Array = data.GetUserModel as Array;
+					var dataList:Array = [];
+					/* for each(var obj:Object in dataArr)
+					{
+						var item:Object = new Object();
+						item.userName = obj.ChildUserName + "(" + obj.Rebate + ")";
+						item.userID = obj.User_ID;	
+						item.isCategory = obj.Category == "0" ? true : false;
+						dataList.push(item);
+					} */
+					var isHaveChild:String = "";
+					if(dataArr.length<1){
+						isHaveChild = resourceManager.getString('PersonalCenterPrompt','alert_proxy_os_state1');
+					}
+					var item:Object = new Object();
+					item.userName = CurrentUserInfo.userName + "(" + CurrentUserInfo.myRebate +" "+isHaveChild+ ")";
+					//item.userID = CurrentBusinessInfo;	
+					item.isCategory = true ;
+					dataList.push(item);
+					
+					proxySource = new ArrayCollection(dataList);
+				}else if(data.hasOwnProperty("SystemState") && data.SystemState.toString() == "-1"){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(data.hasOwnProperty("SystemState") && data.SystemState.toString() == "-2"){
+					
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_os_state2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2,true);
+//					Util.getInstance().systemMsgTipHandler(data.SystemState.toString());
+				}
+			}
+			
+			private function proxyTree_itemClickHandler(e:ListEvent):void
+			{
+				var selectedItem:Object = (e.currentTarget as Tree).selectedItem as Object;
+				if(selectedItem == null)
+					return;
+				if(Boolean(selectedItem.isCategory))
+				{
+					selectedCategoryItem = selectedItem;
+					var userID:String = selectedItem.userID;
+					selectedCategoryID = userID;
+					if(ser != null)
+					{
+						if(userID){
+							ser.getAgentTreeInfo({"UserID":userID}, treeChildShowHandler);
+						}else{
+							ser.getAgentTreeInfo({}, treeChildShowHandler);
+						}
+					}
+				}
+			}
+			
+			private function treeChildShowHandler(e:ResultEvent):void
+			{
+				var data:Object = JSON.parse(e.result.toString());
+				if(data.hasOwnProperty("SystemState") && data.SystemState.toString() == "64")
+				{
+					var dataArr:Array = data.GetUserModel as Array;
+					if(dataArr.length == 0)
+					{
+//						var alert:AlertMsgCenter = new AlertMsgCenter();
+//						alert.show("该代理未添加下级", "温馨提示");
+						return;
+					}
+					var selectedCategoryChild:Array = [];
+					var obj:Object = new Object();
+					for each(obj in dataArr)
+					{
+						var item:Object = new Object();
+						var isHaveChild:String = "";
+						if(obj.LevelNum < 1 && obj.Category ==0){
+							isHaveChild =  resourceManager.getString('PersonalCenterPrompt','alert_proxy_os_state1');
+						}
+						item.userName = obj.ChildUserName + "(" + obj.Rebate +" "+isHaveChild+ ")";
+						item.userID = obj.User_ID;	
+						item.isCategory = obj.Category == "0" ? true : false;
+						selectedCategoryChild.push(item);
+					}
+					addChildren4ProxySource(selectedCategoryID, proxySource.source, selectedCategoryChild);
+//					proxyTree.dataProvider = proxySource;
+					proxyTree.expandChildrenOf(selectedCategoryItem, true);
+				}else if(data.hasOwnProperty("SystemState") && data.SystemState.toString() == "-1"){
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(data.hasOwnProperty("SystemState") && data.SystemState.toString() == "-2"){
+					
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_proxy_os_state2'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2, true);
+					//					Util.getInstance().systemMsgTipHandler(data.SystemState.toString());
+				}
+			}
+			
+			private function addChildren4ProxySource(selectedID:String = "", proxySourceArr:Array = null, selectedCategoryChild:Array = null):void
+			{
+				var obj:Object = new Object();
+				for each(obj in proxySourceArr)
+				{
+					if(obj.hasOwnProperty("children") && obj.children is Array)
+					{
+						addChildren4ProxySource(selectedID, (obj.children as Array), selectedCategoryChild);
+					}
+					if(obj.userID == selectedCategoryID)
+					{
+						obj.children = selectedCategoryChild;
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<!-- verticalScrollBarStyleName="mxVScrollBarStyle"  灰色垂直滚动条 -->
+	
+	<!--<s:VGroup width="96.5%"  height="95%" top="20"  paddingLeft="35" horizontalCenter="0" >
+		<mx:Tree id="proxyTree" width="100%" height="100%" showRoot="false" styleName="mxTreeStyle"
+				 dataProvider="{proxySource}" labelField="userName"
+				 itemRenderer="css.skin1.ProxyTreeItemRender"
+				 contentBackgroundAlpha="0" borderAlpha="0"
+				 verticalScrollBarStyleName="mxVScrollBarStyle" buttonMode="true"
+				 itemClick="proxyTree_itemClickHandler(event)">
+		</mx:Tree>
+	</s:VGroup>-->
+	
+	<s:Scroller width="100%"  height="95%" top="20"  styleName="personalCenterScrollerStyle_1">
+		<s:VGroup paddingLeft="20" paddingRight="20">
+			<mx:Tree id="proxyTree" width="100%" height="100%" showRoot="false" styleName="mxTreeStyle"
+					 dataProvider="{proxySource}" labelField="userName"
+					 itemRenderer="css.skin1.ProxyTreeItemRender"
+					 contentBackgroundAlpha="0" borderAlpha="0" buttonMode="true"
+					 itemClick="proxyTree_itemClickHandler(event)">
+			</mx:Tree>
+		</s:VGroup>
+	</s:Scroller>
+	
+</s:Group>

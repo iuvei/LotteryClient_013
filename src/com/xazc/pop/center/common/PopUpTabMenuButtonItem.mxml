@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   height="51" width="110" 
+				   buttonMode="true" mouseChildren="false" 
+				   mouseOver="mouseOverHandler(event)"
+				   mouseOut="mouseOutHandler(event)" 
+				   creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]
+			private var c_alpha:uint=0;
+			private var initFlag:Boolean=false;//初始化组件是否完成标识
+			private var _selected:Boolean = false;
+			private var _labelTitle:String="";
+			//Microsoft YaHei,微软雅黑
+			[Bindable]
+			public function get labelTitle():String
+			{
+				return _labelTitle;
+			}
+			
+			public function set labelTitle(value:String):void
+			{
+				_labelTitle = value;
+			}
+			
+			protected function mouseOverHandler(event:MouseEvent):void
+			{
+				changeBg(true);	
+			}
+			
+			protected function mouseOutHandler(event:MouseEvent):void
+			{
+				if(!_selected) {
+					changeBg(false);
+				}
+			}
+			
+			public function get selected():Boolean
+			{
+				return _selected ;
+			}
+			public function set selected(val:Boolean):void
+			{
+				_selected = val;
+				changeBg(val);
+			}
+			
+			private function changeBg(flag:Boolean):void
+			{
+				if(flag) {
+					c_alpha=1;
+					if(initFlag){
+						menulabel_defualt.visible=false;
+						menulabel_selected.visible=true;
+					}
+				}else {
+					c_alpha=0;
+					if(initFlag){
+						menulabel_defualt.visible=true;
+						menulabel_selected.visible=false;
+					}
+				}
+			}
+			
+			private function init():void{
+				if(selected){
+					menulabel_defualt.visible=false;
+					menulabel_selected.visible=true;
+				}else{
+					menulabel_defualt.visible=true;
+					menulabel_selected.visible=false;
+				}
+				initFlag=true;
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<!-- 背景 -->
+	<s:Image source="css/skin1/images/personalCenter/PopupTapMenuButtonItem_bg.png" alpha="{c_alpha}"/>
+	
+	<!-- 菜单语 -->
+	<mx:Label id="menulabel_defualt" text="{labelTitle}" horizontalCenter="0" verticalCenter="0"  styleName="popUpTabMenuButtonItemLabelStyle_default"/>
+	<mx:Label id="menulabel_selected" text="{labelTitle}" horizontalCenter="0" verticalCenter="0" styleName="popUpTabMenuButtonItemLabelStyle_selected" visible="false"/>
+	
+	<!--<s:backgroundFill>
+		<s:LinearGradient >
+			<s:GradientEntry color="0xf6f6f6" alpha="{c_alpha}" />
+		</s:LinearGradient>
+	</s:backgroundFill>-->
+	
+	
+	
+</s:Group>

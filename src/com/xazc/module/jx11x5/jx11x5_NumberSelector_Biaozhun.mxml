@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:syxw="com.xazc.module.syxw.*" width="896"
+		 implements="com.xazc.interfaces.IInit"
+		 xmlns:bettings="com.xazc.components.bettings.*"
+		 initialize="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			//玩法提示语
+			[Bindable]
+			public var num:int = 1;
+			//号码
+			public var btns:Array = new Array();
+			//选号数组
+			public var numbersArray:Array = new Array();
+			//派发事件标识变量
+			public static const NUMBERS_CLICK:String = "numbers_click";
+			/**
+			 * 组件初始化完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				createNumbers();
+				createcontrolBtn();
+			}
+			/**
+			 * 初始化
+			 */
+			public function init():void
+			{
+				numbersArray = new Array();
+				clearAllTheSelectNumbers();
+			}
+			/**
+			 * 创建选号
+			 */
+			public function createNumbers():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=1; i<12; i++){
+					toggleBtn = new ToggleButton();
+					if(i > 9){toggleBtn.label = i.toString();}
+					else{toggleBtn.label = "0" + i.toString();}
+					toggleBtn.styleName = "numberSelectSkinStyle_large";
+					//toggleBtn.id = "toggleBtn_0" + i.toString();
+					btns.push(toggleBtn);
+					toggleBtn.addEventListener(MouseEvent.CLICK,toggleBtn_clickHandler);
+					numbersTileGroup.addElement(toggleBtn);
+				}
+			}
+			/**
+			 * 创建控制按钮
+			 */
+			public function createcontrolBtn():void
+			{
+				var btn:Button;
+				for(var i:int=1; i<7; i++){
+					btn = new Button();
+					if(i == 1){btn.label = resourceManager.getString('LotteryTips','all');}
+					if(i == 2){btn.label = resourceManager.getString('LotteryTips','large');}
+					if(i == 3){btn.label = resourceManager.getString('LotteryTips','small');}
+					if(i == 4){btn.label = resourceManager.getString('LotteryTips','Odd');}
+					if(i == 5){btn.label = resourceManager.getString('LotteryTips','Even');}
+					if(i == 6){btn.label = resourceManager.getString('LotteryTips','clean');}
+					btn.id = "btn_0" + i.toString();
+					btn.styleName = "strSelectSkinStyle_mid";
+					btn.addEventListener(MouseEvent.CLICK,qdxjoq_clickHandler);
+					controlBtnHGroup.addElement(btn);
+				}
+			}
+			/**
+			 * 将选择的号码清空 
+			 */
+			public function clearAllTheSelectNumbers():void
+			{
+				var temp:ToggleButton;
+				for(var i:int=0; i<btns.length; i++){
+					temp = btns[i] as ToggleButton;
+					if(temp){
+						temp.selected = false;
+					}
+				}
+			}
+			/**
+			 *	设置全选按钮选中状态
+			 */
+			public function setAllButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						if(selected == true){
+							numbersArray.push(temp.label);
+						}else{
+							numbersArray = [];
+						}
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBERS_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选大号按钮选中状态
+			 */
+			public function setBigButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=5;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBERS_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选小号按钮选中状态
+			 */
+			public function setSmallButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<5;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBERS_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选偶按钮选中状态
+			 */
+			public function setOddButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp && i % 2 != 0){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBERS_CLICK,numbersArray));
+			}
+			/**
+			 *	设置选奇按钮选中状态
+			 */
+			public function setEvenButtonState(selected:Boolean):void{
+				var temp:ToggleButton;
+				var len:int=btns.length;
+				for(var i:int=0;i<len;i++){
+					temp=btns[i] as ToggleButton;
+					if(temp && i % 2 == 0){
+						temp.selected=selected;
+						numbersArray.push(temp.label);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBERS_CLICK,numbersArray));
+			}
+			/**
+			 * 设置全，大小，奇偶点击事件
+			 */
+			public function qdxjoq_clickHandler(event:MouseEvent):void{
+				//清除号码样式
+				init();
+				var target:Button = event.target as Button;
+				switch(target.id)
+				{
+					case "btn_01":
+						//全选状态
+						setAllButtonState(true); 
+						break;
+					case "btn_02":
+						//选大状态
+						setBigButtonState(true);
+						break;
+					case "btn_03":
+						//选小状态
+						setSmallButtonState(true);
+						break;
+					case "btn_04":
+						//选奇状态
+						setEvenButtonState(true);
+						break;
+					case "btn_05":
+						//选偶状态
+						setOddButtonState(true);
+						break;
+					case "btn_06":
+						//全不选状态
+						setAllButtonState(false); 
+						break;
+					default:
+						break;
+				}
+			}
+			/**
+			 * 点击选号处理
+			 */
+			public function toggleBtn_clickHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.target as ToggleButton;
+				if(numbersArray){
+					if(target && target.selected){
+						numbersArray.push(target.label);
+					}else{
+						numbersArray.splice(numbersArray.indexOf(target.label),1);
+					}
+				}
+				dispatchEvent(new CustomEvent(NUMBERS_CLICK,numbersArray));
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup horizontalAlign="center" gap="20">
+		<s:HGroup paddingTop="5">
+			<s:Button label="{resourceManager.getString('LotteryTips','number')}" styleName="orderButtonSkinStyle_mid"/>
+		</s:HGroup>
+		<s:TileGroup id="numbersTileGroup" requestedColumnCount="9" requestedRowCount="2" horizontalGap="8" verticalGap="24">
+		</s:TileGroup>
+	</s:HGroup>
+	<s:HGroup id="controlBtnHGroup" gap="10" paddingTop="5" right="0">
+	</s:HGroup>
+</s:Group>

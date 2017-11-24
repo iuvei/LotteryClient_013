@@ -1,0 +1,762 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 height="700" xmlns:tb="com.xazc.module.tb.*"
+		 creationComplete="init(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerTool;
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.UIComponent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_01.png")]
+			private var chips_01:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_02.png")]
+			private var chips_02:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_03.png")]
+			private var chips_03:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_04.png")]
+			private var chips_04:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_05.png")]
+			private var chips_05:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_06.png")]
+			private var chips_06:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_07.png")]
+			private var chips_07:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_08.png")]
+			private var chips_08:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_09.png")]
+			private var chips_09:Class;
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/ChipsIco/chips_10.png")]
+			private var chips_10:Class;
+			private var arr:Array = ["",chips_01,chips_02,chips_03,chips_04,chips_05,chips_06,chips_07,chips_08,chips_09,chips_10];
+			private var arr_value:Array = ["",1,2,5,10,20,50,100,500,1000,5000];
+			
+			[Bindable]
+			[Embed(source="css/skin1/images/tbImg/tb_Aear_playInfo.png")]
+			private var playInfo_ico:Class;
+			
+			//各区域存贮金额；
+			private var BetNUmber:Array =["Aear_long_group#12110#0#0","Aear_he_group#12110#0#2","Aear_hu_group#12110#0#1"];
+			
+			//当前所选择的筹码；
+			private var currageImge:Image = new Image();
+			private var startMovePositionArr:Array = ["","178_309","234_309","290_309","346_309","402_309",];
+			private var chip_index:int = 1;
+			private var chip_index_value:Array = ["","1","2","5","10","20",];//筹码对应 value
+			private var chip_select_Arr:Array = ["1","2","3","4","5",];//所选择的筹码对应 序号
+			
+			private var total_zhushu:int;
+			private var total_qianshu:int;
+			
+			/**
+			 * 初始化
+			 **/
+			protected function init(event:FlexEvent):void
+			{
+				currageImge = chip_1;
+				currageImge.x = chip_1.x;
+				currageImge.y = chip_1.y;
+			}
+			//选择筹码；
+			protected function image1_clickHandler(index:int):void
+			{
+				//保存所选择筹码索引；
+				chip_index = index;
+				//切换状态；
+				for(var i:int= 1;i<=5; i++)
+				{
+					this["chip_" + i].y = 15;
+				}
+				this["chip_" + index].y = 0;
+				//保存当前选择对象
+				currageImge = this["chip_" + index];
+				//复制移动资源；
+				copy_obj.source = this["chip_" + index].source;
+				copy_obj.x = startMovePositionArr[index].toString().split("_")[0];
+				copy_obj.y = startMovePositionArr[index].toString().split("_")[1];
+			}
+			//各区域 详情数组；
+			private var AearBetDetail_Arr:ArrayCollection = new ArrayCollection();
+			
+			//下注
+			protected function Aear_clickHandler(event:MouseEvent):void
+			{
+				if(InEffect.isPlaying)
+				{
+					return;
+				}
+				
+				//创建空的Bitmap位图对象image，接收载入的位图图像数据 
+				var image:Image = currageImge;
+				var bitmapdata1:BitmapData = image.bitmapData; 
+				var bitmapdata2:BitmapData = bitmapdata1.clone(); 
+				var image1:Bitmap = new Bitmap(bitmapdata2); 
+				
+				var uicompetent:UIComponent = new UIComponent();
+				uicompetent.addChild(image1);
+				uicompetent.width = 52;
+				uicompetent.height = 44;
+				var add_x:int = (this[(event.currentTarget as Group).id].width - uicompetent.width)/2 ;
+				var add_y:int = (this[(event.currentTarget as Group).id].height - uicompetent.height)/2 - this[(event.currentTarget as Group).id].numChildren*4;
+				uicompetent.x = add_x;
+				uicompetent.y = add_y;
+				
+				var move_x:int = add_x + (event.currentTarget as Group).x;
+				var move_y:int = add_y + (event.currentTarget as Group).y;
+				InEffect.target = copy_obj;
+				InEffect.xFrom = copy_obj.x;
+				InEffect.xTo = move_x;
+				InEffect.yFrom = copy_obj.y;
+				InEffect.yTo = move_y;
+				InEffect.play();
+				copy_obj.alpha = 1;
+				
+				uicompetent.alpha = 0;
+				this[(event.currentTarget as Group).id].addElement(uicompetent);
+				InEffect.addEventListener(EffectEvent.EFFECT_END,function(event:EffectEvent):void{
+					uicompetent.alpha = 1;
+					copy_obj.alpha = 0;
+					copy_obj.x = startMovePositionArr[chip_index].toString().split("_")[0];
+					copy_obj.y = startMovePositionArr[chip_index].toString().split("_")[1];
+				});
+				
+				//存储 详情数据；
+				var item:Object = new Object();
+				//位置；
+				item.start_x = move_x;
+				item.stop_x = copy_obj.x;
+				item.start_y = move_y;
+				item.stop_y = copy_obj.y;
+				item.taget_group = (event.currentTarget as Group).id;
+				item.chip_value = chip_index_value[chip_index];
+				item.taget_src = copy_obj.source;
+				
+				//存贮投注发送数据；
+				var item_n:String = new String();
+				item_n = nowSelectbtn.split("_")[1];//PlayCode;
+				for(var i:int=0;i<BetNUmber.length ;i++){
+					var item_m:String = BetNUmber[i];
+					if((event.currentTarget as Group).id == item_m.split("#")[0]){
+						item_n = item_n + "#" + item_m.split("#")[3];//BetContent;
+					}}
+				item_n = item_n + "#" + int(chip_index_value[chip_index]).toString();//BetMoney
+				item.bet = item_n;
+				
+				AearBetDetail_Arr.addItem(item);
+				//筛选 数据；
+				select_Betdata(AearBetDetail_Arr);
+				//切换 操作按钮状态；
+				setBtn_status();
+				//各区域存贮金额；
+				Count_Money((event.currentTarget as Group).id,"add");
+				//刷新标签提示
+				update_tips((event.currentTarget as Group).id);
+			}
+			
+			//筛选 数据；
+			private var CorrectArr:Array = new Array();
+			private function select_Betdata(tar_arr:ArrayCollection):void
+			{
+				//提取有效对象；
+				var newbetArr:Array = new Array();
+				for(var i:int = 0;i<AearBetDetail_Arr.length;i++){
+					var obj:Object = AearBetDetail_Arr[i];
+					newbetArr.push(obj.bet);
+				}
+				//分类相同信息；
+				var long_arr:Array = new Array();
+				var hu_arr:Array = new Array();
+				var he_arr:Array = new Array();
+				for(var i:int = 0;i<newbetArr.length;i++){
+					//龙区域
+					if(newbetArr[i].toString().split("#")[1] == 0){ long_arr.push(newbetArr[i]) };
+					//虎区域
+					if(newbetArr[i].toString().split("#")[1] == 1){ hu_arr.push(newbetArr[i]) };
+					//和区域
+					if(newbetArr[i].toString().split("#")[1] == 2){ he_arr.push(newbetArr[i]) };
+				}
+				
+				//合并相同信息；
+				CorrectArr = new Array();
+				for(var j:int = 12109;j<12119;j++){
+					var long_playcode:String = j.toString();
+					var long_content:String = "0";
+					var long_money:int = 0;
+					for(var i:int = 0;i<long_arr.length;i++){
+						if(j == long_arr[i].toString().split("#")[0]){
+							long_money += int( long_arr[i].toString().split("#")[2] );}}
+					if(long_money > 0){
+						var ner_string:String = long_playcode+"#"+long_content+"#"+long_money.toString();
+						CorrectArr.push(ner_string);}}
+				for(var j:int = 12109;j<12119;j++){
+					var long_playcode:String = j.toString();
+					var long_content:String = "1";
+					var long_money:int = 0;
+					for(var i:int = 0;i<hu_arr.length;i++){
+						if(j == hu_arr[i].toString().split("#")[0]){
+							long_money += int( hu_arr[i].toString().split("#")[2] );}}
+					if(long_money > 0){
+						var ner_string:String = long_playcode+"#"+long_content+"#"+long_money.toString();
+						CorrectArr.push(ner_string);}}
+				for(var j:int = 12109;j<12119;j++){
+					var long_playcode:String = j.toString();
+					var long_content:String = "2";
+					var long_money:int = 0;
+					for(var i:int = 0;i<he_arr.length;i++){
+						if(j == he_arr[i].toString().split("#")[0]){
+							long_money += int( he_arr[i].toString().split("#")[2] );}}
+					if(long_money > 0){
+						var ner_string:String = long_playcode+"#"+long_content+"#"+long_money.toString();
+						CorrectArr.push(ner_string);}}
+				
+			}
+
+			//切换 操作按钮状态；
+			private function setBtn_status():void
+			{
+				if(AearBetDetail_Arr.length < 1){
+					now_bet.IsClick = false;
+					now_revoked.IsClick = false;
+					now_clearAll.IsClick = false;}
+				else{
+					now_bet.IsClick = true;
+					now_revoked.IsClick = true;
+					now_clearAll.IsClick = true;}
+			}
+			
+			//各区域存贮金额；
+			private function Count_Money(str:String,type:String):void
+			{
+				if(type == "add"){
+					for(var i:int=0;i<BetNUmber.length ;i++){
+						var item:String = BetNUmber[i];
+						if(str == item.split("#")[0]){
+							var money:String = (int(item.split("#")[2])+int(chip_index_value[chip_index])).toString();
+							BetNUmber[i] = item.split("#")[0] + "#" + item.split("#")[1] + "#" + money + "#" + item.split("#")[3];
+							trace(BetNUmber[i]);
+							return;}}
+				}else if(type == "revoked"){
+					for(var i:int=0;i<BetNUmber.length ;i++){
+						var item:String = BetNUmber[i];
+						if(str == item.split("#")[0]){
+							var item_obj:Object = AearBetDetail_Arr[AearBetDetail_Arr.length -1];
+							var money:String = (int(item.split("#")[2]) - int(item_obj.chip_value)).toString();
+							BetNUmber[i] = item.split("#")[0] + "#" + item.split("#")[1] + "#" + money + "#" + item.split("#")[3];
+							trace(BetNUmber[i]);
+							return;}}
+				}else if(type == "clearAll"){
+					for(var i:int=0;i<BetNUmber.length ;i++){
+						var item:String = BetNUmber[i];
+						var money:String = "0";
+						BetNUmber[i] = item.split("#")[0] + "#" + item.split("#")[1] + "#" + money + "#" + item.split("#")[3];
+						trace(BetNUmber[i]);}
+				}
+			}
+			
+			//投注；
+			protected function now_bet_clickHandler(event:MouseEvent):void
+			{
+				if(!now_bet.IsClick)
+				{
+					return;
+				}
+				var alert:AlertMsg= new AlertMsg();
+				alert.show("投注"+CurrentLotteryInfo.currentIssue+"期，"+total_zhushu+"注"+"，共"+Number(total_qianshu.toFixed(4))+CurrentUserInfo.moneyType+"\n请确认！", "温馨提示",2,true);
+				alert.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,bettingNow);
+			}
+			//3.0版投注方法实现
+			private function bettingNow(event:SystemEvent):void
+			{
+				var alert:AlertMsg= new AlertMsg();
+				var serverTool:ServerTool = new ServerToolImpl();
+				var bet_obj:Object = new Object();
+				var tempBetObj:Object = new Object();
+				var betArr:Array = new Array();
+				var tempBetItem:Object
+				
+				//创建投注实体对象；				
+				for(var i:int = 0;i<CorrectArr.length;i++){
+					var item:String = CorrectArr[i];
+					tempBetItem = new Object();
+					tempBetItem.PlayCode = item.split("#")[0];
+					tempBetItem.BetContent = item.split("#")[1];
+					tempBetItem.BetMultiple = int(item.split("#")[2])%2==0?int(item.split("#")[2])/2:int(item.split("#")[2])*10/2;
+					tempBetItem.BetMoney = item.split("#")[2];
+					
+					tempBetItem.BetRebate = CurrentUserInfo.myRebate;//返点
+					tempBetItem.BetMode = 0;//胆拖标志位
+					tempBetItem.BetCount = 1;
+					tempBetItem.IssueNumber = CurrentLotteryInfo.currentIssue;
+					betArr.push(tempBetItem);
+				}
+				
+				tempBetObj.Bet = betArr;
+				tempBetObj.LotteryCode =CurrentLotteryInfo.lotteryId;
+				tempBetObj.IssueNumber =CurrentLotteryInfo.currentIssue; 
+				bet_obj.UserBetInfo = tempBetObj;
+				serverTool.userBet20160412(bet_obj,bettingNowReturn);
+			}
+			private function bettingNowReturn(e:ResultEvent):void
+			{
+				trace(e.result.toString());
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				//var arr:Object = JSON.parse(e.result.toString(),null);
+				if(arr.SystemState==-1){
+					//session失效
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}else if(arr.SystemState==-2){
+					//单点登录
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+					return;
+				}
+				
+				var alert:AlertMsg= new AlertMsg();
+				if(arr.state){
+					alert.show("投注成功！", "温馨提示",1);
+					//更新余额
+					Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.REFRENSH_USER_ALL_MONEY_EVENT));
+					//初始化
+					init_view();
+				}else{
+					if(arr.hasOwnProperty("OrderState")){
+						if(arr.OrderState==-15){
+							// 投注的时候   OrderState = -15,  表示超时 
+							alert.show("交易状态不确定，请在投注记录中查看是否购买成功！", "温馨提示",2);
+						}else if(arr.OrderState == -16){
+							// 投注的时候   OrderState = -15,  表示超时 
+							alert.show(arr.StateMark, "温馨提示",2);
+						}else{
+							alert.show("投注失败！", "温馨提示",2);
+						}
+					}else{
+						alert.show("投注失败！", "温馨提示",2);
+					}
+				}
+			}
+			
+			//撤销
+			private var effect:Move = new Move();
+			protected function now_revoked_clickHandler(event:MouseEvent):void
+			{
+				if(!now_bet.IsClick || effect==null || effect.isPlaying)
+				{
+					return;
+				}
+				
+				var item_obj:Object = AearBetDetail_Arr[AearBetDetail_Arr.length -1];
+				effect = new Move();
+				copy_obj.source = item_obj.taget_src;
+				effect.target = copy_obj;
+				effect.xFrom = item_obj.start_x;
+				effect.xTo = item_obj.stop_x;
+				effect.yFrom = item_obj.start_y;
+				effect.yTo = item_obj.stop_y;
+				effect.play();
+				copy_obj.alpha = 1;
+				//各区域存贮金额；在撤销操作中，这个必须放在删除之前；
+				Count_Money(item_obj.taget_group,"revoked");
+				this[item_obj.taget_group].removeElementAt(this[item_obj.taget_group].numChildren -1);
+				effect.addEventListener(EffectEvent.EFFECT_END,function(event:EffectEvent):void{
+					AearBetDetail_Arr.removeItemAt(AearBetDetail_Arr.length -1);
+					copy_obj.alpha = 0;
+					//切换 操作按钮状态；
+					setBtn_status();
+				});
+				
+				//计算总钱数  总注数；
+				total_money_zhushu();
+			}
+			
+			//清空
+			protected function now_clearAll_clickHandler(event:MouseEvent):void
+			{
+				if(!now_bet.IsClick)
+				{
+					return;
+				}
+				
+				for(var i:int=0;i<AearBetDetail_Arr.length ;i++)
+				{
+					var item_obj:Object = AearBetDetail_Arr[i];
+					var obj_effect:Move = new Move();
+					var img:Image = new Image();
+					img.id = "img_" + i;
+					Aear_group.addElement(img);
+					img.source = item_obj.taget_src;
+					obj_effect.target = img;
+					obj_effect.xFrom = item_obj.start_x;
+					obj_effect.xTo = item_obj.stop_x;
+					obj_effect.yFrom = item_obj.start_y;
+					obj_effect.yTo = item_obj.stop_y;
+					obj_effect.duration = 500;
+					obj_effect.play();
+					//各区域存贮金额；清0
+					Count_Money("","clearAll");
+					this[item_obj.taget_group].removeElementAt(this[item_obj.taget_group].numChildren -1);
+					obj_effect.addEventListener(EffectEvent.EFFECT_END,function(event:EffectEvent):void{
+						Aear_group.removeElement(  ((event.currentTarget as Move).target) as Image  );
+					});
+				}
+				AearBetDetail_Arr.removeAll();
+				//切换 操作按钮状态；
+				setBtn_status();
+				//计算总钱数  总注数；
+				total_money_zhushu();
+			}
+			
+			
+			protected function betAear_rollOverHandler(event:MouseEvent):void
+			{
+				//黄色区域
+				this[((event.currentTarget as Group).id).substring(0,((event.currentTarget as Group).id).length-6)].alpha = 1;
+				//定位
+				var add_x:int = (this[(event.currentTarget as Group).id].width - 95)/2 ;
+				var add_y:int = this[(event.currentTarget as Group).id].height + 3 ;
+				var move_x:int = add_x + (event.currentTarget as Group).x;
+				var move_y:int = add_y + (event.currentTarget as Group).y;
+				Tips.x = move_x;
+				Tips.y = move_y;
+				
+				//赋值 金额
+				var str:String = (event.currentTarget as Group).id;
+				for(var i:int=0;i<BetNUmber.length ;i++){
+					var item:String = BetNUmber[i];
+					if(str == item.split("#")[0]){
+						Tips.labInfo = item.split("#")[2] + ".00";}}
+				
+				if( int(Tips.labInfo) > 0)
+				{
+					Tips.alpha = 1;
+				}
+			}
+			protected function betAear_rollOutHandler(event:MouseEvent):void
+			{
+				//黄色区域
+				this[((event.currentTarget as Group).id).substring(0,((event.currentTarget as Group).id).length-6)].alpha = 0;
+				//定位
+				Tips.labInfo = "0.00";
+				Tips.x = 0;
+				Tips.y = 430;
+				Tips.alpha = 0;
+			}
+			
+			//刷新标签提示；
+			private function update_tips(str:String):void
+			{
+				//赋值 金额
+				for(var i:int=0;i<BetNUmber.length ;i++){
+					var item:String = BetNUmber[i];
+					if(str == item.split("#")[0]){
+						Tips.labInfo = item.split("#")[2] + ".00";}}
+				
+				if( int(Tips.labInfo) > 0)
+				{
+					Tips.alpha = 1;
+				}
+				
+				//计算总钱数  总注数；
+				total_money_zhushu();
+			}
+			//计算总钱数  总注数；
+			private function total_money_zhushu():void
+			{
+				//总钱数
+				total_qianshu = 0;
+				for(var i:int=0;i<BetNUmber.length ;i++){
+					var item:String = BetNUmber[i];
+					total_qianshu += int(item.split("#")[2]);
+				}
+				bet_money_lab.text = total_qianshu.toString()+".00";
+				//总注数
+				total_zhushu = CorrectArr.length;
+			}
+			
+			private function init_view():void
+			{
+				//各区域存贮金额；清0
+				Count_Money("","clearAll");
+				//我的余额；
+				my_money.text = CurrentUserInfo.userCPBalance;
+				//下注额；
+				bet_money_lab.text = "0.00";
+				//各区域 详情数组；
+				AearBetDetail_Arr = new ArrayCollection();
+				//切换 操作按钮状态；
+				setBtn_status();
+				//清楚各区域的筹码
+				for(var i:int=0;i<BetNUmber.length ;i++)
+				{
+					var item:String = BetNUmber[i];
+					this[item.split("#")[0]].removeAllElements();
+				}
+			}
+			
+			protected function customize_clickHandler(event:MouseEvent):void
+			{
+				if(chip_select_group.alpha == 0){
+					fade.alphaFrom = 0;
+					fade.alphaTo = 1;
+					fade.play();
+					chip_group.includeInLayout = true;
+					chip_group.visible = true;
+				}else{
+					fade.alphaFrom = 1;
+					fade.alphaTo = 0;
+					fade.play();
+					chip_group.includeInLayout = false;
+					chip_group.visible = false;
+				}
+			}
+			
+			//自定义筹码  选择区域；
+			protected function select_chip_clickHandler(event:MouseEvent):void
+			{
+				if((event.currentTarget as tb_Chips).isShow){return;}
+				
+				(event.currentTarget as tb_Chips).isShow = true;
+				chip_select_Arr.push( (event.currentTarget as tb_Chips).id.split("_")[2] );
+				this["select_chip_" + chip_select_Arr[0]].isShow = false;
+				chip_select_Arr.shift();
+				//刷新下方 选择筹码；
+				updeta_Chips(chip_select_Arr);
+				
+				// 重新定位  选择筹码；
+				image1_clickHandler(1);
+			}
+			//刷新下方 选择筹码；
+			private function updeta_Chips(obj_arr:Array):void
+			{
+				var neeArr:Array = obj_arr.slice();
+				neeArr.sort(Array.NUMERIC);
+				for(var i:int=1;i<6;i++)
+				{
+					this["chip_" + i].source = arr[ neeArr[i-1] ];
+				}
+				
+				//根据选择筹码，实时跟新value;
+				chip_index_value = new Array();
+				chip_index_value.push("");
+				for(var i:int=0;i<neeArr.length;i++)
+				{
+					chip_index_value.push( arr_value[ neeArr[i] ]   );
+				}
+			}
+			
+			protected function weishu_rollOverHandler(event:MouseEvent):void
+			{
+				(event.currentTarget as Image).alpha = 1;
+			}
+			protected function weishu_rollOutHandler(event:MouseEvent):void
+			{
+				if(nowSelectbtn == (event.currentTarget as Image).id)
+				{
+					return;
+				}
+				(event.currentTarget as Image).alpha = 0;
+			}
+			
+			private var nowSelectbtn:String = "aear_12109_43";//默认选中第一个；
+			protected function weishu_clickHandler(event:MouseEvent):void
+			{
+				//设置状态；
+				for(var i:int=0;i<playcode_group.numChildren;i++){
+					playcode_group.getElementAt(i).alpha=0;
+				}
+				(event.currentTarget as Image).alpha = 1;
+				nowSelectbtn = (event.currentTarget as Image).id;
+				
+				//更新开奖结果列表 位数变化;
+				var str:String = (event.currentTarget as Image).id;
+				this.dispatchEvent(new CustomEvent(CustomEvent.LONGHU_CHANGE_RESULT_LISTS,str.split("_")[2]));
+				
+				//更新玩法id；
+				var newbetArr:Array = new Array();
+				for(var i:int = 0;i<BetNUmber.length;i++){
+					var item:String = BetNUmber[i];
+					var playcode:String = str.split("_")[1];
+					BetNUmber[i] = item.split("#")[0] + "#" + playcode + "#" + item.split("#")[2] + "#" + item.split("#")[3];
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		
+		<s:Move id="InEffect" duration="300" />
+		
+		<s:Fade duration="300" id="fade" target="{chip_select_group}"/>
+	</fx:Declarations>
+	
+	<s:Image source="css/skin1/images/lhImg/lh_table_bg.jpg"/>
+	
+	<!--背景-->
+	<s:VGroup x="0" y="581" gap="0" width="100%">
+		<s:BitmapImage width="1337" source="@Embed('css/skin1/images/tbImg/tb_table_btn_bg.png')"/>
+		<!--<s:BitmapImage width="{FlexGlobals.topLevelApplication.width}" source="@Embed('css/skin1/images/tbImg/tb_table_btn_bg.png',
+					   scaleGridLeft='10', scaleGridRight='15', scaleGridTop='15', scaleGridBottom='20')"/>-->
+	</s:VGroup>
+	
+	<s:Group x="251" y="225" width="840" height="58" id="playcode_group">
+		<s:Image source="css/skin1/images/lhImg/Aear/lh_aear_1.png" click="weishu_clickHandler(event)" alpha="1" id="aear_12109_43"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="84" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_2.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12110_42"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="168" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_3.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12111_41"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="252" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_4.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12112_40"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="336" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_5.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12113_32"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="421" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_6.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12114_31"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="503" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_7.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12115_30"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="586" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_8.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12116_21"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="668" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_9.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12117_20"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+		<s:Image x="752" y="0" source="css/skin1/images/lhImg/Aear/lh_aear_10.png" click="weishu_clickHandler(event)" alpha="0" id="aear_12118_10"
+				 rollOver="weishu_rollOverHandler(event)"
+				 rollOut="weishu_rollOutHandler(event)"/>
+	</s:Group>
+	
+	
+	<!--筹码选择  投注-->
+	<s:HGroup x="235" y="582" width="866" height="85" gap="0" verticalAlign="middle">
+		<s:VGroup width="164" height="85" verticalAlign="middle" gap="10">
+			<s:HGroup>
+				<s:Label text="下注额：" width="60" textAlign="right" fontSize="14" fontFamily="微软雅黑" color="0x999999"/>
+				<s:Label text="￥0.00" fontSize="14" fontFamily="微软雅黑" color="0xe1af2d" id="bet_money_lab"/>
+			</s:HGroup>
+			<s:HGroup>
+				<s:Label text="余额：" width="60" textAlign="right" fontSize="14" fontFamily="微软雅黑" color="0x999999"/>
+				<s:Label text="{CurrentUserInfo.userCPBalance}" fontSize="14" fontFamily="微软雅黑" color="0xe1af2d" id="my_money"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:Line xFrom="0" xTo="0" yFrom="15" yTo="70">
+			<s:stroke>
+				<s:SolidColorStroke color="0x3f3c41" weight="1" caps="square"/>
+			</s:stroke>
+		</s:Line>
+		<s:HGroup width="370" height="85" verticalAlign="middle" horizontalAlign="center" gap="5">
+			<s:Group>
+				<s:Image source="@Embed('css/skin1/images/tbImg/ChipsIco/chips_01.png')" x="0" y="0" buttonMode="true" id="chip_1" 
+						 click="image1_clickHandler(1)"/>
+				<s:Image source="@Embed('css/skin1/images/tbImg/ChipsIco/chips_02.png')" x="55" y="15" buttonMode="true" id="chip_2"
+						 click="image1_clickHandler(2)"/>
+				<s:Image source="@Embed('css/skin1/images/tbImg/ChipsIco/chips_03.png')" x="110" y="15" buttonMode="true" id="chip_3"
+						 click="image1_clickHandler(3)"/>
+				<s:Image source="@Embed('css/skin1/images/tbImg/ChipsIco/chips_04.png')" x="165" y="15" buttonMode="true" id="chip_4"
+						 click="image1_clickHandler(4)"/>
+				<s:Image source="@Embed('css/skin1/images/tbImg/ChipsIco/chips_05.png')" x="220" y="15" buttonMode="true" id="chip_5"
+						 click="image1_clickHandler(5)"/>
+			</s:Group>
+			<s:Image source="@Embed('css/skin1/images/tbImg/ChipsIco/choosebtn.png')" buttonMode="true" click="customize_clickHandler(event)"/>
+		</s:HGroup>
+		<s:Line xFrom="0" xTo="0" yFrom="15" yTo="70">
+			<s:stroke>
+				<s:SolidColorStroke color="0x3f3c41" weight="1" caps="square"/>
+			</s:stroke>
+		</s:Line>
+		<s:HGroup width="330" height="85" verticalAlign="middle" horizontalAlign="center" gap="20">
+			<tb:tb_betBtn labInfo="投注" IsClick="false" id="now_bet" click="now_bet_clickHandler(event)" buttonMode="true"/>
+			<tb:tb_claerBtn labInfo="撤销" IsClick="false" id="now_revoked" click="now_revoked_clickHandler(event)" buttonMode="true"/>
+			<tb:tb_claerBtn labInfo="清空" IsClick="false" id="now_clearAll" click="now_clearAll_clickHandler(event)" buttonMode="true"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	
+	<!--投注 响应区域-->
+	<s:Group x="235" y="284" width="866" height="173">
+		<s:Image x="2" y="3" source="css/skin1/images/lhImg/Aear/lh_longAear_bg.png" alpha="0" id="Aear_long" />
+		<s:Image x="257" y="3" source="css/skin1/images/lhImg/Aear/lh_heAear_bg.png" alpha="0" id="Aear_he" />
+		<s:Image x="607" y="3" source="css/skin1/images/lhImg/Aear/lh_huAear_bg.png" alpha="0" id="Aear_hu" />
+	</s:Group>
+	
+	<!--投注 区域-->
+	<s:Group x="235" y="284" width="866" height="385">
+		<!--龙-->
+		<s:Group x="0" y="0" width="259" height="173" id="Aear_long_group"
+				 rollOver="betAear_rollOverHandler(event)" rollOut="betAear_rollOutHandler(event)"
+				 click="Aear_clickHandler(event)"/>
+		<!--和-->
+		<s:Group x="259" y="0" width="350" height="173" id="Aear_he_group"
+				 rollOver="betAear_rollOverHandler(event)" rollOut="betAear_rollOutHandler(event)"
+				 click="Aear_clickHandler(event)"/>
+		<!--虎-->
+		<s:Group x="609" y="0" width="258" height="173" id="Aear_hu_group"
+				 rollOver="betAear_rollOverHandler(event)" rollOut="betAear_rollOutHandler(event)"
+				 click="Aear_clickHandler(event)"/>
+		
+		<!--撤销 对象-->
+		<s:Image id="copy_obj" x="178" y="309" alpha="0"
+				 source="@Embed('css/skin1/images/tbImg/ChipsIco/chips_01.png')"/>
+		<!--清空 对象-->
+		<s:Group id="Aear_group"/>
+		<tb:tb_aearTips y="430" id="Tips" alpha="0"/>
+	</s:Group>
+	
+	<!--自定义筹码  选择区域-->
+	<s:Group x="448" y="527" width="550" height="50" id="chip_select_group" alpha="0">
+		<s:Rect width="100%" height="100%" radiusX="5" radiusY="5">
+			<s:fill>
+				<s:LinearGradient >
+					<s:GradientEntry color="0x000000" alpha="0.7"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Image x="266" y="48" source="@Embed('css/skin1/images/tbImg/ChipsIco/triangle_ico.png')"/>
+		<s:HGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="center" gap="2" id="chip_group" includeInLayout="false" visible="false">
+			<tb:tb_Chips  srcIndex="1" isShow="true" id="select_chip_1" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="2" isShow="true" id="select_chip_2" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="3" isShow="true" id="select_chip_3" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="4" isShow="true" id="select_chip_4" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="5" isShow="true" id="select_chip_5" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="6" isShow="false" id="select_chip_6" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="7" isShow="false" id="select_chip_7" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="8" isShow="false" id="select_chip_8" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="9" isShow="false" id="select_chip_9" click="select_chip_clickHandler(event)"/>
+			<tb:tb_Chips  srcIndex="10" isShow="false" id="select_chip_10" click="select_chip_clickHandler(event)"/>
+		</s:HGroup>
+	</s:Group>
+	
+</s:Group>

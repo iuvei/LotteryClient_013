@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" clipAndEnableScrolling="true"
+		 width="990" height="425" creationComplete="creationCompleteHandler(event)" xmlns:easing="com.greensock.easing.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.single.PersonCenterInfo;
+			
+			import mx.effects.Effect;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				effect_fade();
+			}
+			
+			private  function effect_fade():void
+			{
+				img_1.alpha = 1;
+				effect_alpha_1.target = img_1;
+				effect_alpha_1.play();
+			}
+			
+			protected function effect_alpha_1_effectEndHandler(event:EffectEvent):void
+			{
+				img_1.depth = 1;
+				//img_3.depth = 3;
+				img_2.depth = 4;
+				
+				img_2.alpha = 1;
+				effect_alpha_2.target = img_2;
+				effect_alpha_2.play();
+			}
+			
+			protected function effect_alpha_2_effectEndHandler(event:EffectEvent):void
+			{
+				img_2.depth = 1;
+				img_1.depth = 2;
+				
+				img_1.alpha = 1;
+				effect_alpha_1.target = img_1;
+				effect_alpha_1.play();
+				
+				/* img_3.depth = 4;
+				
+				img_3.alpha = 1;
+				effect_alpha_3.target = img_3;
+				effect_alpha_3.play(); */
+			}
+			
+			protected function effect_alpha_3_effectEndHandler(event:EffectEvent):void
+			{
+				/* img_3.depth = 1;
+				img_2.depth = 2;
+				img_1.depth = 3;
+				
+				img_1.alpha = 1;
+				effect_alpha_1.target = img_1;
+				effect_alpha_1.play(); */
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->	
+		<s:Fade id="effect_alpha_1" alphaFrom="1" alphaTo="0" duration="1000" startDelay="3000" effectEnd="effect_alpha_1_effectEndHandler(event)"/>
+		<s:Fade id="effect_alpha_2" alphaFrom="1" alphaTo="0" duration="1000" startDelay="3000" effectEnd="effect_alpha_2_effectEndHandler(event)"/>
+		<s:Fade id="effect_alpha_3" alphaFrom="1" alphaTo="0" duration="1000" startDelay="3000" effectEnd="effect_alpha_3_effectEndHandler(event)"/>
+	</fx:Declarations>
+	<s:VGroup width="100%" horizontalAlign="center" gap="-425">
+		<!--<s:Image id="img_3" source="css/skin1/assets/lotteryindex/act_1.png" width="990" height="425" depth="2" alpha="0"/>-->
+		<s:Image id="img_2" source="css/skin1/assets/lotteryindex/act_1.png" width="990" height="425" depth="3" alpha="0"/>
+		<s:Image id="img_1" source="css/skin1/assets/lotteryindex/act_3.png" width="990" height="425" depth="4" alpha="0"/>
+	</s:VGroup>
+	
+</s:Group>

@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 implements="com.xazc.interfaces.IInit"
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 creationComplete="createGridInitProperties()"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  
+		 xmlns:load="com.xazc.components.load.*" width="900" height="455"
+		 xmlns:common="com.xazc.pop.center.common.*" xmlns:single="com.xazc.single.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:DateFormatter id="df" formatString="YYYY-MM-DD JJ:NN:SS"/>
+		<mx:DateFormatter id="df1" formatString="YYYY-MM-DD"/>
+		<mx:DateFormatter id="df2" formatString="JJ:NN:SS"/>
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryPlayNames")]
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[ 
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.pop.center.record.PopUpOrderDetails;
+			import com.xazc.pop.center.record.PopUpOrderDetails2;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.Alert;
+			import mx.controls.Label;
+			import mx.controls.LinkButton;
+			import mx.core.FlexGlobals;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.events.DynamicEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ObjectUtil;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var myPattern1:RegExp=/-|:| /g;
+			public var initializeCompleteFlag:Boolean=false;//标识是否初始化完成
+			public var lotteryId:String = "";
+			public var orderId:String = "";
+			public var lotteryQH:String="";
+			
+			//当前查询是否是历史库
+			private var isHistory:Boolean = false; 
+			
+			public var currentPage:int=1;//当前页
+			private var currentPageSize:int=10;//当页行数
+			//共几页
+			[Bindable]
+			private var totalPage:int = 0;
+			//共多少条记录
+			[Bindable]
+			private var totalRecords:int = 0;
+			private var service:ServerToolImpl;
+			
+			[Bindable]
+			private var types:ArrayCollection=new ArrayCollection([{label:"当前记录",value:0},{label:"历史记录",value:1}]);
+			
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			//订单状态
+			private var titles:ArrayCollection=new ArrayCollection([
+				{title:"a",w:480},//主题
+				{title:"b",w:230},//发件时间
+				{title:"c",w:200}]);//操作
+			private var models:ArrayCollection=new ArrayCollection([
+				{orderMask:"Title",width:480},
+				{orderMask:"SendDateTime",width:230},
+				{orderMask:"Operation",width:200}]);
+			/*
+			StationEmailReceiveBox  收件实体
+			SendID   发件ID
+			Title        标题
+			Content  内容
+			SendUserID  发件人ID
+			SendPserson  发件人
+			SendDateTime 发件时间
+			SendPersonLevel 发件级别(1.下级 2.上级 3.系统)
+			ReceiveUserID    接收人ID
+			ReceivePerson   接收人
+			EmailState          1.已读2.未读3.已撤回
+			Sign                    0.前台    1.后台
+			*/
+			
+			/**
+			 *初始化信息 
+			 ***/
+			private function createGridInitProperties():void{
+				var count:int=0;
+				//初始化表头
+				var titleGrid:Grid=new Grid();
+				var titlerow:GridRow=new GridRow();
+				for(var i:int=0;i<titles.length;i++){
+					titlerow.height=30;
+					var gridItem:GridItem=new GridItem();
+					gridItem.width=titles.getItemAt(i).w;
+					//					gridItem.styleName = "RecordsGridItemStyle_borderBlack";
+					gridItem.horizontalScrollPolicy = "off";
+					gridItem.verticalScrollPolicy = "off";
+					var label:mx.controls.Label = new mx.controls.Label();
+					if(titles.getItemAt(i).title == "a"){
+						label.text = "主题";
+					}else if(titles.getItemAt(i).title == "b"){
+						label.text = "发件时间";
+					}else if(titles.getItemAt(i).title == "c"){
+						label.text = "操作";
+					}
+					label.styleName="personalCenterDetailLabelStyle_1_white";
+					gridItem.addChild(label);
+					titlerow.addChild(gridItem);
+					titleGrid.addChild(titlerow);
+					count +=titles.getItemAt(i).w;
+				}
+				vg.addElementAt(titleGrid,0);
+				//初始化提示
+				var promptGrid:Grid=new Grid();
+				var promptRow:GridRow=new GridRow();
+				for(var j:int=0;j<titles.length;j++){
+					promptRow.height=30;
+					var promptItem:GridItem=new GridItem();
+					promptItem.width=titles.getItemAt(j).w;
+					var label1:mx.controls.Label= new mx.controls.Label();
+					label1.text="";
+					label1.styleName="personalCenterDetailLabelStyle_1"; 
+					promptItem.addChild(label1);
+					promptRow.addChild(promptItem);
+					promptGrid.addChild(promptRow);
+				}
+				vg.addElementAt(promptGrid,1);
+				
+				init();
+			}
+			
+			
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				
+				currentPage=1;
+				changePage.pageSelector.text="";
+				
+				getBetDataList();
+			}
+			
+			/**
+			 * 查询数据
+			 */
+			protected function getBetDataList():void{
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var object:Object = filterSelectCondition();
+				service.getStationEmailSendBox(object,returnMessageList);
+			}
+			
+			private var currentPageSource:Array=[];//记录当前也得数据源
+			/**
+			 * 返回结果
+			 */
+			protected function returnMessageList(event:ResultEvent):void
+			{
+				loading.suspend();
+				trace(event.result.toString());
+				var object:Object = Util.getInstance().resuleFormatToJSon(event.result.toString(),1);
+				if(object.SystemState== 64)
+				{
+					var array:Array = object.EmailSendBoxs as Array;
+					if(array.length==0){
+						createGridOneRow();
+						return;
+					}
+					totalPage = parseInt(object.PageCount);
+					totalRecords = parseInt(object.DataCount);
+					changePage.setPage(currentPage,totalPage,totalRecords);
+					updateViewPropertysValue(array);
+					g_page.visible=true;
+					g_page.includeInLayout=true;
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}else{
+					alert.show(resourceManager.getString('PersonalCenterPrompt','alert_bets_records_error'),
+						resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+				}
+			}
+			/**
+			 * 查询结果无数据时创建
+			 **/
+			private function createGridOneRow():void{
+				g_page.visible=false;
+				g_page.includeInLayout=false;
+				var gt:Grid=vg.getChildAt(0) as Grid;
+				var grid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				grid.removeAllChildren();//清空所有子项
+				var row:GridRow=new GridRow();
+				row.height=30;
+				grid.addChild(row);
+				var item:GridItem=new GridItem();
+				item.horizontalScrollPolicy = "off";
+				item.verticalScrollPolicy = "off";
+				item.width=gt.width;
+				row.addChild(item);
+				var label:mx.controls.Label= new mx.controls.Label();
+				label.text=resourceManager.getString('PersonalCenterPage','no_Data');
+				label.styleName="personalCenterDetailLabelStyle_1";
+				item.addChild(label);
+			}
+			public function updateViewPropertysValue(source:Array):void
+			{
+				if(source == null){
+					return;
+				}
+				var d:Date=new Date();
+				var promptGrid:Grid=vg.getChildAt(1) as Grid;//取出显示内容的grid
+				promptGrid.removeAllChildren();//清空所有子项
+				for(var j:int=0; j<source.length; j++){
+					var promptRow:GridRow = new GridRow();
+					promptRow.height = 30;
+					promptGrid.addChild(promptRow);
+					for(var n:int=0; n<models.length; n++)
+					{
+						var promptItem:GridItem = new GridItem();
+						promptItem.horizontalScrollPolicy = "off";
+						promptRow.addChild(promptItem);
+						promptItem.width = models.getItemAt(n).width;
+						
+						var label1:mx.controls.Label = new mx.controls.Label();
+						label1.styleName = "personalCenterDetailLabelStyle_1";
+						promptItem.addChild(label1);
+						
+						var str:String = models.getItemAt(n).orderMask;
+						if(str == "Title"){label1.text = source[j].Title;
+							label1.maxWidth = 400;
+						}else if(str == "SendDateTime"){label1.text = source[j].SendDateTime;
+						}else if(str == "Operation")
+						{
+							label1.text="详情";
+							label1.width = 35;
+							promptItem.addChild(label1);
+							label1.buttonMode=true;
+							label1.useHandCursor=true;
+							label1.mouseChildren=false;
+							label1.name = source[j].ID;
+							label1.addEventListener(MouseEvent.CLICK,detailsClickHandler);
+							label1.setStyle("color","0xff0000");
+							
+							label1 = new mx.controls.Label();
+							label1.styleName = "personalCenterDetailLabelStyle_1";
+							label1.text="收件人";
+							label1.width = 50;
+							promptItem.addChild(label1);
+							label1.buttonMode=true;
+							label1.useHandCursor=true;
+							label1.mouseChildren=false;
+							label1.name = source[j].ID;
+							label1.addEventListener(MouseEvent.CLICK,reciveNameClickHandler);
+							label1.setStyle("color","0xff0000");
+						}
+					}
+				}
+				vg.addElementAt(promptGrid,1);
+			} 
+			
+			//详情消息
+			private function detailsClickHandler(e:MouseEvent):void
+			{
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var object:Object = new Object();
+				object.Id = (e.target as mx.controls.Label).name;
+				service.getStationEmailSendBoxDetails(object,messageDetails);
+			}
+			//消息详情 回调
+			protected function messageDetails(event:ResultEvent):void
+			{
+				trace(event.result.toString());
+				var object:Object = Util.getInstance().resuleFormatToJSon(event.result.toString(),1);
+				if(object.SystemState== 64)
+				{
+					var popupMessageDetails:PopupMessageDetails = new PopupMessageDetails();
+					popupMessageDetails.x=(FlexGlobals.topLevelApplication.width-popupMessageDetails.width)/2;
+					popupMessageDetails.y=(FlexGlobals.topLevelApplication.height-popupMessageDetails.height)/2;
+					popupMessageDetails.setData(object.StationEmailSendBox,0);
+					PopUpManager.addPopUp(popupMessageDetails,this,true);
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}
+			}
+			
+			
+			//收件人 获取
+			private function reciveNameClickHandler(e:MouseEvent):void
+			{
+				if(service == null){
+					service = new ServerToolImpl();
+				}
+				var object:Object = new Object();
+				object.Sendid = (e.target as mx.controls.Label).name;
+				service.getAllReceivePerson(object,getAllReceivePersonHandler);
+			}
+			//收件人  回调
+			protected function getAllReceivePersonHandler(event:ResultEvent):void
+			{
+				trace(event.result.toString());
+				var object:Object = Util.getInstance().resuleFormatToJSon(event.result.toString(),1);
+				if(object.SystemState== 64)
+				{
+					var popupMessageReciveName:PopupMessageReciveName = new PopupMessageReciveName();
+					popupMessageReciveName.x=(FlexGlobals.topLevelApplication.width-popupMessageReciveName.width)/2;
+					popupMessageReciveName.y=(FlexGlobals.topLevelApplication.height-popupMessageReciveName.height)/2;
+					PopUpManager.addPopUp(popupMessageReciveName,this,true);
+					popupMessageReciveName.dataArr = object.StationEmailReceiveBoxs as Array;
+				}else if(object.SystemState==-1){
+					//跳转登录页面
+					Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+				}else if(object.SystemState==-2){
+					var yd:AlertMsgCenter=new AlertMsgCenter();
+					yd.show(resourceManager.getString('PersonalCenterPrompt','alert_yd'),resourceManager.getString('PersonalCenterPrompt','alert_title'),2);
+					yd.okBtnBoolean=true;
+					yd.addEventListener(SystemEvent.ALERT_SUCSSES_BTN_CLICK,yd_clickHandler);
+				}
+			}
+			
+			/**
+			 * 过滤条件 
+			 */
+			private function filterSelectCondition():Object
+			{
+				var object:Object = new Object();
+				object.CurrentPageIndex = currentPage-1;
+				object.CurrentPageSize = currentPageSize;
+				return object;
+			}
+			
+			private function yd_clickHandler(e:SystemEvent):void{
+				Sendnotification.instance.dispatchEvent(new JumpEvent(JumpEvent.JUMP_TO_LOGIN));
+			}
+			
+			protected function changePage_ChangePageIndexHandler(event:CustomEvent):void
+			{
+				loading.splicePromptLanguage(3,"");
+				loading.resume();
+				currentPage=int(event.body);
+				getBetDataList();
+			}
+		]]>
+	</fx:Script>
+	<s:Rect id="fill1" top="30" width="908" height="30" >
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0x6a6969" alpha="1"/>
+				<s:GradientEntry color="0x595858" alpha="1"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Group top="30" >
+		
+		<!--详细内容-->
+		<s:VGroup gap="-1" height="100%" id="vg">
+			<s:Group height="70"   width="100%" id="g_page" visible="false" includeInLayout="false">
+				<s:Rect x="0" id="border" width="100%" height="100%">
+					<s:fill>
+						<s:LinearGradient >
+							<s:GradientEntry color="0xcfcece" alpha="1"/>
+						</s:LinearGradient>
+					</s:fill>
+					<s:stroke>
+						<s:LinearGradientStroke>
+							<s:GradientEntry color="0xc9d2dc"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+				</s:Rect>
+				<s:VGroup left="10" right="10" height="100%" verticalAlign="middle">
+					<s:HGroup horizontalAlign="right" verticalAlign="middle" height="20%" width="100%">
+						<common:PopUpChangePageComponent id="changePage" width="100%" height="100%"  ChangePageIndex="changePage_ChangePageIndexHandler(event)"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+			<s:HGroup height="40" verticalAlign="middle">
+				<s:Label text="温馨提示：记录只保留一个月，请及时查看！" />
+			</s:HGroup>
+		</s:VGroup>
+	</s:Group>
+	
+	<!-- 查询进度 -->
+	<load:LoadingGroup width="100%" height="100%" visible="false" id="loading"/>
+</s:Group>

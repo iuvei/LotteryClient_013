@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+	<modules>
+		<!-- 彩种模块加载 -->
+		<!-- 11选5 -->
+		<module id="4" 	name="广东11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<module id="5" 	name="江西11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<module id="16" name="山东11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<module id="77" name="上海11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<module id="78" name="安徽11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<module id="61" name="巴西11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<module id="63" name="澳门11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<module id="85" name="江苏11选5" 	resultNumberType="1" url="com/xazc/module/jx11x5/jx11x5_Module.swf?2017080304"/>
+		<!-- 快乐8 -->
+		<module id="9" 	name="北京快乐8" 	resultNumberType="4" url="com/xazc/module/happy8/Happy8Module.swf?2017080304"/>
+		<module id="79" name="韩国快乐8" 	resultNumberType="4" url="com/xazc/module/happy8/Happy8Module.swf?2017080304"/>
+		<module id="80" name="台湾快乐8" 	resultNumberType="4" url="com/xazc/module/happy8/Happy8Module.swf?2017080304"/>
+		<!-- pk10 -->
+		<module id="10" name="北京PK拾" 	resultNumberType="3" url="com/xazc/module/pk10/PK10Module.swf?2017080304"/>
+		<!-- 快3 -->
+		<module id="26" name="江苏快3" 	resultNumberType="1" url="com/xazc/module/jsk3/Jsk3Module.swf?2017080304"/>
+		<module id="81" name="吉林快3" 	resultNumberType="1" url="com/xazc/module/jsk3/Jsk3Module.swf?2017080304"/>
+		<module id="82" name="安徽快3" 	resultNumberType="1" url="com/xazc/module/jsk3/Jsk3Module.swf?2017080304"/>
+		<module id="83" name="湖北快3" 	resultNumberType="1" url="com/xazc/module/jsk3/Jsk3Module.swf?2017080304"/>
+		<!-- 时时彩 -->
+		<module id="12" name="重庆时时彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="13" name="江西时时彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="14" name="新疆时时彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="71" name="天津时时彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="72" name="韩国1.5分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="51" name="巴西1分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="53" name="巴西3分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="55" name="巴西5分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="56" name="波兰1.5分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="66" name="新德里1.5分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="75" name="东京1.5分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="74" name="新加坡2分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="76" name="加拿大3.5分彩" resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="73" name="台湾5分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="57" name="腾讯分分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="59" name="腾讯分分彩" 	resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="58" name="QQ分分彩" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="41" name="新西兰45秒彩" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="42" name="加拿大3.5分彩" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>		
+		<module id="43" name="1.5分彩3" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="44" name="1.5分彩4" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="45" name="1.5分彩5" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="46" name="2分彩1" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="47" name="2分彩2" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="48" name="1分彩2" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="49" name="1分彩3" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>		
+		<module id="86" name="北京时时彩" 		resultNumberType="1" url="com/xazc/module/cqssc/CqsscModule.swf?2017080304"/>
+		<module id="90" name="重庆幸运农场" 	resultNumberType="8" url="com/xazc/module/klsf/KLSFModule.swf?2017080304"/>
+		<!-- 秒秒彩 -->
+		<module id="50" name="极限秒秒彩" 	resultNumberType="1" url="com/xazc/module/miaomiaocai/miaomiaoModule.swf?2017080304"/>
+		<!-- 其他 -->
+		<module id="15" name="上海时时乐" 	resultNumberType="1" url="com/xazc/module/shssl/ShsslModule.swf?2017080304"/>
+		<module id="17" name="排列3" 		resultNumberType="1" url="com/xazc/module/pl3/Pl3_Module.swf?2017080304"/>
+		<module id="18" name="排列5" 		resultNumberType="1" url="com/xazc/module/pl5/Pl5Module.swf?2017080304"/>
+		<!-- 3d -->
+		<module id="19" name="福彩3D" 	resultNumberType="1" url="com/xazc/module/fc3D/fc3D_Module.swf?2017080304"/>
+		<module id="84" name="3D分分彩" 	resultNumberType="1" url="com/xazc/module/fc3D/fc3D_Module.swf?2017080304"/>
+		<!-- 骰宝 -->
+		<module id="21" name="江苏骰宝" 	resultNumberType="1" url="com/xazc/module/tb/tbModule.swf?2017080304"/>
+		<module id="87" name="吉林骰宝" 	resultNumberType="1" url="com/xazc/module/tb/tbModule.swf?2017080304"/>
+		<module id="88" name="安徽骰宝" 	resultNumberType="1" url="com/xazc/module/tb/tbModule.swf?2017080304"/>
+		<module id="89" name="湖北骰宝" 	resultNumberType="1" url="com/xazc/module/tb/tbModule.swf?2017080304"/>
+		<module id="1299" name="龙虎斗" 	resultNumberType="1" url="com/xazc/module/ssc_lh/lhModule.swf?2017080304"/>
+		<module id="1499" name="龙虎斗" 	resultNumberType="1" url="com/xazc/module/ssc_lh/lhModule.swf?2017080304"/>
+	</modules>
+</root>

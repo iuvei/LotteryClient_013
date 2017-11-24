@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="435" height="352">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.DynamicEvent;
+			import mx.managers.PopUpManager;
+			protected function image1_clickHandler(event:MouseEvent):void
+			{
+				var evt:DynamicEvent=new DynamicEvent("closeOrderDetailsEvent");
+				evt.parentCurrent=this;
+				dispatchEvent(evt);
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+		[Event(name="closeOrderDetailsEvent",type="mx.events.DynamicEvent")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Image source="css/skin1/universal/images/k3_sum.png" smooth="true" />
+	
+	<s:Image y="17" right="13" smooth="true" source="css/skin1/universal/images/prize_close.png" visible="false"
+			 click="image1_clickHandler(event)" buttonMode="true"/>
+	
+</s:Group>

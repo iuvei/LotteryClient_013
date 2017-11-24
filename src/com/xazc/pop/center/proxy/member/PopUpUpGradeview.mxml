@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"  creationComplete="vgroup1_creationCompleteHandler(event)"
+		  xmlns:s="library://ns.adobe.com/flex/spark" paddingLeft="0" paddingTop="10"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" gap="20">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.components.bettings.AlertMsgCenter;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			private var service:ServerToolImpl;
+			public var RebateArr:Array;//proxy返点
+			[Bindable]
+			public var rechargeItem:Object;
+			private var alert:AlertMsgCenter=new AlertMsgCenter();
+			/**
+			 *修改代理下级返点
+			 **/
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				btnSubmit.mouseChildren = false;
+				btnSubmit.enabled = false;
+				
+				if(rechargeItem == null || rechargeItem.UserID == null)
+				{
+					throw new Error("当前下级不能为NULL");
+					return;
+				}
+				if(service==null){
+					service=new ServerToolImpl();
+				}
+				if(rebateCombox.selectedIndex <=0){
+					alert.show("请选择返点！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					return;
+				}
+				var key:int = rebateCombox.selectedItem.rebate;
+				service.SetUserRebate({"ThisUserID":rechargeItem.UserID,"Rebate":key},setValueBackHandler);
+				this.btnSubmit.enabled = false;
+			}
+			/**
+			 * 向服务器设置返点回调函
+			 */
+			private function setValueBackHandler(e:ResultEvent):void
+			{
+				var arr:Object = Util.getInstance().resuleFormatToJSon(e.result.toString(),1);
+				this.btnSubmit.enabled = true;
+				if(arr.RegisterComplete == true){//成功
+					if(arr.OrderState == 0){
+						alert.show("修改成功！",resourceManager.getString('PersonalCenterPrompt','alert_title'),1);
+						//删除小鱼等于设置的返点列表
+						var arr2:Array = rechargeItem.Parentrebate as Array;
+						var temp:Array = new Array();
+						for(var i:int = 0;i< arr2.length;i++){
+							if(arr2[i]>this.rebateCombox.selectedItem.rebate)
+							{
+								temp.push(arr2[i]);
+							}
+						}
+						rechargeItem.Parentrebate = temp;
+						rechargeItem.Rebate = this.rebateCombox.selectedItem.rebate;
+						
+						vgroup1_creationCompleteHandler();
+						Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.SETUSERREBATESUCCESS, rechargeItem));
+					}
+				}
+				else
+				{
+					if(arr.OrderState == (-1)){
+						alert.show("该用户没有在上级中！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+					else if(arr.OrderState == (-2)){
+						alert.show("逻辑错误！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+					else if(arr.OrderState == (-3)){
+						alert.show("该返点注册人数已满！",resourceManager.getString('PersonalCenterPrompt','alert_title'));
+					}
+				}
+				
+				btnSubmit.mouseChildren = true;
+				btnSubmit.enabled = true;
+			}
+			
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent = null):void
+			{
+				RebateArr = new Array();
+				btnSubmit.enabled = false;
+				RebateArr.push({"rebate":"请选择"});
+				if(rechargeItem.hasOwnProperty("Parentrebate")){
+					var arr:Array = rechargeItem.Parentrebate as Array;
+					if(arr.length<1){
+						btnSubmit.enabled = false;
+					}else{
+						btnSubmit.enabled = true;
+						for (var i:int = 0; i <arr.length; i++) 
+						{
+							RebateArr.push({"rebate":arr[i]});
+						}
+					
+					}
+				}
+				rebateCombox.dataProvider = new ArrayCollection(RebateArr);
+				rebateCombox.selectedIndex = 0;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%" height="24" horizontalAlign="left" verticalAlign="middle"  gap="10">
+		<s:Label text="升级返点  :" textAlign="right" styleName="personalCenterDetailLabelStyle_1"/>
+		<s:ComboBox initialize="rebateCombox.textInput.editable = false" id="rebateCombox" styleName="personalCenterDetailComboBoxStyle" labelField="rebate"/>
+	</s:HGroup>
+	<s:Spacer width="100%" height="100"/>
+	<s:HGroup width="204"  horizontalAlign="center" gap="0">
+		<s:Button id="btnSubmit" label="{resourceManager.getString('PersonalCenterPage','save')}" styleName="personalSubmitButtonStyle" click="button1_clickHandler(event)" buttonMode="true"/>
+	</s:HGroup>
+</s:VGroup>

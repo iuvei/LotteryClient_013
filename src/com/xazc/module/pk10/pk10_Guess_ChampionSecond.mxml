@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" 
+		  xmlns:ssc="com.xazc.components.ssc.*" gap="0"
+		  creationComplete="creationCompleteHandler(event)" xmlns:bettings="com.xazc.components.bettings.*" xmlns:pk10="com.xazc.module.pk10.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.MathUtil;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.events.ToolTipEvent;
+			import mx.managers.ToolTipManager;
+			import mx.utils.StringUtil;
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			private var game_id:String = "12";
+			
+			public var lotteryID:String = "";
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			[Bindable]
+			public var pattern:RegExp = /^(([0][1-9]|[1][0])((\s)([0][1-9]|[1][0])){1,10})(([0][1-9]|[1][0])((\s)([0][1-9]|[1][0])){1,10}){0,}$/;
+			
+			private function checkNumbers1(str:String,model:RegExp):Boolean
+			{
+				var result:Object = model.exec(str);
+				if(result == null)
+				{
+					return false;
+				}
+				return true;
+			}
+			/**
+			 * 正则匹配 
+			 */
+			private function checkNumbers(arr:Array,model:RegExp):Boolean
+			{
+				for each(var item:String in arr)
+				{
+					var result:Object = model.exec(item);
+					if(result == null)
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				selectedPlayContainer = playContainer1;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+			}
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				switch(playType)
+				{
+					case 1:
+						zhushu = MathUtil.getBetSumByType(currentContainOne.selectedNum,currentContainTwo.selectedNum,1);
+						bettingInfo.tzcontent = currentContainOne.selectedNum + "|" + currentContainTwo.selectedNum;
+						break;
+				}
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			protected function playClickHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				target.selected = true;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,game_id));
+				switch (target.id)
+				{
+					case "play_12":
+						sntuo = 0;
+						playType = 1;
+						gameType.text = resourceManager.getString('LotteryTips','PK10_game_tip_2');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','PK10_game_tip_emp_2');
+						showPlayContainer(playContainer1);
+						break;
+					case "play_v_12":
+						sntuo = 3;
+						playType = 2;
+						gameType.text = resourceManager.getString('LotteryTips','PK10_game_tip_3');
+						gameType_emp.toolTip = resourceManager.getString('LotteryTips','PK10_game_tip_emp_3');
+						start5Tip.text = resourceManager.getString('LotteryTips','lottery_10_guess_Second_Stick_Common_Tips');
+						showPlayContainer(playContainer2);
+						break;
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+			protected function clearTextAreaBtn_clickHandler(event:MouseEvent):void
+			{
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+			}
+			
+			public function clearAll(e:BetsClickEvent = null):void
+			{
+				clearSelectedNumbers();
+				clearCopyHandler();
+			}
+			
+			private function clearSelectedNumbers():void
+			{
+				currentContainOne.clearAllSelectedNumHandler();
+				currentContainTwo.clearAllSelectedNumHandler();
+			}
+			
+			private function clearCopyHandler():void
+			{
+				if(textarea)
+				{
+					textarea.text = "";
+				}
+			}
+			
+			protected function textarea1_mouseOutHandler(event:MouseEvent):void
+			{
+				error = false;
+				numbersArr = new Array();
+				var arrs:Array = new Array();
+				if(textarea.text != ""){
+					textarea.text = textarea.text.split("格式不正确").join(""); 
+					
+					if(textarea.text.charAt(2) == "," || textarea.text.charAt(2) == ";")
+					{
+						textarea.text += "\      格式不正确";
+						return;
+					}
+					
+					var myPattern_1:RegExp = /,/g;
+					var myPattern_2:RegExp = /;/g;
+					var myPattern_3:RegExp = /，/g;
+					var myPattern_4:RegExp = /；/g;
+					var myPattern_5:RegExp = /　/g;//全角模式
+					var myPattern_6:RegExp = /，/g;//全角模式
+					var myPattern_7:RegExp = /；/g;//全角模式
+					
+					textarea.text = textarea.text.replace(myPattern_5," ");//替换全角模式
+					textarea.text = textarea.text.replace(myPattern_6,",");//替换全角模式
+					textarea.text = textarea.text.replace(myPattern_7,"\n");//替换全角模式
+					textarea.text = textarea.text.replace(myPattern_1,"\n");
+					textarea.text = textarea.text.replace(myPattern_2,"\n");
+					textarea.text = textarea.text.replace(myPattern_3,"\n");
+					textarea.text = textarea.text.replace(myPattern_4,"\n");
+					var arr:Array = textarea.text.split("\n");
+					
+					var itemArr:Array = [];
+					for(var itemIndex:int = 0; itemIndex < arr.length; itemIndex++)
+					{
+						if(arr[itemIndex] != "")
+						{
+							itemArr.push(StringUtil.trim(arr[itemIndex]));
+						}
+					}
+					if(checkNumbers(itemArr,pattern)){
+						for(var ia:int=0; ia<itemArr.length; ia++){
+							if(itemArr[ia] != ""){
+								arrs.push(itemArr[ia]);
+							}
+						}
+						textarea.text = "";
+						check_digit(arrs,5);
+					}else{
+						var resultStr:String = "";
+						for(var ib:int=0; ib<itemArr.length; ib++){
+							if(itemArr[ib] != ""){
+								if(checkNumbers1(itemArr[ib].toString(),pattern)){
+									resultStr += itemArr[ib].toString() + "\n";
+								}else{
+									if((itemArr[ib].toString().indexOf("\      格式不正确\n") || itemArr[ib].toString().indexOf("格式不正确")) == -1){
+										resultStr += itemArr[ib].toString() + "\      格式不正确\n";
+									}else{
+										resultStr += itemArr[ib].toString().split(itemArr[ib].toString().indexOf("\      格式不正确\n")).join("\      格式不正确\n");
+									}
+								}
+							}
+						}
+						textarea.text = resultStr;
+					}
+					if(!error)
+					{
+						
+						var numbersArray:Array = new Array();
+						for(var z:int=0; z<arrs.length; z++){
+							var str:String=arrs[z].toString().split(" ").join(",");
+							numbersArray.push(str);
+						}
+						bettingInfo.tzzs = numbersArray.length;
+						var str2:String= "";
+						for(var i5:int=0; i5<numbersArray.length; i5++){
+							var item1:String = numbersArray[i5]; 
+							str2 += item1.split(",").join("|") + " ";					
+						}
+						bettingInfo.tzcontent = str2.substring(0,str2.length - 1);
+						bettingInfo.sntuo = sntuo;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+					else
+					{
+						bettingInfo.tzzs = 0;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK,bettingInfo));
+					}
+				}
+			}
+			
+			/**
+			 * 检查错误（位数检查）
+			 */
+			public function check_digit(arrs:Array,lengths:int):void{
+				textarea.text = "";
+				for(var i:int=0; i<arrs.length; i++){
+					var flag:Boolean = false;
+					if(arrs[i] != ""){
+						if(arrs[i].length != lengths){
+							textarea.text += arrs[i] + "\      格式不正确\n";
+							error=true;
+						}else{
+							var str:String=arrs[i].toString().split(" ").join(",");
+							var array:Array = str.split(",");
+							for(var j:int=0; j<array.length; j++)
+							{
+								for(var k:int=j+1; k<array.length; k++)
+								{
+									if(array[k] == array[j]){
+										flag = true;
+										error=true;
+									}
+								}
+							}
+							if(flag)
+								textarea.text += arrs[i] + "\      格式不正确\n";
+							else
+								textarea.text += arrs[i] + "\n";
+						}
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="24" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup verticalAlign="middle" gap="4">
+			<s:ToggleButton id="play_12" label="{resourceManager.getString('LotteryTips','straight_Selected')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_12" label="{resourceManager.getString('LotteryTips','stick_Selected')}" styleName="standardButtonSkinStyle"
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="{resourceManager.getString('LotteryTips','PK10_game_tip_2')}" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','PK10_game_tip_emp_2')}"/>
+		</s:HGroup>
+	</s:Group>
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	<s:VGroup id="playContainer1" width="100%"  height="310" paddingLeft="15" gap="24" verticalAlign="middle">
+		<pk10:PK10NumberSelected id="currentContainOne" selectedNumStyle="numberSelectSkinStyle_large" bettingRowName="{resourceManager.getString('LotteryTips','first')}"/>
+		<pk10:PK10NumberSelected id="currentContainTwo" selectedNumStyle="numberSelectSkinStyle_large" bettingRowName="{resourceManager.getString('LotteryTips','second')}"/>
+	</s:VGroup>
+	
+	<s:HGroup id="playContainer2" width="100%" height="310" paddingLeft="15" verticalAlign="middle" gap="58" visible="false" includeInLayout="false">
+		<s:TextArea  id="textarea" width="620" height="250" color="#000000" 
+					 contentBackgroundColor="0xffffff" borderColor="0xffffff" 
+					 rollOut="textarea1_mouseOutHandler(event)"/>
+		<s:VGroup gap="18" height="250" verticalAlign="top">
+			<s:Label text="{resourceManager.getString('LotteryTips','fomal_Description')}" styleName="stickYellowTextStyle"/>
+			<s:Label id="start5Tip" text="{resourceManager.getString('LotteryTips','lottery_10_guess_Second_Stick_Common_Tips')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','pk10_stick_Tips_7')}{2}{resourceManager.getString('LotteryTips','pk10_stick_Tips_12')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','pk10_stick_Tips_13')}" styleName="stickWriteTextStyle"/>
+			<s:Label text="{resourceManager.getString('LotteryTips','pk10_stick_Tips_10')}" styleName="stickWriteTextStyle"/>
+		</s:VGroup>
+	</s:HGroup>
+</s:VGroup>

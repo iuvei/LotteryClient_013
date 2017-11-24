@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%"
+		 creationComplete="creationCompleteHandler(event)" 
+		 xmlns:load="com.xazc.components.load.*"
+		 implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable" 
+		 xmlns:components="com.xazc.components.*" 
+		 xmlns:models="com.xazc.view.models.*"
+		 xmlns:index="com.xazc.view.index.*"
+		 >
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.components.navication.TopNaivcation;
+			import com.xazc.event.BusinessLogicEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.manager.TimerManager;
+			import com.xazc.manager.XmlManager;
+			import com.xazc.pop.center.gameRecords.PopUpGameRecord;
+			import com.xazc.pop.center.gameRecords.PopUpGameRecordMainView;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			import com.xazc.view.index.ActivityIndex;
+			import com.xazc.view.index.NoticeIndex;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.core.IVisualElement;
+			import mx.effects.EffectManager;
+			import mx.events.DynamicEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.events.ModuleEvent;
+			import mx.managers.PopUpManager;
+			import mx.modules.IModuleInfo;
+			import mx.modules.ModuleManager;
+			
+			
+			private var _loadedModule:Array;
+			
+			private var _url:String;
+			
+			private var _moduleInfo:IModuleInfo;
+			
+			private var topNav:TopNaivcation; 
+			
+			private var markLottery:String="";//标识是否是子模块传递过来的彩种
+			
+			//彩种选项卡是否已有彩种
+			private var isSelectLpttery:Boolean = false;
+			
+			private var alert:AlertMsg = new AlertMsg();
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				this.currentState="default";
+				
+				_loadedModule = [];
+				XmlManager.getInstance().init();
+				
+				Util.getInstance().addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.addEventListener(SystemEvent.TZ_LOCK_FULL_SCREEN,tzLockFullScreenHandler);
+				//监听鼠标单击页面事件
+				this.addEventListener(MouseEvent.MOUSE_DOWN,onMouseEventHandler);
+				//切换个人中心
+				Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_MAIN,jumpPanelHandler);
+				//弹出公告窗口
+				Sendnotification.instance.addEventListener(JumpEvent.JUMP_TO_ANNOUNCEMENT,jumpAnnouncementHandler);
+				
+				navigationBtns.lottery.addEventListener(MouseEvent.ROLL_OVER,mouseOverHandler);
+				navigationBtns.home.addEventListener(MouseEvent.ROLL_OVER,nsv_rollOutHandler);
+				navigationBtns.chess.addEventListener(MouseEvent.ROLL_OVER,nsv_rollOutHandler);
+				lotteryTopGroup.addEventListener(MouseEvent.ROLL_OVER,nsv_rollOutHandler);
+				
+				//获取邮件未读数目
+				Sendnotification.instance.dispatchEvent(new BusinessLogicEvent(BusinessLogicEvent.GET_MESSAGEUNREAD_NUM));
+			}
+			
+			private function selectedLotteryChangeHandler(e:SystemEvent):void
+			{
+				var data:Object = e.body as Object;
+				//修改当前选择的彩种
+				CurrentLotteryInfo.lotteryId = data.lotteryID.toString();
+				if(data.lotteryID.toString().indexOf("#")<0){
+					//获取加载模块地址
+					moduleContainer.virtual_lotteryID = "";
+					_url = XmlManager.getInstance().getModuleUrl(parseInt(data.lotteryID.toString()));
+				}else{
+					//修改当前选择的彩种
+					moduleContainer.virtual_lotteryID = data.lotteryID.toString();
+					CurrentLotteryInfo.lotteryId = data.lotteryID.toString().split("#")[0];
+					_url = XmlManager.getInstance().getModuleUrl(parseInt(CurrentLotteryInfo.lotteryId+"99"));
+				}
+				if(_url == "")
+				{
+					alert.show("敬请期待！");
+					return;
+				}
+				
+				if(data.hasOwnProperty("mark")){
+					markLottery=data.mark.toString();	
+				}else{
+					markLottery="";					
+				}
+				//当前加载模块显示
+				moduleContainer.vb.visible = false;
+				moduleContainer.lotteryLoadBorderContainer.visible = false;
+				//初始化彩种数据
+				this.init_lottery();
+				
+				if(_moduleInfo != null)
+				{
+					Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.MODULE_UNLOAD));
+					_moduleInfo.unload();
+				}
+				loadModule();
+				
+				//设置当前已有彩种选择
+				isSelectLpttery = true;
+				//切换到彩种显示页面
+				if(1!=bg2Module.selectedIndex){
+					bg2Module.selectedIndex = 1;
+					navigationBtns.setSelectNavigationItemState("lottery");
+				}
+				//开启加载条
+				openLoaing(1,XmlManager.getInstance().getModuleName(parseInt(data.lotteryID.toString())));
+			}
+			/**
+			 * 初始化彩种参数 
+			 * 
+			 */
+			private function init_lottery():void
+			{
+			
+				CurrentLotteryInfo.currentIssue="";
+				CurrentLotteryInfo.yuanjiaoMoshi = 1;
+				CurrentLotteryInfo.isBetNow = false;
+				CurrentLotteryInfo.gameId = '0';
+				
+				//还原倍数设置
+				CurrentLotteryInfo.beishu = 1;
+				
+				//初始化秒秒彩暂时不投注状态
+				CurrentLotteryInfo.mmcBetNowBoolean = false;
+			
+			
+			}
+			private function loadModule():void
+			{
+				_moduleInfo = ModuleManager.getModule(_url);
+				_moduleInfo.addEventListener(ModuleEvent.READY, OnReadyHandler);
+				_moduleInfo.addEventListener(ModuleEvent.PROGRESS, OnProgressHandler);
+				_moduleInfo.addEventListener(ModuleEvent.ERROR, OnErrorHandler);
+				_moduleInfo.addEventListener(ModuleEvent.UNLOAD, OnUnLoadHandler);
+				_moduleInfo.load(ApplicationDomain.currentDomain);
+			}
+			private function OnReadyHandler(e:ModuleEvent):void
+			{
+				 _moduleInfo.removeEventListener(ModuleEvent.READY, OnReadyHandler);
+				var moduleInfo:IModuleInfo = e.module;
+				var moduleInstance:Object = moduleInfo.factory.create();
+				moduleContainer.add(moduleInstance as IVisualElement);
+				
+				//加载完彩种样式后执行
+				moduleContainer.vb.visible = true;
+				moduleContainer.lotteryLoadBorderContainer.visible = true;
+				moduleContainer.lottery_loading.suspend();
+				CurrentLotteryInfo.lotteryState = true;
+				
+				this.currentState='default';
+			}
+			
+			
+			private function OnProgressHandler(e:ModuleEvent):void
+			{
+				var bytesLoaded:Number = e.bytesLoaded / e.bytesTotal;
+				TimerManager.getInstance().start();
+				trace("已加载：" + (Number(bytesLoaded.toFixed(2)) * 100) + "%100");
+			}
+			
+			private function OnErrorHandler(e:ModuleEvent):void
+			{
+//				loading.suspend();
+				_moduleInfo.removeEventListener(ModuleEvent.ERROR, OnErrorHandler);
+				trace("加载失败！");
+				//修改当前选择的彩种
+				CurrentLotteryInfo.lotteryId = "0";
+				Alert.show("加载失败！");
+			}
+			
+			private function OnUnLoadHandler(e:ModuleEvent):void
+			{
+				moduleContainer.remove();
+				_moduleInfo.removeEventListener(ModuleEvent.UNLOAD, OnUnLoadHandler);
+				_moduleInfo = null;
+				TimerManager.getInstance().stop();
+				trace("卸载完成");
+			}
+			
+			
+			/**
+			 *显示状态 
+			 **/
+			private function openLoaing(index:int,name:String):void{
+				
+				moduleContainer.lottery_loading.splicePromptLanguage(index,name);
+				moduleContainer.lottery_loading.resume();
+				
+			}
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				isSelectLpttery = false;
+				changeViewStackModel(0,0,0);
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				
+			}
+			
+			private function tzLockFullScreenHandler(e:SystemEvent):void{
+				if(e.body.flag==true){
+					loading.splicePromptLanguage(4,"");
+					loading.resume();
+				}else{
+					loading.suspend();
+				}
+			}
+			
+			public function changeViewStackModel(num:Number,_addIndex:int,_menuIndex:int):void
+			{
+				if(this.bg2Module.selectedIndex!=num){
+					this.bg2Module.selectedIndex = num;
+					if(4==num){
+						navigationBtns.setSelectNavigationItemState("activity");
+						if(activityIndex ==null)
+						{
+							return;
+						}else{
+							activityIndex.init();
+						}
+					}else if(2==num||0==num){
+						navigationBtns.setSelectNavigationItemState("home");
+					}
+				}
+				switch(num)
+				{
+					case 2: //个人中心
+						//充值提款-1
+						//我的记录-2  账户明细  我的记录
+						//我的资料-3
+						//代理管理-4
+						//游戏记录-8
+						personalIndex.addIndex = _addIndex;
+						personalIndex.menuIndex = _menuIndex;
+						personalIndex.init();
+						break;
+					default:
+						
+						break;
+				}
+			}
+			/**
+			 *  跳转公告
+			 * */
+			private var obj_NoticeIndex:NoticeIndex ;
+			public function jumpAnnouncementHandler(event:JumpEvent):void
+			{
+				jumpAnnouncement();
+			}
+			public function jumpAnnouncement():void
+			{
+				if(!obj_NoticeIndex){
+					obj_NoticeIndex=new NoticeIndex();
+				}
+				PopUpManager.addPopUp(obj_NoticeIndex,this,false);
+				obj_NoticeIndex.init();
+				obj_NoticeIndex.x = (FlexGlobals.topLevelApplication.width - obj_NoticeIndex.width)/2;
+				obj_NoticeIndex.y = (FlexGlobals.topLevelApplication.height - obj_NoticeIndex.height)/2 ;
+			}
+			
+			private function onMouseEventHandler(evt:MouseEvent):void
+			{
+				if(obj_NoticeIndex){
+					PopUpManager.removePopUp(obj_NoticeIndex);
+					obj_NoticeIndex=null;
+				}
+			}
+			
+			/**
+			 *  个人中心  切换
+			 * */
+			private var obj_PopUpGameRecord:PopUpGameRecord;
+			protected function jumpPanelHandler(event:JumpEvent):void
+			{
+				switch(event.type)
+				{
+					case JumpEvent.JUMP_TO_MAIN://个人中心
+					{
+						if(event.body != null)
+						{
+							
+							if(event.body.num == 2&&event.body.addIndex==8){
+							
+								if(this.bg2Module.selectedIndex == 2){
+									changeViewStackModel(2,event.body.addIndex,event.body.menuIndex);
+								}else{
+									//弹框  显示游戏记录;
+									if(!obj_PopUpGameRecord)
+									{
+										obj_PopUpGameRecord= new PopUpGameRecord();
+									}
+									obj_PopUpGameRecord.x=(FlexGlobals.topLevelApplication.width-obj_PopUpGameRecord.width)/2 - 7;
+									obj_PopUpGameRecord.y=(FlexGlobals.topLevelApplication.height-obj_PopUpGameRecord.height)/2 + 10;
+									PopUpManager.addPopUp(obj_PopUpGameRecord,moduleContainer,true);
+									obj_PopUpGameRecord.menu_clickHandler(2);
+								}
+							}else{
+								changeViewStackModel(event.body.num,event.body.addIndex,event.body.menuIndex);
+								if(1==event.body.num&&(!isSelectLpttery)){
+									var obj:Object = new Object();
+									obj.lotteryID = "12";
+									Util.getInstance().dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE, obj));
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			
+			private function mouseOverHandler(e:MouseEvent):void
+			{
+				if(this.currentState=="default" ){
+					this.currentState='flipped';
+				}else{
+					this.currentState='default';
+				}
+			}
+			
+			protected function nsv_rollOutHandler(event:MouseEvent):void
+			{
+				this.currentState='default';
+			}
+			/**
+			 * 选项卡切换时触发事件
+			 */
+			protected function bg2Module_changeHandler(event:IndexChangedEvent):void
+			{
+				CurrentUserInfo.indexSelectedItemIndex = bg2Module.selectedIndex;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Move id="wipeEffect_down" target="{lottreySelect}" duration="500" yFrom="-100" yTo="132"/>
+		<s:Move id="wipeEffect_up" target="{lottreySelect}" duration="500" yFrom="132" yTo="-100"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="default"/>
+		<s:State name="flipped"/>
+	</s:states>
+	
+	<s:transitions>
+		<s:Transition id="t1" fromState="*" toState="flipped">
+			<s:Wipe id="wipe"
+					direction="down"
+					target="{lottreySelect}"
+					duration="500" />
+		</s:Transition>
+		<s:Transition id="t2" fromState="flipped" toState="default">
+			<s:Wipe id="wipe1"
+					direction="up"
+					target="{lottreySelect}"
+					duration="500" />
+		</s:Transition>
+	</s:transitions>
+	
+	<s:VGroup width="100%" gap="0" horizontalAlign="center">
+		<!--  头部显示用户基本信息  -->
+		<index:LotteryTopGroup id="lotteryTopGroup"/>
+		<!--  头部导航显示  -->
+		<index:NavigationBtns  id="navigationBtns"/>
+		<!--  各个模块显示切换,首页，彩票专区，棋牌游戏，系统公告。。。  -->
+		<s:Group width="100%">
+			<mx:ViewStack id="bg2Module" width="100%" change="bg2Module_changeHandler(event)" creationPolicy="all"  resizeToContent="true">
+				<!--  首页  -->
+				<index:LotteryIndex width="100%"/>
+				<!--  彩种加载模块  -->
+				<models:ModuleContainer id="moduleContainer" height="100%" width="100%" />
+				<!--  用户中心模块  -->
+				<index:PersonalIndex id="personalIndex"  width="100%" height="100%"/>
+				<!--  棋牌模块  -->
+				<index:ChessIndex id="chessIndex" width="100%" height="100%"/>
+				<!--  活动专区  -->
+				<index:ActivityIndex id="activityIndex" width="100%" height="100%"/>
+			</mx:ViewStack>
+			<!--  公告  -->
+			<index:NoticeTop/>
+		</s:Group>
+		<!--  底部显示  -->
+		<index:LotteryBottomGroup/>
+	</s:VGroup>
+	<!--  左侧导航显示暂时注释掉  -->
+	<s:HGroup width="100%" height="100%" visible="false" includeInLayout="false">
+		<components:NavigationLotterySelected id="leftNavigation" height="100%" />
+	</s:HGroup>
+	<!--投注时锁住全屏-->
+	<load:LoadingGroup id="loading"  width="100%" height="100%" visible="false"/>
+	
+	<s:HGroup  y="132" width="100%" height="100%" horizontalAlign="center" >
+		<index:LottreySelect id="lottreySelect" visible="false" visible.flipped="true" rollOut="nsv_rollOutHandler(event)"/>
+	</s:HGroup>
+	
+</s:Group>

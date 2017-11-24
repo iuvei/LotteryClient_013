@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  width="430" height="230"
+					  creationComplete="group1_creationCompleteHandler(event)">
+	<!--<s:layout>
+		<s:VerticalLayout gap="15" horizontalAlign="center"/>
+	</s:layout>-->
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.SystemEvent;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Application;
+			
+			public var okBtnBoolean:Boolean=false;
+			
+			[Bindable]
+			private var _message1:String;
+			[Bindable]
+			private var _message2:String;
+			[Bindable]
+			private var _message3:String;
+			
+			[Bindable]
+			private var _cancleBtnShow:Boolean;
+			
+			[Bindable]
+			private var _titleMsg:String;
+			
+			private var _timer:Timer;
+			
+			private var _isShow:Boolean = false;
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				closeBtn.setFocus();
+			}
+			
+			public function show(msg:String = "", titleValue:String = "", cancleFlg:Boolean = false, timerStart:Boolean = false, model:Boolean = true):void
+			{
+				if(timerStart)
+				{
+					_timer = new Timer(5000, 1);
+					_timer.addEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+					_timer.start();
+				}
+				_isShow = true;
+				_cancleBtnShow = cancleFlg;
+				_titleMsg = titleValue;
+				var array:Array = msg.split("#");
+				_message1 = array[0].toString();
+				_message2 = array[1].toString();
+				_message3 = array[2].toString();
+				PopUpManager.removePopUp(this);
+				PopUpManager.addPopUp(this, FlexGlobals.topLevelApplication.contentGroup, model);
+				PopUpManager.centerPopUp(this);
+				this.setFocus();
+			}
+			
+			
+			protected function timerCompleteHandler(e:TimerEvent):void
+			{
+				_timer.stop();
+				_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+				_timer = null;
+				canleHandler();
+			}
+			
+			protected function canleHandler():void
+			{
+				if(_isShow)
+					PopUpManager.removePopUp(this);
+				_isShow = false;
+			}
+			
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				canleHandler();
+			}
+			/**
+			 *发送关闭窗口时间 
+			 **/
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				canleHandler();
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Rotate id="rotateEffect"  autoCenterTransform="true"
+				  duration="500"  angleFrom="0" angleTo="360"
+				  target="{imgClose}" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	
+	<s:BorderContainer width="430" height="230" backgroundColor="#000000" backgroundAlpha="0.5" borderColor="#ffffff" borderAlpha="0.5" >
+		<s:BorderContainer width="100%" height="100%" left="10" right="10" top="10" bottom="10" backgroundColor="#ffffff" borderVisible="false">
+			<s:Rect width="408" height="43">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0x5f5f5f" alpha="1" ratio="0.2"/>
+						<s:GradientEntry color="0x000000" alpha="1" ratio="1"/>
+						<s:GradientEntry color="0x242424" alpha="1" ratio="0.3"/>
+					</s:LinearGradient>
+				</s:fill>
+				<s:stroke>
+					<s:LinearGradientStroke>
+						<s:GradientEntry color="0xc9d2dc" alpha="0"/>
+					</s:LinearGradientStroke>
+				</s:stroke>
+			</s:Rect>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	
+	<s:Group  x="10" y="10" width="410" height="210" >
+		
+		<s:Group width="100%" height="43" >
+			<mx:Label id="title" verticalCenter="0" left="20" text="{_titleMsg}" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			<s:Image id="imgClose" x="375" y="15" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+					 rollOver="imgClose_rollOverHandler(event)"
+					 rollOut="imgClose_rollOutHandler(event)"/>
+		</s:Group>
+		
+		
+		<s:VGroup x="0" top="53" width="100%" height="150" gap="10" horizontalAlign="center">
+			<s:VGroup  width="369" height="90" gap="10" horizontalAlign="center" verticalAlign="middle">
+				<s:HGroup gap="10" horizontalAlign="center" verticalAlign="middle">
+					<s:Label text="{_message1}" styleName="personalCenterDetailLabelStyle_1"/>
+					<s:Label text="{_message2}" styleName="personalCenterDetailLabelStyle_1"/>
+				</s:HGroup>
+				<s:Label text="{_message3}" styleName="personalCenterDetailLabelStyle_1"/>
+			</s:VGroup>
+			<s:HGroup horizontalCenter="150" verticalAlign="middle">
+				<s:Button id="closeBtn" click="canleHandler()" label="关  闭" styleName="chongzhi_alertSubmitButtonStyle_2"/>
+			</s:HGroup>
+		</s:VGroup>
+		
+	</s:Group>
+	
+</s:Group>

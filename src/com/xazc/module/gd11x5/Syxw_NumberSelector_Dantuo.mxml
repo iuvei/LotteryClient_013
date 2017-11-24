@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="com.xazc.interfaces.IInit"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			//绑定位数
+			[Bindable]
+			public var weiShu:String = "";
+			//选号数组
+			public var numbersArray:Array = new Array();
+			//派发事件所用变量
+			public static const NUMBER_CLICK:String = "dantuo_number_click";
+			/**
+			 *初始化 
+			 */
+			public function init():void{
+				numbersArray = new Array();
+				clean();
+			}
+			/**
+			 * 清除选号状态
+			 */
+			public function clean():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=0; i<numbersHGroup.numElements; i++){
+					toggleBtn = numbersHGroup.getElementAt(i) as ToggleButton;
+					toggleBtn.selected = false;
+				}
+			}
+			/**
+			 * 组件初始化完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				createToggleBtn();
+			}
+			/**
+			 * 创建选号
+			 */
+			public function createToggleBtn():void
+			{
+				var toggleBtn:ToggleButton;
+				for(var i:int=1; i<12; i++){
+					toggleBtn = new ToggleButton();
+					if(i > 9){toggleBtn.label = i.toString();}
+					else{toggleBtn.label = "0" + i.toString();}
+					toggleBtn.styleName = "numberSelectSkinStyle_large";
+					toggleBtn.addEventListener(MouseEvent.CLICK,toggleBtn_clickHandler);
+					numbersHGroup.addElement(toggleBtn);
+				}
+			}
+			/**
+			 * 处理点击按钮事件
+			 */
+			protected function toggleBtn_clickHandler(event:MouseEvent):void
+			{
+				var temp:ToggleButton = event.target as ToggleButton;
+				if(temp.selected == true){
+					numbersArray.push(temp.label);
+				}else{
+					numbersArray.splice(numbersArray.indexOf(temp.label),1);
+				}
+				dispatchEvent(new CustomEvent(NUMBER_CLICK,numbersArray));
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup height="100%" verticalAlign="middle" gap="20">
+		<s:Button label="{weiShu}" styleName="orderButtonSkinStyle_mid"/>
+		<s:HGroup id="numbersHGroup" gap="10" horizontalAlign="center" verticalAlign="middle">
+		</s:HGroup>
+	</s:HGroup>
+</s:Group>

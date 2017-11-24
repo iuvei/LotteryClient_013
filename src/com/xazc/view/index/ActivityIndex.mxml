@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="1000"  
+		 xmlns:notice="com.xazc.pop.center.notice.*" 
+		 creationComplete="vbox1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.pop.center.activity.PopUpActivityMainView;
+			import com.xazc.pop.center.notice.PopUpNoticeMainView;
+			
+			import mx.events.FlexEvent;
+			
+			private var p_6:PopUpActivityMainView;//优惠活动
+			
+			protected function vbox1_creationCompleteHandler(event:FlexEvent):void
+			{
+				init();
+			}
+			public function init():void
+			{
+				if(bc)
+				{
+					bc.removeAllElements();
+				}
+				if(p_6 == null)
+				{
+					p_6 = new PopUpActivityMainView()
+				}
+				bc.addElement(p_6);
+				p_6.init();
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Group width="100%" height="100%">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="#0e0d10" />
+			</s:fill>
+		</s:Rect>
+		<s:BitmapImage source="css/skin1/assets/otherbg.jpg" width="100%"  smooth="true"/>
+		<s:VGroup width="100%"  horizontalAlign="center" paddingTop="55" gap="15">
+			<s:Image source="css/skin1/assets/activity_logo.png"/>
+			<s:BorderContainer borderAlpha="0" borderColor="0xffffff" backgroundAlpha="0" width="1000" >
+				<s:Group x="0" y="0" id="bc">
+					<!--<notice:PopUpNoticeMainView />-->
+				</s:Group>
+			</s:BorderContainer>
+		</s:VGroup>
+	</s:Group>
+</mx:VBox>

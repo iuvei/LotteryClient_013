@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:VerticalLayout paddingTop="25" paddingBottom="0" gap="10"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Button;
+			[Bindable]
+			public var numbers:String = "";
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var numbersArray:Array = numbers.split(",");
+				createNumbers(numbersArray);
+			}
+			/**
+			 * 创建号码
+			 */
+			public function createNumbers(array:Array):void
+			{
+				tittleGroup.removeAllElements();
+				var btn:spark.components.Button;
+				for(var i:int=0; i<array.length; i++){
+					btn = new spark.components.Button();
+					btn.label = array[i].toString();
+					btn.width = 75;
+					btn.height = 58;
+					btn.styleName = "winNumberStyle_huge";
+					tittleGroup.addElement(btn);
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup width="100%">
+		<s:Label text="{resourceManager.getString('LotteryTips','hundred')}" width="100%" textAlign="center" styleName="lastLabelStyles2"/>
+		<s:Label text="{resourceManager.getString('LotteryTips','ten')}" width="100%" textAlign="center" styleName="lastLabelStyles2"/>
+		<s:Label text="{resourceManager.getString('LotteryTips','single')}" width="100%" textAlign="center" styleName="lastLabelStyles2"/>
+	</s:HGroup>
+	<s:TileGroup id="tittleGroup" width="100%" requestedColumnCount="3">
+	</s:TileGroup>
+</s:Group>

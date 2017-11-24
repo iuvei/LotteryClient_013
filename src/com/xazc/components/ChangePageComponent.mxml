@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 styleName="ChangePageComponentStyle"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:HorizontalLayout gap="0" verticalAlign="middle" horizontalAlign="right"/>
+	</s:layout>
+	<fx:Metadata>
+		[Event(name="ChangePageIndex", type="com.xazc.event.CustomEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.components.ToggleButton;
+			import spark.events.TextOperationEvent;
+			
+			/**
+			 * 用户点击更换页面事件 
+			 */
+			public static const CHANGE_PAGE_INDEX:String = "ChangePageIndex";
+			
+			// 当前页数
+			private var _currentPgae:int = 1
+			public function get currentPgae():int{return _currentPgae;}
+			
+			// 总页数;
+			private var _totalpage:int;
+			public function get totalpage():int{return _totalpage;}
+			
+			/**
+			 * 设置页面
+			 * @param currentPage 当前页数
+			 * @param totalPage 总页数 
+			 */
+			public function setPage(currentPage:int, totalPage:int):void
+			{
+				_currentPgae = currentPage;
+				_totalpage = totalPage;
+				
+				updatePage();
+			}
+			
+			public function updatePage():void
+			{
+				updateButton();
+				updatePageButton();
+			}
+			
+			// 更新按钮
+			private function updateButton():void
+			{
+				nextPage.enabled = _currentPgae < _totalpage;
+				lastPage.enabled = _currentPgae > 1;
+			}
+			
+			// 更新分页按钮
+			private function updatePageButton():void
+			{
+				var pages:Array = analysisPageSelector();
+				creatPageSelector(pages);
+			}
+			
+			/**
+			 * 分析分页设置
+			 * @param 分析后得到的页面设置
+			 */
+			private function analysisPageSelector():Array
+			{
+				var pageArray:Array = [];
+				
+				var tempNumFirst:Number = 0;
+				var tempNumLast:Number = 0;
+				
+				if(_currentPgae<=2){
+					tempNumLast = 3-_currentPgae;
+				}
+				
+				if((_totalpage-_currentPgae)<=2){
+					tempNumFirst = 2-(_totalpage-_currentPgae);
+				}
+				
+				
+				for(var i:int = _currentPgae - 2 - tempNumFirst; i < _currentPgae; i++)
+				{
+					if(i >= 1)
+					{
+						pageArray.push(i);
+					}
+				}
+				for(i = _currentPgae; i <= _currentPgae +2 + tempNumLast; i++)
+				{
+					if(i <= _totalpage)
+					{
+						pageArray.push(i);
+					}
+				}
+				
+				return pageArray;
+			}
+			
+			/**
+			 * 创建页面选项
+			 * @param selector 选项设置 
+			 */
+			private function creatPageSelector(selector:Array):void
+			{
+				pageContainer.removeAllElements();
+				
+//				var temp:ToggleButton;
+				var temp:LinkButton;
+				for(var i:int = 0; i < selector.length; i++)
+				{
+					temp = new LinkButton();
+					temp.buttonMode = true;
+					temp.label = selector[i];
+					temp.name = selector[i].toString();
+					temp.setStyle("color","#ffffff");
+					temp.addEventListener(MouseEvent.CLICK, pageClickHandler, false, 0, true);
+					if(_currentPgae == selector[i])
+					{
+//						temp.selected = true;
+						temp.setStyle("color","0x428cb3");
+					}
+					pageContainer.addElement(temp);
+				}
+			}
+			
+			protected function lastPage_clickHandler(event:MouseEvent):void
+			{
+				if(_currentPgae > 1)
+				{
+					_currentPgae--;
+				}
+				
+				sendRequest();
+				updatePage();
+			}
+			
+			protected function nextPage_clickHandler(event:MouseEvent):void
+			{
+				if(_currentPgae < _totalpage)
+				{
+					_currentPgae++;
+				}
+				
+				sendRequest();
+				updatePage();
+			}
+			
+			protected function pageClickHandler(event:MouseEvent):void
+			{
+//				_currentPgae = parseInt((event.currentTarget as ToggleButton).name);
+				_currentPgae = parseInt((event.currentTarget as LinkButton).name);
+				sendRequest();
+				updatePage();
+			}
+			
+			protected function pageSelector_changeHandler(event:Event):void
+			{
+				var value:int = parseInt(pageSelector.text);
+				if(value < 1)
+				{
+					value = 1;
+				}
+				else if(value > _totalpage)
+				{
+					value = _totalpage;
+				}
+				//_currentPgae = value;
+				pageSelector.text = value.toString();
+			}
+			
+			
+			
+			private function sendRequest():void
+			{
+				dispatchEvent(new CustomEvent(CHANGE_PAGE_INDEX, _currentPgae, true));
+				pageSelector.text="";
+			}
+			
+			protected function pageSelector_mouseDownHandler(event:MouseEvent):void
+			{
+				callLater(addStageListener);
+			}
+			
+			protected function addStageListener():void
+			{
+				if(stage)
+				{
+					//stage.addEventListener(MouseEvent.MOUSE_DOWN, stageClickHandler);
+				}
+			}
+			
+			protected function stageClickHandler(event:MouseEvent):void
+			{
+				//stage.removeEventListener(MouseEvent.MOUSE_DOWN, stageClickHandler);
+				this.setFocus();
+			}
+			
+			protected function pageSelector_focusInHandler(event:FocusEvent):void
+			{
+				pageSelector.text = "";
+			}
+			
+			protected function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				if(pageSelector.text==""){
+					return;
+				}
+				dispatchEvent(new CustomEvent(CHANGE_PAGE_INDEX, pageSelector.text, true));
+				pageSelector.text="";
+				
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				lastPage.label = "<上一页";
+				nextPage.label = "下一页>";
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--styleName="lastPageButtonStyle"-->
+	<mx:LinkButton id="lastPage" buttonMode="true"  color="0x428cb3"
+			  click="lastPage_clickHandler(event)"/>
+	<s:HGroup id="pageContainer" gap="0">
+	</s:HGroup>
+	<!--styleName="nextPageButtonStyle"-->
+	<mx:LinkButton id="nextPage" buttonMode="true" color="0x428cb3"  
+			  click="nextPage_clickHandler(event)"/>
+	
+	<s:Spacer width="8"/>
+	<mx:TextInput id="pageSelector" textAlign="center" 
+				 width="28" maxChars="4" restrict="0-9" mouseChildren="false"
+				 change="pageSelector_changeHandler(event)" 
+				 styleName="personalCenterDetailTextInputStyle"/>
+	<s:Spacer width="2"/>
+	<mx:LinkButton label="跳转"  color="0xffffff" click="linkbutton1_clickHandler(event)"/>
+</s:Group>

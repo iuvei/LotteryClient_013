@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<actionScriptProperties analytics="false" mainApplicationPath="LotteryClient.mxml" projectUUID="02569341-b093-4b1a-a43d-d5d6b4ecd67c" version="10">
+  <compiler additionalCompilerArguments="-locale en_US&#13;&#10;-locale zh_CN&#13;&#10;-source-path=locale/{locale}" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="false" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="true" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
+    <compilerSourcePath/>
+    <libraryPath defaultLinkType="0">
+      <libraryPathEntry kind="4" path="">
+        <excludedEntries>
+          <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/flex.swc" useDefaultLinkType="false"/>
+          <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/core.swc" useDefaultLinkType="false"/>
+        </excludedEntries>
+      </libraryPathEntry>
+      <libraryPathEntry kind="1" linkType="1" path="libs"/>
+    </libraryPath>
+    <sourceAttachmentPath/>
+  </compiler>
+  <applications>
+    <application path="LotteryClient.mxml">
+      <airExcludes/>
+    </application>
+  </applications>
+  <modules>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/fc3D/fc3D_Module.swf" optimize="true" sourcePath="src/com/xazc/module/fc3D/fc3D_Module.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/klsf/KLSFModule.swf" optimize="false" sourcePath="src/com/xazc/module/klsf/KLSFModule.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/shssl/ShsslModule.swf" optimize="true" sourcePath="src/com/xazc/module/shssl/ShsslModule.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/pl3/Pl3_Module.swf" optimize="true" sourcePath="src/com/xazc/module/pl3/Pl3_Module.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/cqssc/CqsscModule.swf" optimize="true" sourcePath="src/com/xazc/module/cqssc/CqsscModule.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/tb/tbModule.swf" optimize="true" sourcePath="src/com/xazc/module/tb/tbModule.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/miaomiaocai/miaomiaoModule.swf" optimize="true" sourcePath="src/com/xazc/module/miaomiaocai/miaomiaoModule.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/jx11x5/jx11x5_Module.swf" optimize="true" sourcePath="src/com/xazc/module/jx11x5/jx11x5_Module.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/pk10/PK10Module.swf" optimize="true" sourcePath="src/com/xazc/module/pk10/PK10Module.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/pl5/Pl5Module.swf" optimize="true" sourcePath="src/com/xazc/module/pl5/Pl5Module.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/jsk3/Jsk3Module.swf" optimize="true" sourcePath="src/com/xazc/module/jsk3/Jsk3Module.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/happy8/Happy8Module.swf" optimize="true" sourcePath="src/com/xazc/module/happy8/Happy8Module.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/ssc_lh/lhModule.swf" optimize="true" sourcePath="src/com/xazc/module/ssc_lh/lhModule.mxml"/>
+    <module application="src/LotteryClient.mxml" destPath="com/xazc/module/sd11x5/sd11x5_Module.swf" optimize="true" sourcePath="src/com/xazc/module/sd11x5/sd11x5_Module.mxml"/>
+  </modules>
+  <buildCSSFiles/>
+  <flashCatalyst validateFlashCatalystCompatibility="false"/>
+  <buildTargets>
+    <buildTarget buildTargetName="default">
+      <airSettings airCertificatePath="C:/Users/Administrator/Desktop/qq.p12" airTimestamp="false" anePathSet="true" version="1">
+        <airExcludes/>
+        <anePaths/>
+      </airSettings>
+      <actionScriptSettings version="1"/>
+    </buildTarget>
+  </buildTargets>
+</actionScriptProperties>

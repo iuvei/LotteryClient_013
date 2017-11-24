@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="145">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			
+			import mx.events.FlexEvent;
+			
+			public static const SELECT_THIS_CENTERMENU_ITEM:String = "selectThisCenterMenuItem";
+			
+			private var item_id:String = '';
+			
+			protected function clickHandler(event:MouseEvent):void
+			{
+				item_id = (event.currentTarget as Label).id.split("_")[1];
+				setStautes(item_id);
+				dispatchEvent(new CustomEvent(SELECT_THIS_CENTERMENU_ITEM,this.item_id));
+			}
+			private function setStautes(str:String):void
+			{
+				for(var i:int = 2; i< 3;i++)
+				{
+					this["item_" + i].setStyle("color","0x8e8b8b");
+				}
+				
+				this["item_" + str].setStyle("color","0xbb9b4e");
+			}
+			public function init():void
+			{
+				setStautes("2");//默认选择转盘活动；
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	
+	<s:Image x="32" source="css/skin1/images/activityImages/menu_caipiao.png" />
+	<!--<s:Label x="57" y="35"  buttonMode="true" color="0x8e8b8b" fontFamily="Microsoft YaHei,微软雅黑" fontSize="14" text="消费大返利" 
+			 id="item_1" click="clickHandler(event)"	/>-->
+	<s:Label x="57" y="35"  buttonMode="true" color="0x8e8b8b" fontFamily="Microsoft YaHei,微软雅黑" fontSize="14" text="幸运转盘"
+			 id="item_2" click="clickHandler(event)"	/>
+	
+	<s:Image x="-7" y="65" source="css/skin1/images/activityImages/activityMenuBtnItem_line.png"/>
+	
+	<!--<s:Group visible="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}"
+			 includeInLayout="{(!CurrentUserInfo.isTestName)?(CurrentBusinessInfo.isOpenChessAndCardModelOpen):false}">
+		<s:Image x="32" y="80" source="css/skin1/images/activityImages/menu_qipai.png"/>
+		<s:Label x="57" y="115"  buttonMode="true" color="0x8e8b8b" fontFamily="Microsoft YaHei,微软雅黑" fontSize="14" text="敬请期待…"
+				 id="item_3" click="clickHandler(event)"	/>
+		
+		<s:Image x="-7" y="145" source="css/skin1/images/activityImages/activityMenuBtnItem_line.png"/>
+	</s:Group>-->
+</s:Group>

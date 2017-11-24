@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CenterEvent;
+			import com.xazc.event.Sendnotification;
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			import mx.managers.PopUpManager;
+			private function submit():void
+			{
+				Sendnotification.instance.dispatchEvent(new Event("waitingItemCloseEvent"));
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function send():void
+			{
+				Sendnotification.instance.dispatchEvent(new Event("rechargeSuccessEvent"));
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				Sendnotification.instance.dispatchEvent(new Event("waitingItemCloseEvent"));
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:BorderContainer width="480" height="310" backgroundColor="#000000" backgroundAlpha="0.5" borderColor="#ffffff" borderAlpha="0.5" >
+		<s:BorderContainer width="100%" height="100%" left="10" right="10" top="10" bottom="10" backgroundColor="#ffffff" borderVisible="false">
+			<s:Rect width="458" height="43">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0x5f5f5f" alpha="1" ratio="0.2"/>
+						<s:GradientEntry color="0x000000" alpha="1" ratio="1"/>
+						<s:GradientEntry color="0x242424" alpha="1" ratio="0.3"/>
+					</s:LinearGradient>
+				</s:fill>
+				<s:stroke>
+					<s:LinearGradientStroke>
+						<s:GradientEntry color="0xc9d2dc" alpha="0"/>
+					</s:LinearGradientStroke>
+				</s:stroke>
+			</s:Rect>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	
+	
+	<!--<s:Image source="css/skin1/universal/center/chongzhi.png"/>-->
+	
+	<s:VGroup x="10" y="10" width="461" height="290" gap="10">
+		<!--<s:HGroup width="100%"  horizontalAlign="right" verticalAlign="middle" height="40">
+			<s:Button  styleName="zxWatingButtonStyle" click="submit()" buttonMode="true"/>
+		</s:HGroup>-->
+		
+		<s:Group width="100%" height="43" >
+			<mx:Label id="title" verticalCenter="0" left="20" text="提示信息" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			<s:Image id="imgClose" x="430" y="15" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+					 rollOver="imgClose_rollOverHandler(event)"
+					 rollOut="imgClose_rollOutHandler(event)"/>
+		</s:Group>
+		
+		
+		<mx:Label  paddingLeft="80" styleName="personalCenterDetailLabelStyle_3"
+				  text="{resourceManager.getString('PersonalCenterPage','recharge_Tips_12')}"/>
+		<s:VGroup width="100%" paddingLeft="80" gap="10">
+			<mx:Label text="     {resourceManager.getString('PersonalCenterPage','recharge_Tips_13')}"  styleName="personalCenterDetailLabelStyle_1"/>	
+			<mx:Label text="     {resourceManager.getString('PersonalCenterPage','recharge_Tips_14')}：" styleName="personalCenterDetailLabelStyle_1"/>	
+			<s:HGroup gap="20">
+				<s:Button label="{resourceManager.getString('PersonalCenterPage','complete_Recharge')}" width="120"  styleName="chongzhi_alertSubmitButtonStyle_3" click="send()" buttonMode="true"/>
+				<s:Button label="{resourceManager.getString('PersonalCenterPage','recharge_Problems')}" width="120" styleName="chongzhi_alertSubmitButtonStyle_2" click="submit()" buttonMode="true"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:Spacer width="85" height="40"/>
+		<s:HGroup width="100%" height="27" horizontalAlign="right">
+			<s:Button label="{resourceManager.getString('PersonalCenterPage','goback_Again_Select_Bank')}"  width="150" styleName="chongzhi_alertSubmitButtonStyle_1" click="submit()" buttonMode="true"/>
+			<s:Spacer width="10"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

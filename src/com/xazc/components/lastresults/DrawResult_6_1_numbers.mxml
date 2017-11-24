@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:VerticalLayout gap="10" paddingTop="25" paddingBottom="0" horizontalAlign="center"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Button;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Button;
+			//开奖号码
+			[Bindable]
+			public var numbers:String = "";
+			//彩种ID
+			[Bindable]
+			public var lotteryID:String = "";
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var numbersArray:Array = numbers.split(",");
+				createNumbers(numbersArray);
+			}
+			/**
+			 * 创建号码
+			 */
+			public function createNumbers(array:Array):void
+			{
+				tittleGroup.removeAllElements();
+				var btn:spark.components.Button;
+				for(var i:int=0; i<array.length; i++){
+					btn = new spark.components.Button();
+					btn.label = array[i].toString();
+					btn.styleName = "winNumberStyle_large";
+					tittleGroup.addElement(btn);
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryPlayNames")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:Label text="{resourceManager.getString('LotteryPlayNames','lottery_' + lotteryID)}  官方网站" styleName="lastLabelStyles2"/>
+	<s:TileGroup id="tittleGroup" width="100%" requestedColumnCount="5">
+	</s:TileGroup>
+</s:Group>

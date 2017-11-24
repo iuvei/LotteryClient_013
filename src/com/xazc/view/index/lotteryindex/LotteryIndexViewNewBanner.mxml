@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" clipAndEnableScrolling="true"
+		 width="1100" height="425" creationComplete="creationCompleteHandler(event)" xmlns:easing="com.greensock.easing.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.JumpEvent;
+			import com.xazc.event.Sendnotification;
+			import com.xazc.single.PersonCenterInfo;
+			
+			import mx.effects.Effect;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Image;
+			
+			private var imgArr:Array = ["",
+								"css/skin1/assets/lotteryindex/act_3.png",
+								"css/skin1/assets/lotteryindex/act_4.png",
+								"css/skin1/assets/lotteryindex/act_1.png",
+								"css/skin1/assets/lotteryindex/act_5.png",
+								
+			];
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				for(var i:int = 1; i < imgArr.length; i++)
+				{
+					var image:Image = new Image();
+					image.source = imgArr[i];
+					imgGroup.addElementAt(image,0);
+					image.name = "img_" + i;
+					image.alpha = 0;
+				}
+				effect_fade();
+			}
+			
+			
+			private var old_index:int;
+			private  function effect_fade():void
+			{
+				imgGroup.getChildAt(0).alpha = 1;
+				effect_alpha_1.target = imgGroup.getChildAt(0);
+				effect_alpha_1.play();
+				old_index = 0;
+			}
+			
+			protected function effect_alpha_1_effectEndHandler(event:EffectEvent):void
+			{
+				if(old_index + 1 >= imgGroup.numChildren)
+				{
+					old_index = 0;
+				}else{
+					old_index += 1;
+				}
+				imgGroup.getChildAt(old_index).alpha = 1;
+				effect_alpha_1.target = imgGroup.getChildAt(old_index);
+				effect_alpha_1.play();
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->	
+		<s:Fade id="effect_alpha_1" alphaFrom="1" alphaTo="0" duration="1000" startDelay="3000" effectEnd="effect_alpha_1_effectEndHandler(event)"/>
+	</fx:Declarations>
+	<s:VGroup id="imgGroup" horizontalAlign="center" gap="-425" width="1100" height="425"/>
+	
+</s:Group>

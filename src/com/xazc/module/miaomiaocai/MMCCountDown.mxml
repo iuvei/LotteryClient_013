@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+					  width="248" height="189" styleName="countDownBgStyle">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.Util;
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				Util.getInstance().addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+				Sendnotification.instance.addEventListener(SystemEvent.SELECTED_LOTTERY_CHANGE, selectedLotteryChangeHandler);
+			}
+			private function selectedLotteryChangeHandler(e:SystemEvent):void{
+				recycle()
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				trace("清空回收组件。。。");
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+</s:SkinnableContainer>

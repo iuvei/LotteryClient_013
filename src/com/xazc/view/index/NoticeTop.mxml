@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" 
+		 creationComplete="init(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.single.CurrentBusinessInfo;
+			
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			//公告列表
+			private var noticeArr:Array;
+			
+			private var timer:Timer;
+			
+			protected function init(event:FlexEvent):void
+			{
+				if(!timer){
+					this.showTime();
+				}
+			}
+			
+			private function showTime():void
+			{
+				this.timer = new Timer(1000);
+				this.timer.addEventListener(TimerEvent.TIMER, this.resetNow);
+				getNews();//获取公告;
+			}
+			
+			
+			private function resetNow(event:TimerEvent):void
+			{
+				this.showNotice();
+			}
+			/**
+			 * 显示公告 
+			 */
+			private var tempNoticeNumber:Number = 0;
+			
+			private var maxNoticeNumber:Number = 7;
+			//当前播放的公告id
+			private var noticeIdNow:String;
+			
+			private var temp:Number = 0;
+			private function showNotice():void
+			{
+				if(!noticeArr){
+					noticeItem.text = "抱歉，暂无公告！";
+					return;
+				}
+				if(noticeArr.length<7){
+					maxNoticeNumber = noticeArr.length;
+				}else{
+					maxNoticeNumber = 7;
+				}
+				noticeItem.text =   noticeArr[tempNoticeNumber].NewsTittle;
+				noticeIdNow = noticeArr[tempNoticeNumber].MerchantNews_ID;
+				if(temp==0){
+					tempNoticeNumber++;
+				}
+				
+				temp++;
+				if(5==temp){
+					temp = 0;
+				}
+				if(tempNoticeNumber>=maxNoticeNumber){
+					tempNoticeNumber = 0;
+				}
+			}
+			
+			protected function noticeItem_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+			
+			private function getNews():void
+			{
+				var servern:ServerToolImpl = new ServerToolImpl();
+				var obj:Object = new Object();
+				obj.CurrentPageIndex = 0;
+				obj.CurrentPageSize = 10;
+				servern.getNewsInfoFlex(obj, getNewsInfoFlexHandler);
+			}
+			private function getNewsInfoFlexHandler(e:ResultEvent):void{
+				trace(e.result.toString());
+				var object:Object=JSON.parse(e.result.toString());
+				if(object.SystemState==64){
+					noticeArr = object.ModelList;
+					this.timer.start();
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%" horizontalAlign="center">
+		<s:BitmapImage source="css/img/notice_bg.png"/>
+	</s:HGroup>
+	<s:HGroup width="100%" horizontalAlign="center">
+		<s:Group x="102" width="896" height="35" >
+			<s:Image x="0" y="9" smooth="true" source="css/skin1/images/Notice/gonggaoIco.png"/>
+			<mx:Label id="noticeItem" x="85" y="7" click="noticeItem_clickHandler(event)"
+					  styleName="NoticeLabelStyle_1_white"/>
+		</s:Group>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" height="35">
+		
+	</s:HGroup>
+	
+</s:Group>

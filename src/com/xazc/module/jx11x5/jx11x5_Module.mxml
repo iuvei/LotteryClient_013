@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:countdowns="com.xazc.components.countdowns.*"
+		  xmlns:lastresults="com.xazc.components.lastresults.*"
+		  xmlns:resultlists="com.xazc.components.resultlists.*"
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  width="960" height="825"
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  creationComplete="module1_creationCompleteHandler(event)" xmlns:gd11x5="com.xazc.module.gd11x5.*" xmlns:components="com.xazc.components.*" xmlns:jx11x5="com.xazc.module.jx11x5.*">
+	<fx:Style source="css/skin1/universal/universal.css"/>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			/**
+			 * 初始化监听
+			 */
+			protected function module1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.currentState='default';
+				init();
+			}
+			/**
+			 * 初始化模块
+			 */
+			public function init():void
+			{
+				if(countDown_Content){countDown_Content.init();}
+				if(lastResult_Content){lastResult_Content.init();}
+				if(resultList_Content){resultList_Content.init();}
+				if(SyxwBet_Content){SyxwBet_Content.init();}
+				if(SyxwBet_Content){SyxwBet_Content.bettings_Module.init();}
+				
+				//添加对子组件时间的监听
+				this.addEventListener(BetEvent.YUANJIAOMOSHI_CLICK,betEventHandler);
+				this.addEventListener(CustomEvent.CHANGE_RESULT_LISTS,betEventHandler);
+				this.addEventListener(CustomEvent.ADD_BETNUM_BTNCLICK, betEventHandler);
+			}
+			/**
+			 * 处理投注模块
+			 */
+			public function betEventHandler(event:CustomEvent):void
+			{
+				switch(event.type)
+				{
+					case BetEvent.YUANJIAOMOSHI_CLICK:
+					{
+						SyxwBet_Content.switchMoneyModel();
+						break;
+					}
+					case CustomEvent.CHANGE_RESULT_LISTS://显示最新开奖结果
+					{
+						
+						resultList_Content.getKaijiangMessage(event.body as ResultEvent);
+						break;
+					}
+					case CustomEvent.ADD_BETNUM_BTNCLICK://添加号码
+					{
+						
+						SyxwBet_Content.confirm_clickHandler();
+						break;
+					}
+					default:
+						break;
+				}
+			}
+			/**
+			 * 资源回收
+			 */
+			public function recycle():void
+			{
+				if(countDown_Content){countDown_Content.recycle();}
+				if(lastResult_Content){lastResult_Content.recycle();}
+				if(resultList_Content){resultList_Content.recycle();}
+				if(SyxwBet_Content){SyxwBet_Content.recycle();}
+				if(SyxwBet_Content){SyxwBet_Content.bettings_Module.recycle();}
+				
+				this.removeEventListener(BetEvent.YUANJIAOMOSHI_CLICK,betEventHandler);
+				this.removeEventListener(CustomEvent.CHANGE_RESULT_LISTS,betEventHandler);
+				this.removeEventListener(CustomEvent.ADD_BETNUM_BTNCLICK, betEventHandler);
+			}
+			protected function countdowns_Module_selectedLotterysTabButtonEventHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(this.currentState=="default" || this.currentState=="flipped1"){
+					this.currentState='flipped';
+				}else{
+					this.currentState='default';
+				}
+			}
+			
+			protected function nsv_rollOutHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.currentState='default';
+			}
+			
+			protected function resultlists_Module_addResultObjectEventHandler(event:DynamicEvent):void
+			{
+				// TODO Auto-generated method stub
+				lrd.objItem=event.arr as Array;
+			}
+			
+			protected function resultlists_Module_lookResultDetailEventHandler(event:DynamicEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(this.currentState=="default"  || this.currentState=="flipped"){
+					this.currentState='flipped1';
+				}else{
+					this.currentState='default';
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="default"/>
+		<s:State name="flipped"/>
+		<s:State name="flipped1"/>
+	</s:states>
+	
+	<s:transitions>
+		<s:Transition id="t1" fromState="*" toState="flipped">
+			<s:Wipe id="wipe"
+					direction="down"
+					target="{nsv}"
+					duration="500" />
+		</s:Transition>
+		<s:Transition id="t2" fromState="flipped" toState="default">
+			<s:Wipe id="wipe1"
+					direction="up"
+					target="{nsv}"
+					duration="500" />
+		</s:Transition>
+		
+		<s:Transition id="t3" fromState="*" toState="flipped1">
+			<s:Wipe id="wipe3"
+					direction="down"
+					target="{lrd}"
+					duration="500" />
+		</s:Transition>
+		<s:Transition id="t4" fromState="flipped1" toState="default">
+			<s:Wipe id="wipe4"
+					direction="up"
+					target="{lrd}"
+					duration="500" />
+		</s:Transition>
+	</s:transitions>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup horizontalAlign="left" verticalAlign="middle" width="100%" height="100%">
+		<s:Group width="960" height="189" depth="1000">
+			<s:BitmapImage source="@Embed('css/skin1/universal/images/ssc_TopBg_03.png')"/>
+			<s:HGroup gap="0">
+				<countdowns:CountDown id="countDown_Content" selectedLotterysTabButtonEvent="countdowns_Module_selectedLotterysTabButtonEventHandler(event)"/>
+				<lastresults:LastResult id="lastResult_Content"/>
+				<resultlists:sd11x5ResultList id="resultList_Content" addResultObjectEvent="resultlists_Module_addResultObjectEventHandler(event)"
+										lookResultDetailEvent="resultlists_Module_lookResultDetailEventHandler(event)"/>
+			</s:HGroup>
+		</s:Group>
+		<s:BorderContainer width="100%" height="624" styleName="smallBgSkinStyle">
+			<jx11x5:jx11x5_BetsContent width="100%" height="100%" id="SyxwBet_Content" 
+									   lottery_ID="{CurrentLotteryInfo.lotteryId}">
+			</jx11x5:jx11x5_BetsContent>
+		</s:BorderContainer>
+	</s:VGroup>
+	<components:NavSwitchView id="nsv" x="47" y="47"  visible="false"  visible.flipped="true" rollOut="nsv_rollOutHandler(event)"/>	
+	<components:LookResultDetailView id="lrd" y="155" x="660" visible="false"  visible.flipped1="true" rollOut="nsv_rollOutHandler(event)"/>
+</s:Module>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="430" height="230"
+				   creationComplete="initFocus()">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.SystemEvent;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Application;
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			[Embed(source="css/skin1/universal/images/alert_bg.png")]
+			[Bindable]
+			private var bgImage:Class;
+			
+			[Embed(source="css/skin1/universal/images/warringLogoRight.png")]
+			[Bindable]
+			private var warringLogoRight:Class;
+			[Embed(source="css/skin1/universal/images/warringLogoError.png")]
+			[Bindable]
+			private var warringLogoError:Class;
+			
+			public var okBtnBoolean:Boolean=false;
+			private var _keyBoardFlag:Boolean=false;
+			
+			[Bindable]
+			private var _message:String;
+			
+			[Bindable]
+			private var _cancleBtnShow:Boolean;
+			
+			
+			
+			[Bindable]
+			private var _titleMsg:String;
+			
+			private var _timer:Timer;
+			
+			private var _isShow:Boolean = false;
+			
+			public function get keyBoardFlag():Boolean
+			{
+				return _keyBoardFlag;
+			}
+			
+			public function set keyBoardFlag(value:Boolean):void
+			{
+				_keyBoardFlag = value;
+			}
+			
+			public function initFocus():void
+			{
+				okBtn.setFocus();
+			}
+			
+			public function show(msg:String = "", titleValue:String = "",icoType:int = 2, cancleFlg:Boolean = false, timerStart:Boolean = false, model:Boolean = true):void
+			{
+				if(icoType == 1)
+				{
+					//显示正确的对勾图标
+					warringImgIco.source = warringLogoRight;
+				}else if(icoType == 2)
+				{
+					//显示错误的叹号图标
+					warringImgIco.source = warringLogoError;
+				}else{
+					//不显示图标
+					warringImgIco.source = null;
+				}
+				
+				
+				if(timerStart)
+				{
+					_timer = new Timer(5000, 1);
+					_timer.addEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+					_timer.start();
+				}
+				_isShow = true;
+				_cancleBtnShow = cancleFlg;
+				_titleMsg = titleValue;
+				_message = msg;
+				PopUpManager.removePopUp(this);
+				PopUpManager.addPopUp(this, FlexGlobals.topLevelApplication.contentGroup, model);
+				PopUpManager.centerPopUp(this);
+				//				this.setFocus();
+				okBtn.setFocus();
+			}
+			
+			protected function onClick():void
+			{
+				if(_cancleBtnShow)
+					dispatchEvent(new SystemEvent(SystemEvent.ALERT_SUCSSES_BTN_CLICK));
+				if(okBtnBoolean){
+					dispatchEvent(new SystemEvent(SystemEvent.ALERT_SUCSSES_BTN_CLICK));
+				}
+				canleHandler();
+			}
+			
+			protected function timerCompleteHandler(e:TimerEvent):void
+			{
+				_timer.stop();
+				_timer.removeEventListener(TimerEvent.TIMER_COMPLETE, timerCompleteHandler);
+				_timer = null;
+				canleHandler();
+			}
+			
+			protected function canleHandler():void
+			{
+				if(_isShow)
+					PopUpManager.removePopUp(this);
+				_isShow = false;
+			}
+			private function keySetDownHandler(e:KeyboardEvent):void{
+				if(keyBoardFlag){
+					if(e.keyCode==13){
+						canleHandler();
+					}	
+				}
+			}
+			
+			
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+//				rotateEffect.play();
+				
+				canleHandler();
+			}
+			/**
+			 *发送关闭窗口时间 
+			 **/
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				// TODO Auto-generated method stub
+				canleHandler();
+			}
+			
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Rotate id="rotateEffect"  autoCenterTransform="true"
+				  duration="500"  angleFrom="0" angleTo="360"
+				  target="{imgClose}" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	
+	<!--<s:Image source="{bgImage}" />-->
+	
+	<s:BorderContainer width="430" height="230" backgroundColor="#000000" backgroundAlpha="0.5" borderColor="#ffffff" borderAlpha="0.5" >
+		<s:BorderContainer width="100%" height="100%" left="10" right="10" top="10" bottom="10" backgroundColor="#ffffff" borderVisible="false">
+			<s:Rect width="408" height="43">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0x5f5f5f" alpha="1" ratio="0.2"/>
+						<s:GradientEntry color="0x000000" alpha="1" ratio="1"/>
+						<s:GradientEntry color="0x242424" alpha="1" ratio="0.3"/>
+					</s:LinearGradient>
+				</s:fill>
+				<s:stroke>
+					<s:LinearGradientStroke>
+						<s:GradientEntry color="0xc9d2dc" alpha="0"/>
+					</s:LinearGradientStroke>
+				</s:stroke>
+			</s:Rect>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	
+	<s:Group  x="10" y="10" width="410" height="210" >
+		<s:Group width="100%" height="43" >
+			<mx:Label id="title" verticalCenter="0" left="20" text="{_titleMsg}" styleName="popupWindowTitleStyle"  fontSize="14"/>
+			<s:Image id="imgClose" x="375" y="15" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+					 rollOver="imgClose_rollOverHandler(event)"
+					 rollOut="imgClose_rollOutHandler(event)"/>
+		</s:Group>
+		<s:VGroup x="0" top="53" width="100%" height="150" gap="10" horizontalAlign="center">
+			<s:HGroup  width="369" height="90" gap="10" horizontalAlign="center" verticalAlign="middle">
+				<s:Image smooth="true" id="warringImgIco"/>
+				<s:Label text="{_message}" textAlign="left" styleName="personalCenterDetailLabelStyle_1"/>
+			</s:HGroup>
+			<s:HGroup horizontalAlign="center" gap="50" verticalAlign="middle">
+				<s:Button id="cancle" label="取  消" click="canleHandler()" styleName="chongzhi_alertSubmitButtonStyle_3"
+						  visible="{_cancleBtnShow}" includeInLayout="{_cancleBtnShow}" buttonMode="true"/>
+				<s:Button id="okBtn" label="确  定" click="onClick()" styleName="chongzhi_alertSubmitButtonStyle_2" 
+						  keyDown="keySetDownHandler(event)" buttonMode="true" /> 
+			</s:HGroup>
+		</s:VGroup>
+	</s:Group>
+</s:Group>

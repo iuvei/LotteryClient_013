@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="896" height="38"
+		 creationComplete="screationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.BetsClickEvent;
+			
+			import mx.events.FlexEvent;
+			[Bindable]
+			public var bettingRowName:String = "";
+			
+			public var selectedNum:Array;
+			
+			[Bindable]
+			public var selectedNumStyle:String = "numberSelectSkinStyle_mid";
+			
+			protected function screationCompleteHandler(event:FlexEvent):void
+			{
+				selectedNum = [];				
+			}
+			public function clearAllSelectedNumHandler():void
+			{
+				this.lage.selected = false;
+				this.small.selected = false;
+				this.single.selected = false;
+				this.double.selected = false;
+				selectedNum = [];
+			}
+			
+			protected function bettingNum_clickHandler(event:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = event.target as ToggleButton;
+				if(TogBtn.selected == true){
+					selectedNum.push(TogBtn.name);
+				}else{
+					selectedNum.splice(selectedNum.indexOf(TogBtn.name),1);
+				}
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.BETS_NUMBER_CLICK));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:HGroup height="100%" verticalAlign="middle" gap="20">
+		<s:Button id="bettingName" styleName="orderButtonSkinStyle_mid" label="{bettingRowName}"/>
+		<s:HGroup height="100%" verticalAlign="middle" gap="8">
+			<s:ToggleButton id="lage" label="{resourceManager.getString('LotteryTips','large')}" styleName="numberSelectSkinStyle_large" name="0" click="bettingNum_clickHandler(event)"/>
+			<s:ToggleButton id="small" label="{resourceManager.getString('LotteryTips','small')}" styleName="numberSelectSkinStyle_large" name="1" click="bettingNum_clickHandler(event)"/>
+			<s:ToggleButton id="single" label="{resourceManager.getString('LotteryTips','odd')}" styleName="numberSelectSkinStyle_large" name="2" click="bettingNum_clickHandler(event)"/>
+			<s:ToggleButton id="double" label="{resourceManager.getString('LotteryTips','even')}" styleName="numberSelectSkinStyle_large" name="3" click="bettingNum_clickHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+</s:Group>

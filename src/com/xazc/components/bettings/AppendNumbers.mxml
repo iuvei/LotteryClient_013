@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="480" height="310"
+		 creationComplete="creationCompleteHandler(event)"
+		 xmlns:bettings="com.xazc.components.bettings.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.ServerToolImpl;
+			import com.xazc.comm.vo.AppendNumbersItemVO;
+			import com.xazc.comm.vo.AppendNumbersVO;
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.service.SendMessageService;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.ISystemManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.TextOperationEvent;
+			
+			[Embed(source="css/skin1/universal/images/pop_close.png")]
+			[Bindable]
+			private var closeImage:Class;
+			
+			private var beishu:int = -1;
+			private var zhuiCount:int = -1;
+			private var needUpdate:Boolean = false;
+			
+			private var currentIssue:String;
+			
+			private var lotteryID:String;
+			
+			//追号数据
+			public var zhuiNumbersArr:ArrayCollection;
+			
+			
+			//当前期投注金额
+			public var countMoney:Number = 0;
+			
+			//追号总金额
+			[Bindable]
+			private var totalMoney:Number = 0;
+			//追号总期数
+			[Bindable]
+			private var totalIssuesNum:int;
+			
+			public var params:Object = new Object();
+			
+			private var issues:Array;
+			
+			private var server:ServerToolImpl;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				server = new ServerToolImpl();
+				getAppendNumIssuesHandler();
+				addEventListener(BetEvent.BETS_ITEM_INFO_CHANGE, betsItemInfoChangeHandler);
+				Util.getInstance().addEventListener(CustomEvent.BETTING_TOTALMONEY, bettingTotalMoenyHandler);
+			}
+			
+			private function getAppendNumIssuesHandler():void
+			{
+				//				scanner.enabled = false;
+				var obj:Object = new Object();
+				obj.LotteryCode = CurrentLotteryInfo.lotteryId;
+				obj.Num = scanner.text;
+				//				obj.Num = 100;
+				server.getLotteryIssueByNum(obj,resultHandler);
+			}
+			
+			private function bettingTotalMoenyHandler(e:CustomEvent):void
+			{
+				countMoney = Number(e.body);
+				for each(var item:AppendNumbersItemVO in zhuiNumbersArr)
+				{
+					var betsMoneyText:Number = parseInt(item.changeDouble) * countMoney;
+					item.betsMoney = Math.round(betsMoneyText * 10000) / 10000;
+					item.countMoney = countMoney;
+				}
+				vg.dataProvider = null;
+				vg.dataProvider = zhuiNumbersArr;
+				bettingAppendNumChangeHandler();
+			}
+			
+			private function betsItemInfoChangeHandler(e:BetEvent):void
+			{
+				var data:AppendNumbersItemVO = e.body as AppendNumbersItemVO;
+				for each(var item:AppendNumbersItemVO in zhuiNumbersArr)
+				{
+					if(item.rowNum == data.rowNum)
+					{
+						item.betsMoney = data.betsMoney;
+						item.changeDouble = data.changeDouble;
+						item.selected = data.selected;
+						if(!item.selected)
+							scanner.text = "";
+					}
+				}
+				multiple.text = "";
+				bettingAppendNumChangeHandler();
+			}
+			
+			//追号数据改变
+			public function bettingAppendNumChangeHandler():void
+			{
+				totalIssuesNum = 0;
+				totalMoney = 0;
+				for each(var item:AppendNumbersItemVO in zhuiNumbersArr)
+				{
+					if(item.selected)
+					{
+						totalIssuesNum++;
+						totalMoney += item.betsMoney;
+					}
+				}
+				var obj:Object = {};
+				obj.issuesNum = totalIssuesNum;
+				obj.totalMoney = totalMoney;
+				Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.BETTING_APPENDNUM_CHANGE,obj));
+			}
+			
+			private function resultHandler(e:ResultEvent):void
+			{
+				var data:Object = JSON.parse(e.result.toString());
+				issues = [];
+				//				scanner.enabled = true;
+				if(parseInt(data.SystemState.toString()) == 64)
+				{
+					var issuesArr:Array = data.LottI as Array;
+					scanner.text = ""+issuesArr.length;
+					for each(var item:Object in issuesArr)
+					{
+						issues.push(item.IssueNumber);
+					}
+					initZhuiNumbers();
+				}
+				bettingAppendNumChangeHandler();
+			}
+			
+			private function initZhuiNumbers():void
+			{
+				zhuiNumbersArr = new ArrayCollection();
+				for(var i:int = 0; i < issues.length; i++)
+				{
+					var appNum:AppendNumbersItemVO = new AppendNumbersItemVO();
+					appNum.rowNum = i + 1;
+					appNum.issue = issues[i];
+					if(multiple.text == "")
+						multiple.text = "1";
+					appNum.changeDouble = multiple.text;
+					var betsMoneyText:Number = parseInt(appNum.changeDouble) * countMoney;
+					appNum.betsMoney = Math.round(betsMoneyText * 10000) / 10000;
+					appNum.selected = true;
+					appNum.countMoney = countMoney;
+					zhuiNumbersArr.addItem(appNum);
+				}
+				vg.dataProvider = null;
+				vg.dataProvider = zhuiNumbersArr;
+			}
+			
+			/**
+			 * 关闭追号弹出框
+			 * */
+			protected function closeHandler():void
+			{
+				Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.BETTING_APPENDNUM_CLOSE));
+			}
+			
+			protected function scanner_changeHandler(event:TextOperationEvent):void
+			{
+				if(scanner.text == "" || parseInt(scanner.text) == 0)
+				{
+					scanner.text = "";
+					scanner.appendText("1");
+				}
+				
+				if(parseInt(scanner.text)>120){
+					scanner.text = "";
+					scanner.appendText("120");
+				}
+				
+				getAppendNumIssuesHandler();
+			}
+			
+			private function multiple_changeHandler(e:TextOperationEvent):void
+			{
+				if(multiple.text == "" || parseInt(multiple.text) == 0)
+				{
+					multiple.text = "";
+					multiple.appendText("1");
+				}
+				else if(parseInt(multiple.text) > 9999)
+					multiple.text = "9999";
+				
+				initZhuiNumbers();
+				bettingAppendNumChangeHandler();
+			}
+			protected function beishu_keyUpHandler(event:KeyboardEvent):void
+			{
+				if(""==this.multiple.text){
+					this.multiple.text = "1";
+				}
+				else if((Number(multiple.text))>9999){
+					multiple.text = '9999';
+				}
+				initZhuiNumbers();
+				bettingAppendNumChangeHandler();
+			}
+			
+			private function submit_clickHandler(e:MouseEvent):void
+			{
+				if(zhuiNumbersArr == null ||  zhuiNumbersArr.length == 0)
+				{
+					var alert:AlertMsg= new AlertMsg();
+					alert.show("数据加载中...\n请加载完成再投注!", "温馨提示");
+					return;
+				}
+				var appVo:AppendNumbersVO = new AppendNumbersVO();
+				appVo.isAppended = flag.selected;
+				appVo.betsContext = zhuiNumbersArr;
+				Util.getInstance().dispatchEvent(new CustomEvent(CustomEvent.BETTING_APPENDNUM_SUBMIT, appVo));
+			}
+			
+			protected function dragHandler():void
+			{
+				//this.startDrag(false, new Rectangle(-((FlexGlobals.topLevelApplication.width - 480) / 2), 0, 500, 500));
+				//				this.startDrag(false, new Rectangle(-((FlexGlobals.topLevelApplication.width - 500) / 2), 0, 500, 500));
+				//				stage.addEventListener(MouseEvent.MOUSE_UP, stageMouseUpHandler, true);
+			}
+			
+			private function stageMouseUpHandler(event:MouseEvent = null):void
+			{
+				if(stage)
+				{
+					stage.removeEventListener(MouseEvent.MOUSE_UP, stageMouseUpHandler, true);
+				}
+				if(event)
+				{
+					event.stopPropagation();
+				}
+				this.stopDrag();
+			}
+			
+			/**
+			 *关闭窗口 
+			 **/
+			protected function imgClose_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				rotateEffect.play();
+			}
+			
+			/**
+			 *发送关闭窗口时间 
+			 **/
+			protected function rotateEffect_effectEndHandler(event:EffectEvent):void
+			{
+				this.closeHandler();
+			}
+			protected function imgClose_rollOverHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = .5;
+			}
+			
+			protected function imgClose_rollOutHandler(event:MouseEvent):void
+			{
+				imgClose.alpha = 1;
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+		
+	</fx:Metadata>
+	<fx:Declarations>
+		<s:Rotate id="rotateEffect"  autoCenterTransform="true"
+				  duration="250"  angleFrom="0" angleTo="360"
+				  target="{imgClose}" effectEnd="rotateEffect_effectEndHandler(event)"/>
+	</fx:Declarations>
+	
+	<s:BorderContainer width="480" height="310" backgroundColor="#000000" backgroundAlpha="0.5" borderColor="#ffffff" borderAlpha="0.5" >
+		<s:BorderContainer width="100%" height="100%" left="10" right="10" top="10" bottom="10" backgroundColor="#ffffff" borderVisible="false">
+			<s:Rect width="458" height="42">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0x5f5f5f" alpha="1" ratio="0.2"/>
+						<s:GradientEntry color="0x000000" alpha="1" ratio="1"/>
+						<s:GradientEntry color="0x242424" alpha="1" ratio="0.3"/>
+					</s:LinearGradient>
+				</s:fill>
+				<s:stroke>
+					<s:LinearGradientStroke>
+						<s:GradientEntry color="0xc9d2dc" alpha="0"/>
+					</s:LinearGradientStroke>
+				</s:stroke>
+			</s:Rect>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	
+	<s:Group  x="10" y="10" width="460" height="290" >
+		<s:Group width="100%" height="42" >
+			<s:Label id="title" verticalCenter="0" left="20" text="追号" color="0xFFFFFF" fontFamily="Microsoft YaHei,微软雅黑" fontSize="16"/>
+			<s:Image id="imgClose" x="424" y="9" source="{closeImage}" buttonMode="true" click="imgClose_clickHandler(event)"
+					 rollOver="imgClose_rollOverHandler(event)"
+					 rollOut="imgClose_rollOutHandler(event)"/>
+		</s:Group>
+	</s:Group>
+	<s:VGroup  width="460" height="290" top="53" left="10" gap="-1">
+		<s:Group width="100%" height="34">
+			<s:Image source="css/skin1/universal/images/zhuihaoTitle.png" left="1"/>
+			<s:HGroup width="100%" height="34" verticalAlign="middle" gap="0">
+				<s:HGroup width="31" height="100%" verticalAlign="middle" horizontalAlign="center" gap="0">
+					<s:Label text="{resourceManager.getString('LotteryTips','serial_Numbers')}" styleName="labelStyles7"/>
+				</s:HGroup>
+				<s:HGroup width="127" height="100%" verticalAlign="middle" horizontalAlign="center" gap="6">
+					<s:Label text="{resourceManager.getString('LotteryTips','follow')}"  styleName="labelStyles7"/>
+					<s:TextInput id="scanner" maxChars="3" restrict="0-9" text="5"
+								 change="scanner_changeHandler(event)" skinClass="css.skin1.PopUpTitleTextInputSkin"/> 
+					<s:Label text="{resourceManager.getString('LotteryTips','issue')}" styleName="labelStyles7"/>
+				</s:HGroup>
+				<s:HGroup width="148" height="100%" verticalAlign="middle" horizontalAlign="center" gap="6">
+					<s:Label text="{resourceManager.getString('LotteryTips','times_The_Bettings')}" styleName="labelStyles7"/>
+					<s:TextInput id="multiple"  maxChars="4" text="1" restrict="0-9" keyUp="beishu_keyUpHandler(event)"
+								 change="multiple_changeHandler(event)" skinClass="css.skin1.PopUpTitleTextInputSkin"/> 
+					<mx:Label text="{resourceManager.getString('LotteryTips','double')}"  styleName="labelStyles7"/>
+				</s:HGroup>
+				<s:HGroup width="154" height="100%" verticalAlign="middle" horizontalAlign="center" gap="0">
+					<s:Label text="{resourceManager.getString('LotteryTips','money')}" styleName="labelStyles7"/>
+				</s:HGroup>
+			</s:HGroup>
+		</s:Group>
+		<s:List id="vg" width="460" height="170" horizontalScrollPolicy="off" skinClass="css.skin1.PopUpListSkin"
+				itemRenderer="com.xazc.components.bettings.AppendNumbersInfo"/>
+	</s:VGroup>
+	<s:Group width="100%" height="45" bottom="10">
+		<s:HGroup height="100%" verticalAlign="middle" left="20">
+			<s:CheckBox id="flag"  label="{resourceManager.getString('LotteryTips','the_winning_stop_Chasing_Number')}" selected="true" styleName="zhuihaoCheckBoxStyle"/>
+		</s:HGroup>
+		<s:HGroup height="100%" verticalAlign="middle" left="130">
+			<s:Label text="追号总期数" styleName="labelStyles7"/>
+			<s:Label text="{totalIssuesNum}" styleName="labelStyles4" />
+			<s:Label text="追号总金额" styleName="labelStyles7" />
+			<s:Label text="{Number(totalMoney.toFixed(4))}" styleName="labelStyles4" textAlign="center" maxWidth="65"/>
+			<s:Label text="{CurrentUserInfo.moneyType}" styleName="labelStyles7" />
+		</s:HGroup>
+		<s:HGroup height="100%" verticalAlign="middle" right="20">
+			<s:Button label="立即投注" enabled="{ CurrentLotteryInfo.isBetNow}" click="submit_clickHandler(event)" buttonMode="true" skinClass="css.skin1.PopUpSubmitBtnSkin"/>
+		</s:HGroup>
+	</s:Group>
+</s:Group>

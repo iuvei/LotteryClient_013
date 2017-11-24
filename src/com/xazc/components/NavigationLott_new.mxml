@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:components="com.xazc.components.*"
+		 >
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.Sendnotification;
+			import com.xazc.event.SystemEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.lotteryNameHelp;
+			import spark.components.ToggleButton;
+			
+			//采种类型编号ID
+			//[Bindable]
+			private var lotteryTypeID:String;
+			
+			public function set LottID(_ItemID:String):void
+			{
+				lotteryTypeID=_ItemID;
+			}
+			//初始化要加载彩种列表
+			private var _lotlist:Array;
+			
+			//设置采种列表
+			public function set lotlist(value:Array):void
+			{
+				_lotlist = value;
+				AddLottItem();
+			}
+			//加载采种内容
+			public function AddLottItem():void
+			{
+				lottlist.removeAllElements();
+				var liscount:Number=_lotlist.length;
+				
+				if(liscount>0)
+				{
+					var lot:ToggleButton;
+					for(var i:Number=0;i<liscount;i++)
+					{
+						lot=new ToggleButton();
+						lot.buttonMode = true;
+						lot.label=lotteryNameHelp.getCaizhong(_lotlist[i].toString());
+						lot.addEventListener(MouseEvent.CLICK,TranLott);
+						if('50'==_lotlist[i]||'51'==_lotlist[i]||'53'==_lotlist[i]||'55'==_lotlist[i]||'61'==_lotlist[i]||'63'==_lotlist[i]||'12'==_lotlist[i]){
+							lot.styleName = "lottSelectBut_new";
+						}else{
+							lot.styleName = "lottSelectBut_new2";
+						}
+						lot.percentWidth=100;
+						lot.name=_lotlist[i].toString();
+						if(_lotlist[i]==CurrentLotteryInfo.lotteryId){
+							lot.selected=true;
+						}
+						lottlist.addElement(lot);
+					}
+					
+				}
+			}
+			
+			//采种按钮，click 回调事件
+			private function TranLott(eve:MouseEvent):void
+			{
+				var _lotName:String=(eve.target as ToggleButton).name;
+				if(!CurrentLotteryInfo.lotteryState){
+					
+					 if(_lotName!=CurrentLotteryInfo.lotteryId){
+						(eve.target as ToggleButton).selected = false;
+						//SetShowTime(CurrentLotteryInfo.lotteryId);
+					} 
+					//当前点击的彩种未加载完不能切换彩种
+					return;
+				}
+				CurrentLotteryInfo.lotteryState = false;//已经开始加载
+				//设置其他未选中
+				SetShowTime(_lotName);
+				//设置跳转菜单
+				Sendnotification.instance.dispatchEvent(new SystemEvent(SystemEvent.SELECTED_LOTTERY_CHANGE,{lotteryID:_lotName,mark:_lotName}));
+			}
+			
+			//设置其他未选中
+			protected function SetShowTime(lottID:String):void
+			{
+				var ChildCount:Number=_lotlist.length;
+				for(var i:Number=0;i<ChildCount;i++)
+				{
+					var _LottID:String=_lotlist[i].toString();
+					var lot:ToggleButton=lottlist.getChildByName(_LottID) as ToggleButton;
+					if(_LottID!=lottID)
+					{
+						if(lot.selected)
+							lot.selected=false
+					}
+					else
+					{
+						lot.selected=true
+					} 
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup id="lottlist" width="100%" height="100%" horizontalAlign="left" paddingTop="10" paddingBottom="10">
+	</s:VGroup>
+</s:Group>

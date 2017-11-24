@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  creationComplete="vgroup1_creationCompleteHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%"  height="100%" xmlns:common="com.xazc.pop.center.common.*" >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			private var m_1:PopUpMemberPersonal;//代理会员-个人资料
+			private var m_2:PopUpMemberAccount;//代理会员-账户明细
+			private var m_3:PopUpMemberRecords;//代理会员-投注记录
+			private var m_4:PopUpMemberRecharge;//代理会员-充值
+			private var m_5:PopUpUpGradeview;// 代理会员-升级
+			private var m_6:PopUpUpRiGongZiView;// 代理会员-日工资设置
+			
+			private var _objectItem:Object;
+			
+			private var DailyWagesObj:Object = new Object;//日工资参数对象
+			
+			public function get objectItem():Object
+			{
+				return _objectItem;
+			}
+
+			public function set objectItem(value:Object):void
+			{
+				_objectItem = value;
+			}
+
+			/**
+			 *选中菜单 
+			 **/
+			public function selectedMenuItemClick(index:int):void{
+				for(var i:int=1;i<7;i++){
+					if(i==index){
+						this["tb_"+index].selected=true;
+						detailSelected(i);
+					}else{
+						this["tb_"+i].selected=false;
+					}
+				}
+			}
+			/**
+			 *显示具体详细页面 
+			 **/
+			private function detailSelected(index:int):void{
+				//控制转账
+				 if(CurrentUserInfo.isShowTran){
+					 if(CurrentUserInfo.myRebate>=1956){
+						 tb_4.visible = true;
+						 tb_4.includeInLayout = true;
+					 }else{
+						 tb_4.visible = false;
+						 tb_4.includeInLayout = false;
+					 }
+				}else{
+					tb_4.visible = false;
+					tb_4.includeInLayout = false;
+				}
+				//控制显示审计操作
+				if(CurrentUserInfo.myUserID!=_objectItem.ParentID){
+					tb_5.visible = false;
+					tb_5.includeInLayout = false;
+				}else{
+					tb_5.visible = true;
+					tb_5.includeInLayout = true;
+				}
+				group.removeAllElements();
+				if(!this["m_"+index]){
+					if(index==1){
+						this["m_"+index]=new PopUpMemberPersonal();
+						this["m_"+index].personalItem=objectItem;
+					}
+					if(index==2){
+						this["m_"+index]=new PopUpMemberAccount();
+						this["m_"+index].accountlItem=objectItem;
+					}
+					if(index==3){
+						this["m_"+index]=new PopUpMemberRecords();
+						this["m_"+index].recordItem=objectItem;
+					}
+					if(index==4){
+						this["m_"+index]=new PopUpMemberRecharge();
+						this["m_"+index].rechargeItem=objectItem;
+					}
+					if(index==5){
+						this["m_"+index]=new PopUpUpGradeview();
+						this["m_"+index].rechargeItem=objectItem;
+					}
+					if(index==6){
+						this["m_"+index]=new PopUpUpRiGongZiView();
+						this["m_"+index].DailyWagesItem=DailyWagesObj;
+					}
+				}
+				group.addElement(this["m_"+index]);
+				this["m_"+index]=null;//释放资源
+			}
+			
+			/**
+			 *返回 
+			 **/
+			protected function clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				dispatchEvent(new Event("rollBackProxyMemberEvent"));
+			}
+			
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				Util.getInstance().addEventListener(CustomEvent.SETUSERREBATESUCCESS, SetUserRebateSuccessBack);
+			}
+			protected function SetUserRebateSuccessBack(event:CustomEvent):void{
+				objectItem = event.body;
+			}
+			
+			/**
+			 * 日工资设置
+			 **/
+			public function ShowDailyWages(obj:Object):void{
+				DailyWagesObj = obj;
+				DailyWagesObj.UserName = objectItem.UserName;
+				if(obj.ShowDailyWages)
+				{
+					tb_6.visible = true;
+					tb_6.includeInLayout = true;
+				}else{
+					tb_6.visible = false;
+					tb_6.includeInLayout = false;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+		[Event(name="rollBackProxyMemberEvent",type="flash.events.Event")]
+	</fx:Metadata>
+	<s:HGroup width="100%" gap="16" verticalAlign="middle">
+		<common:PopUpTabButtonItem id="tb_1" selected="true" labelTitle="{resourceManager.getString('PersonalCenterPage','personal_Detail')}" click="selectedMenuItemClick(1)"/>
+		<common:PopUpTabButtonItem id="tb_5"  labelTitle="{resourceManager.getString('PersonalCenterPage','personal_Upgrade')}" click="selectedMenuItemClick(5)"/>
+		<common:PopUpTabButtonItem id="tb_2"  labelTitle="{resourceManager.getString('PersonalCenterPage','account_Detail')}" click="selectedMenuItemClick(2)"/>
+		<common:PopUpTabButtonItem id="tb_3"  labelTitle="{resourceManager.getString('PersonalCenterPage','bets_Record')}" click="selectedMenuItemClick(3)"/>
+		<common:PopUpTabButtonItem id="tb_4" visible="false" labelTitle="{resourceManager.getString('PersonalCenterPage','recharge')}" click="selectedMenuItemClick(4)"/>
+		<common:PopUpTabButtonItem id="tb_6" visible="false" labelTitle="日工资设置" click="selectedMenuItemClick(6)"/>
+		<s:Spacer width="100%"/>
+		<s:Group width="100%">
+			<s:Button label="{resourceManager.getString('PersonalCenterPage','goback')}" styleName="chongzhi_alertSubmitButtonStyle_2"
+					  buttonMode="true" verticalCenter="0" click="clickHandler(event)"/>
+		</s:Group>
+		<!--<s:Spacer width="10"/>-->
+	</s:HGroup>
+	<!-- 详情页面 -->
+	<s:Group id="group" width="100%" height="100%"/>
+</s:VGroup>

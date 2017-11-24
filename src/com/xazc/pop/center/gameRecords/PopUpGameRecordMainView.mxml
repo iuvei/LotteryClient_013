@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  gap="0" width="100%" height="100%"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  xmlns:proxy="com.xazc.center.proxy.*" 
+		  xmlns:common="com.xazc.pop.center.common.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.pop.center.record.PopUpAccountDetails;
+			import com.xazc.pop.center.record.PopUpBankRechargerRecords;
+			import com.xazc.pop.center.record.PopUpBankWithdrawalsRecords;
+			import com.xazc.pop.center.record.PopUpBetsRecords;
+			import com.xazc.pop.center.record.PopUpPersonalReport;
+			import com.xazc.pop.center.record.PopUpRecoveryRecords;
+			import com.xazc.pop.center.record.PopUpWinningRecords;
+			import com.xazc.single.CurrentBusinessInfo;
+			import com.xazc.single.CurrentUserInfo;
+			
+			
+			private var p_1:PopUpAccountDetails;//账户明细
+			private var p_2:PopUpBetsRecords;//投注记录
+			private var p_3:PopUpWinningRecords;//中奖记录
+			private var p_4:PopUpRecoveryRecords;//追号记录
+			private var p_5:PopUpBankRechargerRecords;// 充值记录
+			private var p_6:PopUpBankWithdrawalsRecords;//提款记录
+			private var p_7:PopUpPersonalReport;//个人报表
+			
+			
+			/**
+			 *  点击按钮的时候
+			 * 
+			 */
+			public function menu_clickHandler(index:int):void
+			{
+				for(var i:int=1;i<8;i++){
+					if(index==i){
+						this["menu_"+i].selected=true;
+						detailSelected(i);
+					}else{
+						this["menu_"+i].selected=false;
+					}
+				}
+			}
+			/**
+			 *显示具体详细页面 
+			 **/
+			private function detailSelected(index:int):void{
+				group.removeAllElements();
+				if(!this["p_"+index]){
+					if(index==1){
+						this["p_"+index]=new PopUpAccountDetails();
+					}
+					if(index==2){
+						this["p_"+index]=new PopUpBetsRecords();
+					}
+					if(index==3){
+						this["p_"+index]=new PopUpWinningRecords();
+					}
+					if(index==4){
+						this["p_"+index]=new PopUpRecoveryRecords();
+					}
+					if(index==5){
+						this["p_"+index]=new PopUpBankRechargerRecords();
+					}
+					if(index==6){
+						this["p_"+index]=new PopUpBankWithdrawalsRecords();
+					}
+					if(index==7){
+						this["p_"+index]=new PopUpPersonalReport();
+					}
+				}
+				this["p_"+index].horizontalCenter=0;
+				group.addElement(this["p_"+index]);
+				this["p_"+index]=null;//释放资源
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("PersonalCenterPage")]
+	</fx:Metadata>
+		<!-- 菜单导航 -->
+		<s:Group width="100%">
+			<s:Rect id="fill" width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient >
+						<s:GradientEntry color="#cfcece" />
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:HGroup width="100%" height="55" gap="10" left="23" verticalAlign="middle">
+				<common:PopUpTabButtonItem id="menu_1" labelTitle="{resourceManager.getString('PersonalCenterPage','account_Detail')}"  click="menu_clickHandler(1)" visible="false" includeInLayout="false"/>
+				<common:PopUpTabButtonItem id="menu_2" labelTitle="{resourceManager.getString('PersonalCenterPage','bets_Record')}" selected="true" click="menu_clickHandler(2)"/>
+				<common:PopUpTabButtonItem id="menu_3" labelTitle="{resourceManager.getString('PersonalCenterPage','award_Record')}" click="menu_clickHandler(3)"/>
+				<common:PopUpTabButtonItem id="menu_4" labelTitle="{resourceManager.getString('PersonalCenterPage','follow_Number_Record')}" click="menu_clickHandler(4)"/>
+				<common:PopUpTabButtonItem id="menu_5" labelTitle="{resourceManager.getString('PersonalCenterPage','rechargeRecord')}" click="menu_clickHandler(5)" visible="false" includeInLayout="false"/>
+				<common:PopUpTabButtonItem id="menu_6" labelTitle="{resourceManager.getString('PersonalCenterPage','ewithdrawalRecord')}" click="menu_clickHandler(6)" visible="false" includeInLayout="false"/>
+				<common:PopUpTabButtonItem id="menu_7" labelTitle="{resourceManager.getString('PersonalCenterPage','personal_ReportForms')}" click="menu_clickHandler(7)" visible="false" includeInLayout="false"/>
+			</s:HGroup>
+		</s:Group>
+		<!-- 内容 -->
+		<s:Group id="group" width="100%"/>
+</s:VGroup>

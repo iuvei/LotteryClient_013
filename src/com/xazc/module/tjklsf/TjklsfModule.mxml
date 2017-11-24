@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:countdowns="com.xazc.components.countdowns.*"
+		  xmlns:lastresults="com.xazc.components.lastresults.*"
+		  xmlns:resultlists="com.xazc.components.resultlists.*"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:happy10="com.xazc.components.happy10.*"
+		  xmlns:bettings="com.xazc.components.bettings.*"
+		  implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		  width="100%" height="100%"
+		  creationComplete="module1_creationCompleteHandler(event)" xmlns:components="com.xazc.components.*"
+		  >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.CustomEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.DynamicEvent;
+			import mx.events.FlexEvent;
+			
+			/**
+			 * 初始化组件完后调用
+			 *
+			 */
+			protected function module1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.currentState='default';
+				this.init();
+			}
+			
+			/**
+			 * 组件初始化方法 
+			 * 
+			 */
+			public function init():void
+			{
+				//初始化子组件
+				if(this.countdowns_Module){ this.countdowns_Module.init(); }
+				if(this.lastresults_Module){ this.lastresults_Module.init(); }
+				if(this.resultlists_Module){ this.resultlists_Module.init(); }
+				if(this.betingContent_Module){ this.betingContent_Module.init(); }
+				if(this.bettings_Module){ this.bettings_Module.init(); }
+				
+				//添加对子组件时间的监听
+				this.addEventListener(BetsClickEvent.BETS_NUMBER_CLICK,betsClickEventHandler);
+				this.addEventListener(BetEvent.YUANJIAOMOSHI_CLICK,betEventHandler);
+			}
+			/**
+			 * 对选号模块事件进行处理
+			 *
+			 */
+			protected function betsClickEventHandler(event:CustomEvent):void
+			{
+				
+				switch(event.type)
+				{
+					case BetsClickEvent.BETS_NUMBER_CLICK://将选择的号放到投注框中
+					{
+						var touzhuCathecticsArr:ArrayCollection = new ArrayCollection();
+						touzhuCathecticsArr.addItem(event.body as Cathectic);
+						bettings_Module.sendAllTheTouzhu(touzhuCathecticsArr);
+						break;
+					}
+						
+					default:
+					{
+						break;
+					}
+				}
+				
+			}
+			
+			/**
+			 * 对投注模块事件进行处理
+			 *
+			 */
+			protected function betEventHandler(event:CustomEvent):void
+			{
+				
+				switch(event.type)
+				{
+					case BetEvent.YUANJIAOMOSHI_CLICK://切换圆角模式
+					{
+						betingContent_Module.switchModeForChangeMoney();
+						break;
+					}
+						
+					default:
+					{
+						break;
+					}
+				}
+				
+			}
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				//子组件回收
+				if(this.countdowns_Module){ this.countdowns_Module.recycle(); }
+				if(this.lastresults_Module){ this.lastresults_Module.recycle(); }
+				if(this.resultlists_Module){ this.resultlists_Module.recycle(); }
+				if(this.betingContent_Module){ this.betingContent_Module.recycle(); }
+				if(this.bettings_Module){ this.bettings_Module.recycle(); }
+				
+				//移除对子组件时间的监听
+				this.removeEventListener(BetsClickEvent.BETS_NUMBER_CLICK,betsClickEventHandler);
+				this.removeEventListener(BetEvent.YUANJIAOMOSHI_CLICK,betEventHandler);
+				
+			}
+			protected function countdowns_Module_selectedLotterysTabButtonEventHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				if(this.currentState=="default" || this.currentState=="flipped1"){
+					this.currentState='flipped';
+				}else{
+					this.currentState='default';
+				}
+			}
+			
+			protected function nsv_rollOutHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.currentState='default';
+			}
+			
+			protected function resultlists_Module_addResultObjectEventHandler(event:DynamicEvent):void
+			{
+				// TODO Auto-generated method stub
+				lrd.objItem=event.arr as Array;
+			}
+			
+			protected function resultlists_Module_lookResultDetailEventHandler(event:DynamicEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(this.currentState=="default"  || this.currentState=="flipped"){
+					this.currentState='flipped1';
+				}else{
+					this.currentState='default';
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="default"/>
+		<s:State name="flipped"/>
+		<s:State name="flipped1"/>
+	</s:states>
+	
+	<s:transitions>
+		<s:Transition id="t1" fromState="*" toState="flipped">
+			<s:Wipe id="wipe"
+					direction="down"
+					target="{nsv}"
+					duration="500" />
+		</s:Transition>
+		<s:Transition id="t2" fromState="flipped" toState="default">
+			<s:Wipe id="wipe1"
+					direction="up"
+					target="{nsv}"
+					duration="500" />
+		</s:Transition>
+		
+		<s:Transition id="t3" fromState="*" toState="flipped1">
+			<s:Wipe id="wipe3"
+					direction="down"
+					target="{lrd}"
+					duration="500" />
+		</s:Transition>
+		<s:Transition id="t4" fromState="flipped1" toState="default">
+			<s:Wipe id="wipe4"
+					direction="up"
+					target="{lrd}"
+					duration="500" />
+		</s:Transition>
+	</s:transitions>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Style source="css/skin1/universal/universal.css"/>
+	<s:VGroup horizontalAlign="center" verticalAlign="middle" width="100%" height="100%" paddingTop="10">
+		<s:HGroup width="100%"  horizontalAlign="center" verticalAlign="middle" gap="10" >
+			<countdowns:CountDown  id="countdowns_Module" selectedLotterysTabButtonEvent="countdowns_Module_selectedLotterysTabButtonEventHandler(event)"/>
+			<lastresults:LastResult id="lastresults_Module"/>
+			<resultlists:ResultList id="resultlists_Module"  addResultObjectEvent="resultlists_Module_addResultObjectEventHandler(event)"
+									lookResultDetailEvent="resultlists_Module_lookResultDetailEventHandler(event)"/>
+		</s:HGroup>
+		<s:BorderContainer styleName="smallBgSkinStyle">
+			<s:VGroup width="100%" verticalAlign="middle" horizontalAlign="center"> 
+				<happy10:Happy10BetingContent width="976" height="330" id="betingContent_Module">
+				</happy10:Happy10BetingContent>
+				<bettings:BettingBottom width="976" height="122" id="bettings_Module">
+				</bettings:BettingBottom>
+			</s:VGroup>	
+		</s:BorderContainer>
+	</s:VGroup>
+	<components:NavSwitchView id="nsv" x="47" y="47"  visible="false"  visible.flipped="true" rollOut="nsv_rollOutHandler(event)"/>	
+	<components:LookResultDetailView id="lrd" y="155" x="660" visible="false"  visible.flipped1="true" rollOut="nsv_rollOutHandler(event)"/>
+</s:Module>

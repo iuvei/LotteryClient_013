@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		 creationComplete="creationCompleteHandler(event)"
+		 implements="com.xazc.interfaces.IInit,com.xazc.interfaces.IRecyclable"
+		 xmlns:bettings="com.xazc.components.bettings.*"
+		 xmlns:shssl="com.xazc.module.shssl.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.components.bettings.AlertMsg;
+			import com.xazc.event.BetEvent;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.CurrentUserInfo;
+			import com.xazc.single.Util;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Group;
+			import spark.modules.Module;
+			
+			[Bindable]
+			public var lotteryID:String = "";
+			
+			private var bettingInfo:Cathectic;
+			
+			private var selectedPlay:ToggleButton;
+			
+			private var bettingSelected:ShsslBettingSelected;
+			private var betting3Zu:ShsslBetting3Zu;
+			private var betting6Zu:ShsslBetting6Zu;
+			private var betting2Pre:ShsslBetting2Preceding;
+			private var betting2Last:ShsslBetting2Last;
+			private var betting1Pre:ShsslBetting1Preceding;
+			private var betting1Last:ShsslBetting1Last;
+			
+			//投注注数
+			[Bindable]
+			private var betCount:Number = 0;
+			//投注总额
+			[Bindable]
+			private var betMoney:Number = 0;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlay = togSelected;
+				bettingSelected = new ShsslBettingSelected();
+				bettingSelected.lotteryID = ""+lotteryID;
+				playContainer.addElement(bettingSelected);
+				
+				addEventListener(BetsClickEvent.CONFIRM_BTN_ENABLE, confirmBtnEnableHandler);
+				addEventListener(BetsClickEvent.NUMBER_STICK, confirmBtnEnableHandler);
+				changeConfirmLabelHandler();
+			}
+			
+			public function init():void
+			{
+				
+			}
+			
+			/**
+			 * 组件移除 
+			 *
+			 */
+			public function recycle():void
+			{
+				trace("清空回收组件。。。BettingBottom");
+			}
+			
+			public function changeConfirmLabelHandler():void
+			{
+				betCount = bettingInfo == null ? 0 : bettingInfo.tzzs;
+				betMoney = bettingInfo == null ? 0 : bettingInfo.tzzs*CurrentLotteryInfo.beishu * CurrentLotteryInfo.perPrice/CurrentLotteryInfo.yuanjiaoMoshi;
+			}
+			private function confirmBtnEnableHandler(e:BetsClickEvent):void
+			{
+				bettingInfo = e.body as Cathectic;
+				changeConfirmLabelHandler();
+			}
+			
+			private function changeBetsTypeHandler(event:MouseEvent):void
+			{
+				var target:ToggleButton = event.currentTarget as ToggleButton;
+				var selectedID:String = target.id;
+				selectedPlay.selected = false;
+				target.selected = true;
+				selectedPlay = target;
+				bettingInfo = null;
+				changeConfirmLabelHandler();
+				Util.getInstance().dispatchEvent(new BetsClickEvent(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS));
+				playContainer.removeAllElements();
+				switch (selectedID)
+				{
+					case "togSelected":
+						bettingSelected = new ShsslBettingSelected();
+						bettingSelected.lotteryID = ""+lotteryID;
+						playContainer.addElement(bettingSelected);
+						break;
+					case "tog3Zu":
+						betting3Zu = new ShsslBetting3Zu();
+						betting3Zu.lotteryID = ""+lotteryID;
+						playContainer.addElement(betting3Zu);
+						break;
+					case "tog6Zu":
+						betting6Zu = new ShsslBetting6Zu();
+						betting6Zu.lotteryID = ""+lotteryID;
+						playContainer.addElement(betting6Zu);
+						break;
+					case "tog2Preceding":
+						betting2Pre = new ShsslBetting2Preceding();
+						betting2Pre.lotteryID = ""+lotteryID;
+						playContainer.addElement(betting2Pre);
+						break;
+					case "tog2Last":
+						betting2Last = new ShsslBetting2Last();
+						betting2Last.lotteryID = ""+lotteryID;
+						playContainer.addElement(betting2Last);
+						break;
+					case "tog1Preceding":
+						betting1Pre = new ShsslBetting1Preceding();
+						betting1Pre.lotteryID = ""+lotteryID;
+						playContainer.addElement(betting1Pre);
+						break;
+					case "tog1Last":
+						betting1Last = new ShsslBetting1Last();
+						betting1Last.lotteryID = ""+lotteryID;
+						playContainer.addElement(betting1Last);
+						break;
+				}
+			}
+			
+			public function confirm_clickHandler():void
+			{
+				if(bettingInfo == null || isNaN(bettingInfo.tzzs) || bettingInfo.tzzs <= 0)
+				{
+					var alert:AlertMsg = new AlertMsg();
+					alert.show("请选择正确内容进行投注！", "温馨提示");
+					
+					//Alert.show("请选择正确内容进行投注！");
+					return;
+				}
+				
+				
+				if(betMoney<0.02){
+					var alert3:AlertMsg = new AlertMsg();
+					alert3.show("厘模式每单最少投注0.02元！", "温馨提示");
+					return;
+					
+				}
+				
+				var ca:Cathectic = new Cathectic();
+				ca.tzzs = bettingInfo.tzzs;
+				ca.tzcontent = bettingInfo.tzcontent;
+				ca.sntuo = bettingInfo.sntuo;
+				ca.lottery_type = bettingInfo.lottery_type;
+				ca.game_id = bettingInfo.game_id;
+				var touzhuCathecticsArr:ArrayCollection = new ArrayCollection();
+				touzhuCathecticsArr.addItem(ca);
+				bettings_Module.sendAllTheTouzhu(touzhuCathecticsArr);
+				
+				Util.getInstance().dispatchEvent(new BetsClickEvent(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS));
+				bettingInfo = null;
+				changeConfirmLabelHandler();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:VGroup width="100%" gap="0">
+		<s:SkinnableContainer width="100%" height="44" skinClass="css.skin1.universal.PlayGameSkinnableContainerskin">
+			<s:layout>
+				<s:HorizontalLayout horizontalAlign="left" verticalAlign="middle" gap="0" paddingLeft="16"/>
+			</s:layout>
+			<s:ToggleButton id="togSelected" label="{resourceManager.getString('LotteryTips','straight_Selected_2')}" styleName="menuSelectSkinStyle"
+							selected="true" click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="tog3Zu" label="{resourceManager.getString('LotteryTips','group_3_Selected')}" styleName="menuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="tog6Zu" label="{resourceManager.getString('LotteryTips','group_6_Selected')}" styleName="menuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="tog2Preceding" label="{resourceManager.getString('LotteryTips','ssc_Play_Tips_12')}" styleName="menuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="tog2Last" label="{resourceManager.getString('LotteryTips','ssc_Play_Tips_13')}" styleName="menuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="tog1Preceding" label="{resourceManager.getString('LotteryTips','ssc_Play_Tips_14')}" styleName="menuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)"/>
+			<s:ToggleButton id="tog1Last" label="{resourceManager.getString('LotteryTips','ssc_Play_Tips_15')}" styleName="lastMenuSelectSkinStyle"
+							click="changeBetsTypeHandler(event)"/>
+		</s:SkinnableContainer>
+		<s:HGroup id="playContainer" width="100%" height="100%">
+		</s:HGroup>
+	</s:VGroup>
+	<s:HGroup id="hg_content" gap="0" width="100%" horizontalAlign="left" paddingLeft="14" bottom="143">
+		<s:HGroup height="48" verticalAlign="middle">
+			<s:Label text="{resourceManager.getString('LotteryTips','you_Selected')}" styleName="labelStyles2"/>
+			<s:Label id="zhu" text="{betCount}" styleName="labelStyles4" minWidth="40" maxWidth="50" textAlign="center"/>
+			<s:Label text="注，" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup height="48" verticalAlign="middle">
+			<s:Label text="共计" styleName="labelStyles2"/>
+			<s:Label id="money" text="{betMoney}" styleName="labelStyles4" minWidth="40" maxWidth="75" textAlign="center"/>
+			<s:Label text="{CurrentUserInfo.moneyType}" styleName="labelStyles2"/>	
+		</s:HGroup>
+	</s:HGroup>
+	<bettings:BettingBottom  id="bettings_Module" bottom="0">
+	</bettings:BettingBottom>
+</s:Group>

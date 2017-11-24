@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="creationCompleteHandler(event)" 
+		  xmlns:ssc="com.xazc.components.ssc.*" gap="0" xmlns:bettings="com.xazc.components.bettings.*">
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.comm.vo.Cathectic;
+			import com.xazc.event.BetsClickEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.Util;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			private var game_id:String = "17";
+			
+			public var lotteryID:String = "";
+			
+			[Bindable]
+			private var playType:int = 1;
+			
+			private var selectedPlayContainer:DisplayObject;
+			
+			public var error:Boolean = false;
+			
+			private var numbersArr:Array = new Array();
+			
+			private var bettingInfo:Cathectic;
+			
+			public var zhushu:Number = 0;
+			
+			//类型
+			private var sntuo:int = 0;
+			
+			private var selectedHZNum:Array = [];
+			
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				selectedPlayContainer = playContainer1;
+				for (var i:int = 1; i < 27; i++)
+				{
+					var tog:ToggleButton = new ToggleButton();
+					tog.label = "" + i;
+					tog.styleName = "numberSelectSkinStyle_large";
+					addBets.addElement(tog);
+					tog.addEventListener(MouseEvent.CLICK, addBetsClickHandler);
+				}
+				
+				bettingInfo = new Cathectic();
+				bettingInfo.lottery_type = lotteryID;
+				game_id = lotteryID + game_id;
+				bettingInfo.game_id = game_id;
+				addEventListener(BetsClickEvent.BETS_NUMBER_CLICK, betsNumberClickHandler);
+				Util.getInstance().addEventListener(BetsClickEvent.CLEAN_ALL_SELECTED_NUMBERS, clearAll);
+			}
+			
+			private function addBetsClickHandler(e:MouseEvent):void
+			{
+				var TogBtn:ToggleButton = e.target as ToggleButton;
+				if(TogBtn.selected == true){
+					selectedHZNum.push(TogBtn.label);
+				}else{
+					selectedHZNum.splice(selectedHZNum.indexOf(TogBtn.label),1);
+				}
+				betsNumberClickHandler(null);
+			}
+			
+			private function betsNumberClickHandler(e:BetsClickEvent):void
+			{
+				if(playType == 1 || playType == 5 || playType == 9)
+				{
+					zhushu= zu3.selectedNum.length * (zu3.selectedNum.length-1);
+					bettingInfo.tzcontent = zu3.selectedNum.toString();
+				}
+				else if(playType == 2 || playType == 6 || playType == 10)
+				{
+					zhushu = zu6.selectedNum.length * (zu6.selectedNum.length-1) * (zu6.selectedNum.length-2)/6;
+					bettingInfo.tzcontent = zu6.selectedNum.toString();
+				}
+				else if(playType == 3 || playType == 7 || playType == 11)
+				{
+					var zhus3:int = 0;
+					for(var i3:int=0;i3<selectedHZNum.length;i3++){
+						var num:int = 0;
+						var num1:int=0;
+						for(var j3:int=0;j3<10;j3++){
+							for(var k3:int = 0;k3<10;k3++){
+								for(var x3:int = 0;x3<10;x3++){
+									if(!(j3==k3&&k3==x3)){
+										if(j3==k3||k3==x3||j3==x3){
+											if(j3+k3+x3==selectedHZNum[i3]){
+												num+=1;
+											}
+										}else{
+											if(j3+k3+x3==selectedHZNum[i3]){
+												num1=num1+1;
+											}
+										}
+									}
+								}
+							}
+						}
+						zhus3+=num/3+num1/6;
+					}
+					zhushu=zhus3;
+					bettingInfo.tzcontent = selectedHZNum.toString();
+				}
+				bettingInfo.tzzs = zhushu;
+				bettingInfo.sntuo = sntuo;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE, bettingInfo));
+			}
+			
+			private function clearAll(e:BetsClickEvent = null):void
+			{
+				clearZu3SelectedNumbers();
+				clearZu6SelectedNumbers();
+				clearCopyHandler();
+				clearHeZSelectedNumber();
+			}
+			
+			private function clearCopyHandler():void
+			{
+				if(textarea)
+					textarea.text = "";
+			}
+			
+			private function clearHeZSelectedNumber():void
+			{
+				for (var i:int = 0; i < 26; i++)
+				{
+					var tog:ToggleButton = addBets.getElementAt(i) as ToggleButton
+					tog.selected = false;
+				}
+				selectedHZNum = [];
+			}
+			
+			private function clearZu3SelectedNumbers():void
+			{
+				zu3.clearAllSelectedNumHandler();
+			}
+			
+			private function clearZu6SelectedNumbers():void
+			{
+				zu6.clearAllSelectedNumHandler();
+			}
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				target.selected = true;
+				var targetID:String = target.id;
+				game_id = lotteryID + (targetID.split("_").length == 2 ? targetID.split("_")[1] : targetID.split("_")[2]);
+				bettingInfo.game_id = game_id;
+				clearAll();
+				bettingInfo.tzzs = 0;
+				dispatchEvent(new BetsClickEvent(BetsClickEvent.CONFIRM_BTN_ENABLE,bettingInfo));
+				switch(targetID)
+				{
+					case "play_17":
+						playType = 1;
+						sntuo = 0;
+						showPlayContainer(playContainer1);
+						break;
+					case "play_18":
+						playType = 2;
+						sntuo = 0;
+						showPlayContainer(playContainer2);
+						break;
+					case "play_19":
+						playType = 3;
+						sntuo = 0;
+						showPlayContainer(playContainer3);
+						break;
+					case "play_v_35":
+						playType = 4;
+						sntuo = 3;
+						showPlayContainer(playContainer4);
+						tipLabel.text = "前三混合组选(含组三、组六)：123或者223";
+						ctrlLabel.text = "前三混合组选";
+						ctrlVLabel.text = "前三混合组选粘贴";
+						break;
+					case "play_29":
+						playType = 5;
+						sntuo = 0;
+						showPlayContainer(playContainer1);
+						break;
+					case "play_30":
+						sntuo = 0;
+						playType = 6;
+						showPlayContainer(playContainer2);
+						break;
+					case "play_31":
+						playType = 7;
+						sntuo = 0;
+						showPlayContainer(playContainer3);
+						break;
+					case "play_v_36":
+						playType = 8;
+						sntuo = 3;
+						showPlayContainer(playContainer4);
+						tipLabel.text = "中三混合组选(含组三、组六)：123或者223";
+						ctrlLabel.text = "中三混合组选";
+						ctrlVLabel.text = "中三混合组选粘贴";
+						break;
+					case "play_05":
+						playType = 9;
+						sntuo = 0;
+						showPlayContainer(playContainer1);
+						break;
+					case "play_06":
+						playType = 10;
+						sntuo = 0;
+						showPlayContainer(playContainer2);
+						break;
+					case "play_20":
+						playType = 11;
+						sntuo = 0;
+						showPlayContainer(playContainer3);
+						break;
+					case "play_v_37":
+						playType = 12;
+						sntuo = 3;
+						showPlayContainer(playContainer4);
+						tipLabel.text = "后三混合组选(含组三、组六)：123或者223";
+						ctrlLabel.text = "后三混合组选";
+						ctrlVLabel.text = "后三混合组选粘贴";
+						break;
+				}
+			}
+			
+			private function showPlayContainer(container:DisplayObject):void
+			{
+				selectedPlayContainer.visible = false;
+				(selectedPlayContainer as UIComponent).includeInLayout = false;
+				container.visible = true;
+				(container as UIComponent).includeInLayout = true;
+				selectedPlayContainer = container;
+			}
+			
+			
+			protected function textarea1_mouseOutHandler(event:MouseEvent):void
+			{
+				var arrs:Array=new Array();
+				error=false; numbersArr=new Array();
+				if(textarea.text!=""){
+					var str:String = textarea.text.split(/\D/).join("\n");
+					var arr:Array = str.split("\n");
+					for(var ia:int=0;ia<arr.length;ia++){
+						if(arr[ia]!=""){
+							arrs.push(arr[ia]);
+						}
+					}
+					textarea.text="";
+					check_leopard(arrs,3);
+					if(!error){
+						for(var z:int=0;z<arrs.length;z++){
+							numbersArr.push(arrs[z]);
+						}
+						var haomaStickStr:String = "";
+						for(var i1:int=0;i1<numbersArr.length;i1++){
+							haomaStickStr+=numbersArr[i1].toString().split("").join(",")+" ";					
+						} 
+						bettingInfo.tzcontent =haomaStickStr.substring(0,haomaStickStr.length-1);
+						bettingInfo.tzzs = numbersArr.length;;
+						bettingInfo.sntuo = sntuo;
+						dispatchEvent(new BetsClickEvent(BetsClickEvent.NUMBER_STICK, bettingInfo));
+					}
+				}
+			}
+			
+			/**
+			 * 检查错误（位数检查+豹子号检查）
+			 */
+			public function check_leopard(arrs:Array,lengths:int):void{
+				var str:String = "";
+				for(var i:int=0;i<arrs.length;i++){
+					if(arrs[i]!=""){
+						var leopard:RegExp=/^(\d)\1{2}$/g;
+						if(arrs[i].length!=lengths){
+							str += arrs[i] + "\       格式不正确\n";
+							error=true;
+						}else if(leopard.test(arrs[i].toString())){
+							str += arrs[i] + "\       格式不正确\n";
+							error=true;
+						}else{
+							str += arrs[i]+"\n";
+							error==true?error:error=false;
+						} 
+					}
+				}
+				textarea.text = str;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" paddingLeft="30" verticalAlign="middle" paddingTop="-2">
+		<s:Label text="玩法选择："  styleName="labelStyles1" verticalCenter="0"/>
+		<s:Spacer width="10"/>
+		<s:HGroup verticalAlign="middle" gap="1">
+			<s:Label text="前三"  styleName="labelStyles1" paddingRight="5"/>
+			<s:ToggleButton id="play_17" label="组三" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 1}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_18" label="组六" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 2}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_19" label="和值" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 3}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_35" label="混合组选" styleName="standardButtonSkinStyle" width="70"
+							selected="{playType == 4}" click="playClickHandler(event)"/>
+			<s:Spacer width="10"/>
+			<s:Label text="中三"  styleName="labelStyles1" paddingRight="5"/>
+			<s:ToggleButton id="play_29" label="组三" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 5}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_30" label="组六" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 6}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_31" label="和值" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 7}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_36" label="混合组选" styleName="standardButtonSkinStyle" width="70"
+							selected="{playType == 8}" click="playClickHandler(event)"/>
+			<s:Spacer width="10"/>
+			<s:Label text="后三"  styleName="labelStyles1" paddingRight="5"/>
+			<s:ToggleButton id="play_05" label="组三" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 9}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_06" label="组六" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 10}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_20" label="和值" styleName="standardButtonSkinStyle" width="50"
+							selected="{playType == 11}" click="playClickHandler(event)"/>
+			<s:ToggleButton id="play_v_37" label="混合组选" styleName="standardButtonSkinStyle" width="70"
+							selected="{playType == 12}" click="playClickHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	<s:VGroup id="playContainer1" width="100%" horizontalAlign="center">
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="30" paddingRight="30" paddingTop="5">
+			<bettings:LineLeftRadiusItem width="50%" height="2" left="20" top="3"/>
+			<mx:Label text="至少选择2个号码" styleName="labelStyles2" />
+			<bettings:LineRightRadiusItem width="50%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<ssc:SSCNumberSelected id="zu3" bettingRowName="号码" selectedNumStyle="numberSelectSkinStyle_large" paddingTop="30"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer2" width="100%" visible="false" includeInLayout="false" horizontalAlign="center" verticalAlign="middle">
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="30" paddingRight="30" paddingTop="5">
+			<bettings:LineLeftRadiusItem width="50%" height="2" left="20" top="3"/>
+			<mx:Label text="至少选择3个号码" styleName="labelStyles2" />
+			<bettings:LineRightRadiusItem width="50%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<ssc:SSCNumberSelected id="zu6" bettingRowName="号码" selectedNumStyle="numberSelectSkinStyle_large" paddingTop="30"/>
+	</s:VGroup>
+	<s:VGroup id="playContainer3" width="100%" visible="false" includeInLayout="false" horizontalAlign="center">
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="150" paddingRight="150" paddingTop="5">
+			<bettings:LineLeftRadiusItem width="50%" height="2" left="20" top="3"/>
+			<mx:Label text="至少选择1个号码" styleName="labelStyles2" />
+			<bettings:LineRightRadiusItem width="50%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<s:TileGroup id="addBets" requestedColumnCount="15" verticalGap="12" left="100" paddingTop="25">
+		</s:TileGroup>
+	</s:VGroup>
+	<s:VGroup id="playContainer4" width="100%" visible="false" includeInLayout="false" paddingTop="5">
+		<s:HGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="20" paddingRight="20">
+			<bettings:LineLeftRadiusItem width="50%" height="2" left="20" top="3"/>
+			<mx:Label id="ctrlVLabel" text="前三混合组选粘贴" styleName="labelStyles2" />
+			<bettings:LineRightRadiusItem width="50%" height="2" right="0" top="3"/>
+		</s:HGroup>
+		<s:Group width="100%">
+			<s:Label id="ctrlLabel" text="前三混合组选" fontSize="18" color="0xffffff" fontFamily="Microsoft YaHei,微软雅黑" left="30" top="10"/>
+			<s:Label text="格式说明" fontSize="18" color="0xffffff" fontFamily="Microsoft YaHei,微软雅黑" right="250" top="10"/>
+		</s:Group>
+		
+		<s:HGroup width="100%" paddingTop="10" paddingLeft="30">
+			<s:TextArea id="textarea" width="600" height="120" color="#ffffff" skinClass="css.skin1.CommonTextAreaSkin"
+						rollOut="textarea1_mouseOutHandler(event)"/>
+			<s:VGroup paddingLeft="20" gap="5">
+				<s:Label id="tipLabel" text="前三混合组选(含组三、组六)：123或者223" styleName="stickWriteTextStyle"/>
+				<s:Label text="1）每注必须是3个号码(每个号码之间无需用符号分" styleName="stickWriteTextStyle"/>
+				<s:Label text="割，号码范围0~9)；" styleName="stickWriteTextStyle"/>
+				<s:Label text="2）每注之间以逗号、字母 、空格等字符分割；" styleName="stickWriteTextStyle"/>
+				<s:Label text="3）只支持单式。" styleName="stickWriteTextStyle"/>
+			</s:VGroup>
+		</s:HGroup>
+	</s:VGroup>
+</s:VGroup>

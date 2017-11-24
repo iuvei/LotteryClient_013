@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   cornerRadius="0" 
+				   backgroundAlpha="0"
+				   borderVisible="false"
+				   fontFamily="Microsoft YaHei,微软雅黑" 
+				   fontSize="16" color="#a2a2a2"
+				   creationComplete="init(event)"
+				   width="265" height="45"
+				   
+				   >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			
+			[Bindable]
+			public var prompt:String="";//提示语
+			[Bindable]
+			public var source:String="";//图片路径
+			
+			private var _restrict:String="";//输入限制
+			[Bindable]
+			public function get restrict():String
+			{
+				return _restrict;
+			}
+			
+			public function set restrict(value:String):void
+			{
+				_restrict = value;
+			} 
+			
+			private var _displayAsPassword:Boolean=false; //输入框类型
+			[Bindable]
+			public function get displayAsPassword():Boolean
+			{
+				return _displayAsPassword;
+			}
+			
+			public function set displayAsPassword(value:Boolean):void
+			{
+				_displayAsPassword = value;
+			}
+			
+			private var _maxChars:int=0; //最大字符长度
+			[Bindable]
+			public function get maxChars():int
+			{
+				return _maxChars;
+			}
+
+			public function set maxChars(value:int):void
+			{
+				_maxChars = value;
+			}
+
+			private var _text:String="";//文本
+			[Bindable]
+			public function get text():String{
+				return input.text;
+			}
+			public function set text(text:String):void{
+				input.text=text;
+			}
+			
+			
+			protected function textinput1_focusInHandler(event:FocusEvent):void
+			{
+				promptDisplay.visible=false;
+			}
+			
+			protected function textinput1_focusOutHandler(event:FocusEvent):void
+			{
+				if(input.text=="" ){
+					promptDisplay.visible=true;
+				}
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				if(restrict!=""){
+					input.restrict=restrict;
+				}
+				if(displayAsPassword){
+					input.displayAsPassword=displayAsPassword;
+				}
+				if(maxChars>0){
+					input.maxChars=maxChars;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Image id="img" source="{source}" visible="{source?true:false}" includeInLayout="{source?true:false}"  left="20" verticalCenter="0"/>
+	<s:Label id="promptDisplay" maxDisplayedLines="1" verticalAlign="middle"  fontSize="14" fontFamily="Microsoft YaHei,微软雅黑"
+			 fontStyle="normal" mouseEnabled="false" mouseChildren="false" left="{img.width+5}" bottom="0"   top="2"
+			 text="{prompt}"  color="0xa2a2a2"/>
+	<mx:TextInput id="input" borderVisible="false" left="{img.width+5}"   right="1"  verticalCenter="0"
+				  contentBackgroundAlpha="0"   
+				  borderStyle="none" 
+				  focusThickness="0" 
+				  color="0xa2a2a2"
+				  hasFocusableChildren="false"  
+				  focusIn="textinput1_focusInHandler(event)" 
+				  focusOut="textinput1_focusOutHandler(event)"/>
+</s:BorderContainer>

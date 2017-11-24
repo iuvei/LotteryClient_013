@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" implements="com.xazc.interfaces.IInit"
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:fc3D="com.xazc.module.fc3D.*">
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.xazc.event.ChangeShowDateEvent;
+			import com.xazc.event.CustomEvent;
+			import com.xazc.single.CurrentLotteryInfo;
+			import com.xazc.single.Util;
+			
+			import mx.events.FlexEvent;
+			//玩法显示变量
+			[Bindable]
+			public var playTypes:int = 1;
+			//按钮切换变量
+			[Bindable]
+			public var changeTypes:int = 1;
+			//gameID
+			public var game_ID:String = "16";
+			//是否为胆拖
+			public var sntuo:int = 3;
+			/**
+			 * 初始化
+			 */
+			public function init():void{
+				changeTypes = 1;
+				playTypes = 1;
+				clean();
+			}
+			/**
+			 * 清除选号
+			 */
+			public function clean():void
+			{
+				
+				dispatchEvent(new CustomEvent(CustomEvent.COUNT_ZERO,game_ID));
+				Util.getInstance().dispatchEvent(new ChangeShowDateEvent(ChangeShowDateEvent.CHANGE_SINGLE_PRIZE,CurrentLotteryInfo.lotteryId+game_ID));
+				stick.init();
+				
+			}
+			
+			/**
+			 * 初始化组件完毕
+			 */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				addEventListener(Fc3D_Stick_NumberSelector.GET_STICK_NUMBERS,getNumbersHandler);
+			}
+			/**
+			 * 监听并派发选号
+			 */
+			protected function getNumbersHandler(event:CustomEvent):void
+			{
+				switch(event.type)
+				{
+					case Fc3D_Stick_NumberSelector.GET_STICK_NUMBERS:
+						dispatchEvent(new CustomEvent(CustomEvent.STICK_NUMBERS,event.body));
+						break;
+					default:
+						break;
+				}
+			}
+			private function playClickHandler(e:MouseEvent):void
+			{
+				var target:ToggleButton = e.currentTarget as ToggleButton;
+				target.selected = true;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[ResourceBundle("LotteryTips")]
+	</fx:Metadata>
+	<s:SkinnableContainer backgroundColor="0xcfcece" width="100%">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle" gap="4" paddingLeft="15" paddingTop="8" paddingRight="15" paddingBottom="8"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" gap="4">
+			<s:ToggleButton id="q2_Stick_TogBtn" label="单式" selected="{changeTypes == 1}"
+							click="playClickHandler(event)" styleName="standardButtonSkinStyle" />
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group width="100%" height="34">
+		<s:HGroup width="100%" height="100%" horizontalAlign="left" verticalAlign="middle" paddingLeft="15">
+			<s:Label text="玩法说明：" styleName="labelStyles2"/>
+			<s:Label id="gameType"  text="任选一个非豹子的3个号码组成一注，选号与开奖号一致（顺序不限）即中奖。" styleName="labelStyles2"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="8">
+			<s:Button label="范例" id="gameType_emp" skinClass="css.skin1.universal.TipBtnSkin"  toolTipShow="{Util.getInstance().showToolTips(event)}"
+					  toolTip="{resourceManager.getString('LotteryTips','Fc3D_game_tip_emp_16')}"/>
+		</s:HGroup>
+	</s:Group>
+	
+	<s:Image source="@Embed('css/skin1/universal/images/005_03.png')" width="100%" fillMode="repeat"/>
+	
+	<s:VGroup width="100%" height="310" verticalAlign="middle">
+		<fc3D:Fc3D_Stick_NumberSelector id="stick" width="100%" height="250" paddingLeft="15" verticalAlign="middle" gap="58"
+										checkNums="3" numberStyle="123或223" styleTips="混合组选(含组三，组六)" checkSameBoolean="false" isZusan="true"
+										textTip_1="1）每注必须是3个号码,每个号码之" textTip_2="{resourceManager.getString('LotteryTips','stick_Tips_3')}"/>
+	</s:VGroup>
+</s:Group>

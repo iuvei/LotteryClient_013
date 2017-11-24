@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>投注号码详情</title>
+<script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+<script  type="text/javascript">
+$(document).ready(function (){
+	var str = location.href;
+	var parastr = str.split("?")[1]; 
+	var arr=parastr.split("&");
+	var param="";
+	var url="";
+	for(var i=0;i<arr.length;i++){
+		var p= decodeURIComponent(arr[i]).split("=");
+		if(p[0]=="Url"){
+			url=p[1];
+		}else{
+			param +='"'+p[0]+'"'+":"+'"'+p[1]+'",';
+		}
+	}
+	param=param.substring(0,param.length-1);
+	//alert(param);
+	$.ajax({
+		type:"post",
+		cache : false,
+		dataType:"json",
+		url:url,
+		data:{"message":'{'+param+'}'},
+		timeout : 60000,
+		success:function(d){
+			if(d.BetContent!=null){
+				document.body.innerHTML=d.BetContent;	
+			}else{
+				document.body.innerHTML='无效的访问地址!';
+			}
+		}
+	}); 
+});
+</script>
+</head>
+<body>
+正在加载注单详细信息......
+</body>
+</html>
